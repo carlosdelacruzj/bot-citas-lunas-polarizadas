@@ -46,8 +46,8 @@ def is_network_error(message: str) -> bool:
 
 def recovery_wait_seconds(settings: Settings) -> int:
     return random.randint(
-        settings.recovery_backoff_min_seconds,
-        settings.recovery_backoff_max_seconds,
+        settings.runtime.recovery_backoff_min_seconds,
+        settings.runtime.recovery_backoff_max_seconds,
     )
 
 

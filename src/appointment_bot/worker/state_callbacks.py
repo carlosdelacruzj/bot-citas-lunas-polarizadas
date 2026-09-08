@@ -74,7 +74,7 @@ class WorkerStateCallbacks:
         self._update_state(
             phase="rapid_queue",
             current_order_id=order.order_id,
-            masked_account=order_settings.safe_username,
+            masked_account=order_settings.reservation.safe_username,
             session_started_at=_now(),
             next_check_at=_now(),
         )

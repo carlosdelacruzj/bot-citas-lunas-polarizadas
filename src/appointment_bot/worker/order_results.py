@@ -93,7 +93,7 @@ def handle_observer_order_report(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.error_backoff_seconds,
+            backoff_seconds=settings.runtime.error_backoff_seconds,
             settings=settings,
         )
         send_telegram_message(
@@ -105,7 +105,7 @@ def handle_observer_order_report(
         )
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-        cooldown = settings.captcha_rejection_cooldown_seconds
+        cooldown = settings.captcha.captcha_rejection_cooldown_seconds
         update_order_state(
             order.order_id,
             status=report.status,
@@ -160,7 +160,7 @@ def compatible_handoff_order_ids(
         compatible_orders = list_compatible_orders_for_opportunities(
             opportunities,
             exclude_order_ids={order.order_id},
-            limit=settings.opportunity_handoff_max_candidates,
+            limit=settings.runtime.opportunity_handoff_max_candidates,
             settings=settings,
         )
     except Exception:

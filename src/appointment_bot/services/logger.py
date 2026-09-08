@@ -3,12 +3,12 @@ import threading
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 
 _SETUP_LOCK = threading.Lock()
 
 
-def setup_logging(settings: Settings) -> None:
+def setup_logging(settings: RuntimeSettings) -> None:
     with _SETUP_LOCK:
         root_logger = logging.getLogger()
         if getattr(root_logger, "_appointment_bot_configured", False):

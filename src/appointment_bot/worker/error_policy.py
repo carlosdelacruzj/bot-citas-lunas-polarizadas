@@ -42,16 +42,16 @@ class WorkerErrorPolicy:
                 status="error",
                 message=report.message,
                 exit_code=1,
-                backoff_seconds=self.settings.error_backoff_seconds,
+                backoff_seconds=self.settings.runtime.error_backoff_seconds,
                 settings=self.settings,
             )
             send_telegram_message(
                 self.settings,
                 "El portal mostro una posible defensa durante el monitoreo "
                 f"({defense_signal}) para {order.order_id}. "
-                f"El worker esperara {self.settings.error_backoff_seconds} segundos.",
+                f"El worker esperara {self.settings.runtime.error_backoff_seconds} segundos.",
             )
-            self._wait_retry_phase(self.settings.error_backoff_seconds, "backoff")
+            self._wait_retry_phase(self.settings.runtime.error_backoff_seconds, "backoff")
             self._reset_errors()
             return
         failures = self._increase_errors(report.message)
@@ -59,32 +59,32 @@ class WorkerErrorPolicy:
             self.apply_order_backoff(order, report)
             return
         if is_network_error(report.message) and failures <= len(
-            self.settings.session_retry_delays_seconds
+            self.settings.reservation.session_retry_delays_seconds
         ):
-            delay = self.settings.session_retry_delays_seconds[failures - 1]
+            delay = self.settings.reservation.session_retry_delays_seconds[failures - 1]
             self._wait_retry(delay)
             return
         self.apply_order_backoff(order, report)
 
     def handle_observer_error(self, report: RunReport) -> None:
         failures = self._increase_errors(report.message)
-        if failures <= len(self.settings.session_retry_delays_seconds):
-            self._wait_retry(self.settings.session_retry_delays_seconds[failures - 1])
+        if failures <= len(self.settings.reservation.session_retry_delays_seconds):
+            self._wait_retry(self.settings.reservation.session_retry_delays_seconds[failures - 1])
             return
         send_telegram_message(
             self.settings,
             "El observador continuo acumulo fallos. "
-            f"Reintentara en {self.settings.error_backoff_seconds} segundos.",
+            f"Reintentara en {self.settings.runtime.error_backoff_seconds} segundos.",
         )
-        self._wait_retry_phase(self.settings.error_backoff_seconds, "backoff")
+        self._wait_retry_phase(self.settings.runtime.error_backoff_seconds, "backoff")
         self._reset_errors()
 
     def handle_rapid_queue_error(self, report: RunReport) -> None:
         failures = self._increase_errors(report.message)
-        if failures <= len(self.settings.session_retry_delays_seconds):
-            self._wait_retry(self.settings.session_retry_delays_seconds[failures - 1])
+        if failures <= len(self.settings.reservation.session_retry_delays_seconds):
+            self._wait_retry(self.settings.reservation.session_retry_delays_seconds[failures - 1])
             return
-        self._wait_retry_phase(self.settings.error_backoff_seconds, "backoff")
+        self._wait_retry_phase(self.settings.runtime.error_backoff_seconds, "backoff")
         self._reset_errors()
 
     def handle_unexpected_error(self, error: Exception) -> None:
@@ -92,18 +92,18 @@ class WorkerErrorPolicy:
             failures = self._increase_errors(str(error))
         except Exception:
             logger.exception("Could not persist unexpected worker failure")
-            self._stop_event.wait(self.settings.error_backoff_seconds)
+            self._stop_event.wait(self.settings.runtime.error_backoff_seconds)
             return
-        delays = self.settings.session_retry_delays_seconds
+        delays = self.settings.reservation.session_retry_delays_seconds
         if failures <= len(delays):
             self._wait_retry(delays[failures - 1])
             return
         send_telegram_message(
             self.settings,
             "El trabajador continuo encontro tres fallos internos. "
-            f"Reintentara en {self.settings.error_backoff_seconds} segundos.",
+            f"Reintentara en {self.settings.runtime.error_backoff_seconds} segundos.",
         )
-        self._wait_retry_phase(self.settings.error_backoff_seconds, "backoff")
+        self._wait_retry_phase(self.settings.runtime.error_backoff_seconds, "backoff")
         self._reset_errors()
 
     def apply_order_backoff(self, order: ServiceOrderRuntime, report: RunReport) -> None:
@@ -112,7 +112,7 @@ class WorkerErrorPolicy:
             status=report.status,
             message=report.message,
             exit_code=1,
-            backoff_seconds=self.settings.error_backoff_seconds,
+            backoff_seconds=self.settings.runtime.error_backoff_seconds,
             settings=self.settings,
         )
         send_telegram_message(
@@ -120,5 +120,5 @@ class WorkerErrorPolicy:
             f"La orden {order.order_id} entro en backoff por errores consecutivos. "
             "Se conserva su prioridad y no se procesaran ordenes posteriores.",
         )
-        self._wait_for_backoff(order, self.settings.error_backoff_seconds)
+        self._wait_for_backoff(order, self.settings.runtime.error_backoff_seconds)
         self._reset_errors()

@@ -53,12 +53,12 @@ def run_with_report(
             client_name=client_name or "observer",
             started_at=started_at_dt,
         )
-        logger.info("Starting appointment check for %s", settings.target_url)
+        logger.info("Starting appointment check for %s", settings.reservation.target_url)
         logger.info(
             "Reservation policy: auto_reserve=%s record_client_sessions=%s",
-            settings.auto_reserve, settings.record_client_sessions,
+            settings.reservation.auto_reserve, settings.evidence.record_client_sessions,
         )
-        logger.info("Using login username %s", settings.safe_username)
+        logger.info("Using login username %s", settings.reservation.safe_username)
 
         if cancel_event is not None and cancel_event.is_set():
             if video_recorder is not None:
@@ -80,8 +80,8 @@ def run_with_report(
             open_page(
                 settings,
                 video_dir=(video_recorder.record_video_dir if video_recorder is not None else None),
-                video_width=settings.client_video_width,
-                video_height=settings.client_video_height,
+                video_width=settings.evidence.client_video_width,
+                video_height=settings.evidence.client_video_height,
                 video_path_callback=(
                     video_recorder.capture_source_path if video_recorder is not None else None
                 ),

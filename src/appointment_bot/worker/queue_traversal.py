@@ -97,7 +97,7 @@ def run_rapid_queue_with_settings(
     opportunity_queue = target_order_ids is not None
     opportunity_started = time.monotonic()
     opportunity_deadline = (
-        time.monotonic() + settings.opportunity_handoff_max_seconds
+        time.monotonic() + settings.runtime.opportunity_handoff_max_seconds
         if opportunity_queue
         else None
     )
@@ -125,7 +125,7 @@ def run_rapid_queue_with_settings(
                     len(order_positions),
                 )
             )
-            orders = orders[: settings.opportunity_handoff_max_candidates]
+            orders = orders[: settings.runtime.opportunity_handoff_max_candidates]
         queued_order_ids = {order.order_id for order in orders}
         for order in dependencies.list_active_orders(
             settings, order_ids=follow_up_order_ids or set()
@@ -188,7 +188,7 @@ def run_rapid_queue_with_settings(
                 completion_reason = "opportunity_window_expired"
                 logger.info(
                     "Stopping opportunity queue after %s seconds",
-                    settings.opportunity_handoff_max_seconds,
+                    settings.runtime.opportunity_handoff_max_seconds,
                 )
                 break
             # El valor 0 significa todos los pendientes; un valor positivo
@@ -197,7 +197,7 @@ def run_rapid_queue_with_settings(
                 completion_reason = "reservation_limit"
                 logger.info(
                     "Queue reservation limit reached: %s",
-                    settings.queue_max_reservations_per_run,
+                    settings.runtime.queue_max_reservations_per_run,
                 )
                 break
 
@@ -256,7 +256,7 @@ def run_rapid_queue_with_settings(
                     dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
             if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-                cooldown = settings.captcha_rejection_cooldown_seconds
+                cooldown = settings.captcha.captcha_rejection_cooldown_seconds
                 failed_orders += 1
                 dependencies.update_order_state(
                     order.order_id,
@@ -324,7 +324,7 @@ def run_rapid_queue_with_settings(
                     status=report.status,
                     message=report.message,
                     exit_code=report.exit_code,
-                    backoff_seconds=settings.error_backoff_seconds,
+                    backoff_seconds=settings.runtime.error_backoff_seconds,
                     settings=settings,
                 )
                 logger.warning(
@@ -360,7 +360,7 @@ def run_rapid_queue_with_settings(
 
             if (
                 report.status == "available"
-                and not settings.auto_reserve
+                and not settings.reservation.auto_reserve
                 and stop_on_available_without_reserve
             ):
                 completion_reason = "availability_without_auto_reserve"
@@ -415,12 +415,12 @@ def run_rapid_queue_with_settings(
             "completion_reason": completion_reason,
             "opportunity_queue": opportunity_queue,
             "opportunity_candidate_limit": (
-                settings.opportunity_handoff_max_candidates
+                settings.runtime.opportunity_handoff_max_candidates
                 if opportunity_queue
                 else None
             ),
             "opportunity_window_seconds": (
-                settings.opportunity_handoff_max_seconds if opportunity_queue else None
+                settings.runtime.opportunity_handoff_max_seconds if opportunity_queue else None
             ),
             "opportunity_elapsed_seconds": round(
                 time.monotonic() - opportunity_started,

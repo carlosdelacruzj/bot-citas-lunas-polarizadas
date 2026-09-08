@@ -53,7 +53,7 @@ def notify_result(
             if _should_notify_partial_result(result):
                 return _send_result_notification(result, settings, effective_screenshot_paths)
             logger.info("Skipping Telegram notification for partial availability without hour.")
-            return not settings.telegram_enabled
+            return not settings.telegram.telegram_enabled
 
         if result.status == "unavailable":
             if _has_reservation_evidence(result) and effective_screenshot_paths:
@@ -62,7 +62,7 @@ def notify_result(
                     settings,
                     effective_screenshot_paths,
                 )
-            if settings.telegram_notify_unavailable:
+            if settings.telegram.telegram_notify_unavailable:
                 return send_telegram_message(settings, _format_result_message(result))
 
         if result.status == "completed":
@@ -79,7 +79,7 @@ def notify_result(
                     _format_result_message(result),
                 )
             logger.info("Appointment workflow is no longer available: %s", result.message)
-        return not settings.telegram_enabled
+        return not settings.telegram.telegram_enabled
     except Exception:
         # Una alerta secundaria nunca debe cambiar el resultado real de
         # una reserva que ya fue confirmada por la pagina.
@@ -115,13 +115,13 @@ def send_telegram_message(
     *,
     timeout_seconds: int = TELEGRAM_API_TIMEOUT_SECONDS,
 ) -> bool:
-    if not settings.telegram_enabled:
+    if not settings.telegram.telegram_enabled:
         return False
 
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendMessage"
     payload = urlencode(
         {
-            "chat_id": settings.telegram_chat_id,
+            "chat_id": settings.telegram.telegram_chat_id,
             "text": message,
             "disable_web_page_preview": "true",
         }
@@ -168,7 +168,7 @@ def notify_deferred_queue_summary(
         item for item in deferred_reports if _should_send_deferred_report(item)
     ]
     if not deferred_reports:
-        return not settings.telegram_enabled
+        return not settings.telegram.telegram_enabled
 
     if len(deferred_reports) == 1:
         item = deferred_reports[0]
@@ -209,20 +209,20 @@ def notify_deferred_queue_summary(
 
 
 def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> bool:
-    if not settings.telegram_enabled:
+    if not settings.telegram.telegram_enabled:
         return False
 
     if not image_path.exists():
         logger.warning("Telegram photo does not exist: %s", image_path)
         return False
 
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendPhoto"
+    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendPhoto"
     boundary = f"----appointment-bot-{uuid.uuid4().hex}"
     content_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
     body = _multipart_form_data(
         boundary,
         fields={
-            "chat_id": settings.telegram_chat_id,
+            "chat_id": settings.telegram.telegram_chat_id,
             "caption": caption,
         },
         files={
@@ -281,7 +281,7 @@ def _send_deferred_result_notification(
                 screenshot_paths,
                 _format_deferred_evidence_caption(result),
             )
-        return not settings.telegram_enabled
+        return not settings.telegram.telegram_enabled
     delivered = _send_result_notification(result, settings, screenshot_paths)
     if result.status == "registered":
         delivered = _send_registered_contact_notification(result, settings) or delivered

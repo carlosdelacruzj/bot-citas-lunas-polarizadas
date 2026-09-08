@@ -247,7 +247,7 @@ def captcha_shadow_dataset_export_payload() -> tuple[HTTPStatus, bytes | dict[st
     settings = load_settings(require_login=False)
     try:
         events = _shadow_all_events(settings)
-        archive, _ = build_captcha_dataset_zip(events, settings.screenshots_dir)
+        archive, _ = build_captcha_dataset_zip(events, settings.evidence.screenshots_dir)
     except ValueError as exc:
         return HTTPStatus.CONFLICT, error_payload(
             "captcha_dataset_unavailable",
@@ -357,7 +357,7 @@ def captcha_shadow_image_payload(
             "not_found", "El evento no tiene una imagen disponible."
         )
     image_path = Path(image_value).resolve()
-    screenshots_root = settings.screenshots_dir.resolve()
+    screenshots_root = settings.evidence.screenshots_dir.resolve()
     if not image_path.is_relative_to(screenshots_root):
         logger.warning("captcha_shadow_image_outside_root event_id=%s", event_id)
         return HTTPStatus.FORBIDDEN, error_payload(
@@ -409,12 +409,12 @@ def _shadow_all_events(settings: Settings) -> list[dict[str, Any]]:
 
 
 def _shadow_get(settings: Settings, path: str) -> dict[str, Any]:
-    base_url = settings.captcha_shadow_url.rstrip("/")
+    base_url = settings.captcha.captcha_shadow_url.rstrip("/")
     parsed = urlparse(base_url)
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK_HOSTS:
         raise ValueError("CAPTCHA_SHADOW_URL must use a local HTTP address")
     request = Request(f"{base_url}{path}", method="GET")
-    with urlopen(request, timeout=settings.captcha_shadow_timeout_seconds) as response:
+    with urlopen(request, timeout=settings.captcha.captcha_shadow_timeout_seconds) as response:
         payload = json.loads(response.read().decode("utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("Invalid CAPTCHA shadow response")
@@ -422,7 +422,7 @@ def _shadow_get(settings: Settings, path: str) -> dict[str, Any]:
 
 
 def _shadow_post(settings: Settings, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-    base_url = settings.captcha_shadow_url.rstrip("/")
+    base_url = settings.captcha.captcha_shadow_url.rstrip("/")
     parsed = urlparse(base_url)
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK_HOSTS:
         raise ValueError("CAPTCHA_SHADOW_URL must use a local HTTP address")
@@ -432,7 +432,7 @@ def _shadow_post(settings: Settings, path: str, payload: dict[str, Any]) -> dict
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urlopen(request, timeout=settings.captcha_shadow_timeout_seconds) as response:
+    with urlopen(request, timeout=settings.captcha.captcha_shadow_timeout_seconds) as response:
         response_payload = json.loads(response.read().decode("utf-8"))
     if not isinstance(response_payload, dict):
         raise ValueError("Invalid CAPTCHA shadow response")

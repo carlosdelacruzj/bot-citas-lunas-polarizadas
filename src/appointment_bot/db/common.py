@@ -37,13 +37,13 @@ def _settings(settings: Settings | None) -> Settings:
 
 
 def _database_url(settings: Settings) -> str:
-    if not settings.database_url:
+    if not settings.runtime.database_url:
         raise ValueError("APPOINTMENT_DATABASE_URL is required for PostgreSQL.")
-    return settings.database_url
+    return settings.runtime.database_url
 
 
 def _credential_cipher(settings: Settings) -> CredentialCipher:
-    return CredentialCipher(settings.credential_encryption_keys)
+    return CredentialCipher(settings.runtime.credential_encryption_keys)
 
 
 @contextmanager

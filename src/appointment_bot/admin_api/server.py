@@ -116,7 +116,7 @@ def _dashboard_root() -> Path:
 def run_admin_api() -> int:
     _set_working_directory()
     settings = load_settings(require_login=False)
-    setup_logging(settings)
+    setup_logging(settings.runtime)
     resumed_preflights = resume_pending_order_preflights(settings=settings)
     if resumed_preflights:
         logger.info("Resumed %s pending order validations", resumed_preflights)

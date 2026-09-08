@@ -90,14 +90,14 @@ def _wait_for_math_pre_submit_delay(
     timing: ReservationTiming | None,
 ) -> None:
     delay_seconds = random.uniform(
-        settings.reservation_math_pre_submit_delay_min_seconds,
-        settings.reservation_math_pre_submit_delay_max_seconds,
+        settings.captcha.reservation_math_pre_submit_delay_min_seconds,
+        settings.captcha.reservation_math_pre_submit_delay_max_seconds,
     )
     delay_seconds = round(max(delay_seconds, 0.0), 3)
     captcha_audit["math_pre_submit_delay_seconds"] = delay_seconds
     captcha_audit["math_pre_submit_delay_range_seconds"] = [
-        settings.reservation_math_pre_submit_delay_min_seconds,
-        settings.reservation_math_pre_submit_delay_max_seconds,
+        settings.captcha.reservation_math_pre_submit_delay_min_seconds,
+        settings.captcha.reservation_math_pre_submit_delay_max_seconds,
     ]
     logger.info(
         "Waiting %.3f seconds before the local-math reservation submit",

@@ -96,7 +96,7 @@ def save_reservation_captcha_image(
 
                 if not ensure_reservation_captcha_loaded(
                     panel,
-                    timeout=settings.read_timeout_seconds * 1_000,
+                    timeout=settings.reservation.read_timeout_seconds * 1_000,
                 ):
                     logger.warning(
                         "Reservation panel captcha was not loaded using selector %s",
@@ -107,7 +107,7 @@ def save_reservation_captcha_image(
                 if captcha_media is None:
                     logger.warning("No captcha image was found using selector %s", selector)
                     continue
-                if not settings.captcha_shadow_enabled and alert_sink is not None:
+                if not settings.captcha.captcha_shadow_enabled and alert_sink is not None:
                     alert_sink.graphic_captcha_returned()
                 captcha_media.scroll_into_view_if_needed(timeout=5_000)
                 _record_captcha_render_metrics(captcha_media, captcha_audit)

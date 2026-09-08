@@ -54,6 +54,7 @@ from appointment_bot.utils.screenshots import (
 
 logger = logging.getLogger(__name__)
 
+
 def run_observer_with_report(
     settings: Settings,
     *,
@@ -74,14 +75,17 @@ def run_observer_with_report(
     error_screenshot_path = None
 
     recorder = ports.runs.create_video(
-        settings, order_id=run_id, client_name="observer", started_at=started_at_dt,
+        settings,
+        order_id=run_id,
+        client_name="observer",
+        started_at=started_at_dt,
     )
     try:
         with open_page(
             settings,
             video_dir=recorder.record_video_dir if recorder is not None else None,
-            video_width=settings.client_video_width,
-            video_height=settings.client_video_height,
+            video_width=settings.evidence.client_video_width,
+            video_height=settings.evidence.client_video_height,
             video_path_callback=recorder.capture_source_path if recorder is not None else None,
         ) as page:
             try:
@@ -109,13 +113,17 @@ def run_observer_with_report(
                 details["mode"] = "observer"
                 result = AvailabilityResult(result.status, result.message, details)
                 report = RunReport(
-                    status=result.status, message=result.message, exit_code=0,
-                    run_id=run_id, started_at=started_at, details=details,
+                    status=result.status,
+                    message=result.message,
+                    exit_code=0,
+                    run_id=run_id,
+                    started_at=started_at,
+                    details=details,
                     screenshot_path=str(screenshot_paths[0]) if screenshot_paths else None,
                     screenshot_paths=[str(path) for path in screenshot_paths] or None,
                 )
             except Exception:
-                if settings.screenshot_on_error:
+                if settings.evidence.screenshot_on_error:
                     error_screenshot_path = _save_sanitized_observer_screenshot(
                         page,
                         settings,
@@ -125,10 +133,14 @@ def run_observer_with_report(
     except Exception as exc:
         logger.exception("Observer availability check failed")
         report = RunReport(
-            status="error", message=str(exc), exit_code=1,
-            run_id=run_id, started_at=started_at,
+            status="error",
+            message=str(exc),
+            exit_code=1,
+            run_id=run_id,
+            started_at=started_at,
             details={
-                "mode": "observer", "error_type": type(exc).__name__,
+                "mode": "observer",
+                "error_type": type(exc).__name__,
                 "worker_pause_required": isinstance(exc, PortalContractChanged),
             },
             screenshot_path=str(error_screenshot_path) if error_screenshot_path else None,
@@ -137,7 +149,8 @@ def run_observer_with_report(
         video_path = recorder.finalize(report)
         if video_path is not None:
             report = replace(
-                report, details={**(report.details or {}), "video_path": str(video_path)},
+                report,
+                details={**(report.details or {}), "video_path": str(video_path)},
             )
             logger.info("Observer session video saved: %s", video_path)
     return ports.runs.finalize_report(report, settings, started_at_dt=started_at_dt)
@@ -159,7 +172,7 @@ def _monitor_observer(
     captcha_authority: CaptchaAuthority,
     alert_sink: AlertSink,
 ) -> tuple[AvailabilityResult, Path | None]:
-    deadline = time.monotonic() + settings.monitor_window_seconds
+    deadline = time.monotonic() + settings.reservation.monitor_window_seconds
     attempt = 1
     screenshot_path = None
 
@@ -175,15 +188,15 @@ def _monitor_observer(
         try:
             page = select_available_site_for_observer(
                 page,
-                required_site=settings.observer_required_site,
-                timeout=settings.postback_timeout_seconds * 1_000,
+                required_site=settings.runtime.observer_required_site,
+                timeout=settings.reservation.postback_timeout_seconds * 1_000,
             )
         except AppointmentOptionsNotRefreshed as exc:
             return AvailabilityResult(status="unknown", message=str(exc)), screenshot_path
         result = read_appointment_availability(
             page,
             include_person=False,
-            timeout=settings.read_timeout_seconds * 1_000,
+            timeout=settings.reservation.read_timeout_seconds * 1_000,
         )
         if result.status == "unavailable":
             reload_result = _reload_and_recheck_observer_availability(
@@ -205,7 +218,7 @@ def _monitor_observer(
                 page,
                 allow_hidden=True,
                 include_person=False,
-                timeout=settings.postback_timeout_seconds * 1_000,
+                timeout=settings.reservation.postback_timeout_seconds * 1_000,
             )
             if result.status == "available" and capture_captcha_samples:
                 captcha_paths, shadow_event_ids = _collect_observer_captcha_samples(
@@ -220,9 +233,7 @@ def _monitor_observer(
                 )
                 if captcha_paths:
                     details = dict(result.details or {})
-                    details["observer_captcha_image_paths"] = [
-                        str(path) for path in captcha_paths
-                    ]
+                    details["observer_captcha_image_paths"] = [str(path) for path in captcha_paths]
                     details["observer_captcha_shadow_event_ids"] = shadow_event_ids
                     details["observer_captcha_shadow_enqueued"] = len(shadow_event_ids)
                     result = AvailabilityResult(
@@ -238,16 +249,17 @@ def _monitor_observer(
                         screenshot_path,
                     )
                     if archived_path is None:
-                        logger.warning(
-                            "Could not archive observer slot screenshot immediately"
-                        )
+                        logger.warning("Could not archive observer slot screenshot immediately")
                 if on_check is not None:
                     on_check(result, screenshot_path, attempt, None)
                 return result, screenshot_path
 
         if result.status not in {"unavailable", "partial"}:
             return result, screenshot_path
-        if settings.monitor_window_seconds <= 0 or attempt >= settings.monitor_max_attempts:
+        if (
+            settings.reservation.monitor_window_seconds <= 0
+            or attempt >= settings.reservation.monitor_max_attempts
+        ):
             if on_check is not None:
                 on_check(result, screenshot_path, attempt, None)
             return result, screenshot_path
@@ -257,8 +269,8 @@ def _monitor_observer(
             return result, screenshot_path
         wait_seconds = min(
             random.randint(
-                settings.monitor_interval_min_seconds,
-                settings.monitor_interval_max_seconds,
+                settings.reservation.monitor_interval_min_seconds,
+                settings.reservation.monitor_interval_max_seconds,
             ),
             max(1, int(remaining)),
         )
@@ -290,7 +302,7 @@ def _reload_and_recheck_observer_availability(
     try:
         page.reload(
             wait_until="domcontentloaded",
-            timeout=settings.postback_timeout_seconds * 1_000,
+            timeout=settings.reservation.postback_timeout_seconds * 1_000,
         )
         page = click_program_action(page, observer_read_only=True)
         page = open_hidden_appointment_panel_for_observer(
@@ -299,13 +311,13 @@ def _reload_and_recheck_observer_availability(
         )
         page = select_available_site_for_observer(
             page,
-            required_site=settings.observer_required_site,
-            timeout=settings.postback_timeout_seconds * 1_000,
+            required_site=settings.runtime.observer_required_site,
+            timeout=settings.reservation.postback_timeout_seconds * 1_000,
         )
         result = read_appointment_availability(
             page,
             include_person=False,
-            timeout=settings.read_timeout_seconds * 1_000,
+            timeout=settings.reservation.read_timeout_seconds * 1_000,
         )
     except PortalContractChanged:
         raise
@@ -378,7 +390,7 @@ def _collect_observer_captcha_samples(
     if has_reservation_math_captcha(page):
         logger.info("Skipping observer model sampling for HTML math captcha")
         return captcha_paths, shadow_event_ids
-    sample_limit = settings.observer_captcha_sample_limit
+    sample_limit = settings.captcha.observer_captcha_sample_limit
     for sample_number in range(1, sample_limit + 1):
         if cancel_event is not None and cancel_event.is_set():
             break

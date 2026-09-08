@@ -37,7 +37,7 @@ class ClientSessionVideoRecorder:
         client_name: str | None,
         started_at: datetime,
     ) -> ClientSessionVideoRecorder | None:
-        if not settings.record_client_sessions or order_id is None:
+        if not settings.evidence.record_client_sessions or order_id is None:
             return None
         return cls(
             settings=settings,
@@ -60,7 +60,7 @@ class ClientSessionVideoRecorder:
                 return None
 
             if _retain_diagnostic_video(report):
-                diagnostic_dir = self.settings.client_videos_dir / "diagnostics"
+                diagnostic_dir = self.settings.evidence.client_videos_dir / "diagnostics"
                 diagnostic_dir.mkdir(parents=True, exist_ok=True)
                 target_path = self._target_path(
                     f"-{report.run_id or 'session'}-{report.status}-diagnostic.webm",
@@ -84,11 +84,11 @@ class ClientSessionVideoRecorder:
                 _remove_file(self.source_path)
                 return None
 
-            self.settings.client_videos_dir.mkdir(parents=True, exist_ok=True)
+            self.settings.evidence.client_videos_dir.mkdir(parents=True, exist_ok=True)
             target_path = self._target_path(
-                ".mp4" if self.settings.record_client_video_final_mp4 else ".webm"
+                ".mp4" if self.settings.evidence.record_client_video_final_mp4 else ".webm"
             )
-            if not self.settings.record_client_video_final_mp4:
+            if not self.settings.evidence.record_client_video_final_mp4:
                 self.source_path.replace(target_path)
                 return target_path
 
@@ -108,7 +108,7 @@ class ClientSessionVideoRecorder:
     def _target_path(self, suffix: str, *, directory: Path | None = None) -> Path:
         stamp = self.started_at.strftime("%Y%m%d-%H%M%S")
         client_name = _safe_filename(self.client_name)
-        target_dir = directory or self.settings.client_videos_dir
+        target_dir = directory or self.settings.evidence.client_videos_dir
         path = target_dir / f"{stamp}-{client_name}{suffix}"
         if not path.exists():
             return path
@@ -139,7 +139,7 @@ def _export_mp4(settings: Settings, source_path: Path, target_path: Path) -> Pat
         logger.warning("Could not export client session video: %s", exc)
         return None
 
-    if settings.client_video_width < settings.client_video_height:
+    if settings.evidence.client_video_width < settings.evidence.client_video_height:
         video_filter = "crop=900:1600:90:0,scale=1080:1920,fps=30,format=yuv420p"
     else:
         video_filter = "fps=30,format=yuv420p"

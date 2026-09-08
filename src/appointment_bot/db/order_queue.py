@@ -172,7 +172,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             """,
             (
                 EXCLUSIVE_PRIORITY_THRESHOLD,
-                settings.observer_active_order_limit,
+                settings.runtime.observer_active_order_limit,
             ),
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]

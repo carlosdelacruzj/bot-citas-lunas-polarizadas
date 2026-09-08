@@ -256,7 +256,7 @@ def _validate_order_preflight_owned(
             )
             return {"status": "validated", **details}
         except InvalidPortalCredentials as exc:
-            _save_failure_screenshot(page, order_id, order_settings.screenshots_dir)
+            _save_failure_screenshot(page, order_id, order_settings.evidence.screenshots_dir)
             result = _fail_preflight(
                 order_id,
                 str(exc),
@@ -272,7 +272,7 @@ def _validate_order_preflight_owned(
             )
             return result
         except Exception as exc:
-            _save_failure_screenshot(page, order_id, order_settings.screenshots_dir)
+            _save_failure_screenshot(page, order_id, order_settings.evidence.screenshots_dir)
             return _fail_preflight(order_id, str(exc), exc.__class__.__name__, settings)
 
 

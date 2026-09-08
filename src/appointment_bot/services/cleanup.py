@@ -41,16 +41,19 @@ SCREENSHOT_PROTECTED_NAME_MARKERS = (
 
 
 def cleanup_old_files(settings: Settings) -> None:
-    cutoff = datetime.now() - timedelta(days=settings.cleanup_retention_days)
-    _cleanup_directory(settings.logs_dir, cutoff=cutoff)
+    cutoff = datetime.now() - timedelta(days=settings.evidence.cleanup_retention_days)
+    _cleanup_directory(settings.runtime.logs_dir, cutoff=cutoff)
     _cleanup_directory(
-        settings.screenshots_dir,
+        settings.evidence.screenshots_dir,
         cutoff=cutoff,
-        preserve=lambda path: _preserve_screenshot(path, settings.screenshots_dir),
+        preserve=lambda path: _preserve_screenshot(path, settings.evidence.screenshots_dir),
     )
     _cleanup_directory(
-        settings.client_videos_dir, cutoff=cutoff,
-        preserve=lambda path: "diagnostics" in path.relative_to(settings.client_videos_dir).parts,
+        settings.evidence.client_videos_dir,
+        cutoff=cutoff,
+        preserve=lambda path: (
+            "diagnostics" in path.relative_to(settings.evidence.client_videos_dir).parts
+        ),
     )
     removed_rows = cleanup_database_history(settings)
     if any(removed_rows.values()):
@@ -102,10 +105,7 @@ def _preserve_screenshot(path: Path, screenshots_root: Path) -> bool:
     if relative_path.parts and relative_path.parts[0].lower() in SCREENSHOT_PROTECTED_ROOTS:
         return True
     protected_unique_slot_directories = {"cupos-unicos", "cupos-unicos-marcados"}
-    if any(
-        part.lower() in protected_unique_slot_directories
-        for part in relative_path.parts[:-1]
-    ):
+    if any(part.lower() in protected_unique_slot_directories for part in relative_path.parts[:-1]):
         return True
     normalized_name = path.name.lower()
     return any(marker in normalized_name for marker in SCREENSHOT_PROTECTED_NAME_MARKERS)

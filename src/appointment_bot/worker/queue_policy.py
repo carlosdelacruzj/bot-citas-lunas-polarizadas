@@ -34,7 +34,7 @@ def update_state_from_report(
 
 
 def reservation_limit_reached(settings: Settings, confirmed_reservations: int) -> bool:
-    limit = settings.queue_max_reservations_per_run
+    limit = settings.runtime.queue_max_reservations_per_run
     return limit > 0 and confirmed_reservations >= limit
 
 
@@ -43,12 +43,12 @@ def delay_between_orders(
     *,
     cancel_event: threading.Event | None = None,
 ) -> None:
-    if settings.queue_delay_max_seconds <= 0:
+    if settings.runtime.queue_delay_max_seconds <= 0:
         return
 
     delay = random.randint(
-        settings.queue_delay_min_seconds,
-        settings.queue_delay_max_seconds,
+        settings.runtime.queue_delay_min_seconds,
+        settings.runtime.queue_delay_max_seconds,
     )
     if delay <= 0:
         return

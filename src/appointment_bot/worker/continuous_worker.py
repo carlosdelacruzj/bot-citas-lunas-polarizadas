@@ -137,7 +137,7 @@ class ContinuousWorker:
         state = asdict(get_worker_state(self.settings))
         state["worker_running"] = self.is_running
         state["worker_starting"] = self._starting
-        state["continuous_worker_enabled"] = self.settings.continuous_worker_enabled
+        state["continuous_worker_enabled"] = self.settings.runtime.continuous_worker_enabled
         return state
 
     def pause(self) -> dict[str, object]:
@@ -257,11 +257,7 @@ class ContinuousWorker:
 
     def _run_observer_order_block(self, orders: list[ServiceOrderCandidate]) -> None:
         order = next(
-            (
-                candidate
-                for candidate in orders
-                if self._claim_order(candidate.order_id)
-            ),
+            (candidate for candidate in orders if self._claim_order(candidate.order_id)),
             None,
         )
         if order is None:
@@ -292,12 +288,12 @@ class ContinuousWorker:
                 return
         if self._opportunity_burst_started:
             logger.info("Sequential opportunity handoff skipped after guarded burst")
-            if self._rapid_queue_follow_up_order_ids and self.settings.auto_reserve:
+            if self._rapid_queue_follow_up_order_ids and self.settings.reservation.auto_reserve:
                 self._run_rapid_queue(
                     target_order_ids=tuple(self._rapid_queue_follow_up_order_ids),
                     inter_order_delay_enabled=False,
                 )
-        elif self._compatible_handoff_order_ids and self.settings.auto_reserve:
+        elif self._compatible_handoff_order_ids and self.settings.reservation.auto_reserve:
             self._run_rapid_queue(
                 target_order_ids=self._compatible_handoff_order_ids,
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
@@ -305,7 +301,7 @@ class ContinuousWorker:
                 follow_up_order_ids=self._rapid_queue_follow_up_order_ids,
                 inter_order_delay_enabled=False,
             )
-        elif queue_requested and self.settings.auto_reserve:
+        elif queue_requested and self.settings.reservation.auto_reserve:
             self._run_rapid_queue(
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
                 initial_confirmed_order_ids=self._rapid_queue_initial_confirmed_order_ids,
@@ -357,7 +353,7 @@ class ContinuousWorker:
             or previous_state.phase == "monitoring_observer"
             or (
                 previous_state.masked_account is not None
-                and previous_state.masked_account != order_settings.safe_username
+                and previous_state.masked_account != order_settings.reservation.safe_username
             )
         ):
             self._reset_errors()
@@ -373,7 +369,7 @@ class ContinuousWorker:
         self._set_session_state(
             "monitoring_observer_normal",
             order.order_id,
-            order_settings.safe_username,
+            order_settings.reservation.safe_username,
         )
         burst = OpportunityBurstCoordinator(
             self.settings,
@@ -442,9 +438,7 @@ class ContinuousWorker:
             () if burst_result.started else decision.compatible_handoff_order_ids
         )
         confirmed_order_ids = tuple(
-            dict.fromkeys(
-                (*decision.confirmed_order_ids, *burst_result.confirmed_order_ids)
-            )
+            dict.fromkeys((*decision.confirmed_order_ids, *burst_result.confirmed_order_ids))
         )
         if burst_result.started and confirmed_order_ids:
             self._update_state(
@@ -543,10 +537,12 @@ class ContinuousWorker:
         cycle_settings = continuous_settings(self.settings)
         if previous_state.current_order_id is not None or (
             previous_state.masked_account is not None
-            and previous_state.masked_account != cycle_settings.safe_username
+            and previous_state.masked_account != cycle_settings.reservation.safe_username
         ):
             self._reset_errors()
-        self._set_session_state("monitoring_observer", None, cycle_settings.safe_username)
+        self._set_session_state(
+            "monitoring_observer", None, cycle_settings.reservation.safe_username
+        )
         report = run_observer_with_report(
             cycle_settings,
             cancel_event=self._cancel_event,
@@ -759,11 +755,11 @@ class ContinuousWorker:
             return False, "worker_progress_timestamp_invalid"
         stale_after = max(
             180,
-            self.settings.worker_progress_grace_seconds
-            + self.settings.login_timeout_seconds
-            + self.settings.postback_timeout_seconds
-            + self.settings.read_timeout_seconds
-            + self.settings.reservation_timeout_seconds
+            self.settings.runtime.worker_progress_grace_seconds
+            + self.settings.reservation.login_timeout_seconds
+            + self.settings.reservation.postback_timeout_seconds
+            + self.settings.reservation.read_timeout_seconds
+            + self.settings.reservation.reservation_timeout_seconds
             + 60,
         )
         if age_seconds > stale_after:
@@ -821,7 +817,7 @@ class ContinuousWorker:
         self._last_cleanup_date = today
 
     def _daily_cutoff_reached(self) -> bool:
-        return daily_cutoff_reached(self.settings.worker_daily_cutoff_time)
+        return daily_cutoff_reached(self.settings.runtime.worker_daily_cutoff_time)
 
     def _wait_for_hot_window_if_needed(self) -> bool:
         decision = hot_window_wait_decision(
@@ -884,7 +880,7 @@ class ContinuousWorker:
             self._reset_errors()
             return True
 
-        limit = self.settings.unavailable_streak_limit
+        limit = self.settings.runtime.unavailable_streak_limit
         if limit > 0 and self._state_callbacks.unavailable_streak >= limit:
             wait_seconds = recovery_wait_seconds(self.settings)
             logger.warning(
@@ -921,11 +917,9 @@ class ContinuousWorker:
         return True
 
     def _maybe_pause_after_detection(self, report: RunReport) -> bool:
-        if self.settings.auto_reserve or report.status != "available":
+        if self.settings.reservation.auto_reserve or report.status != "available":
             return False
-        logger.warning(
-            "Pausing worker after availability detection with AUTO_RESERVE=false"
-        )
+        logger.warning("Pausing worker after availability detection with AUTO_RESERVE=false")
         self.pause()
         send_telegram_message(
             self.settings,
@@ -939,7 +933,7 @@ class ContinuousWorker:
     def _record_window_metric(self, report: RunReport, *, source: str) -> None:
         details = report.details or {}
         now = datetime.now(WORKER_TIMEZONE)
-        window_label = current_window_label(now.time(), self.settings.observer_hot_windows)
+        window_label = current_window_label(now.time(), self.settings.runtime.observer_hot_windows)
         try:
             record_observer_window_metric(
                 self.settings,

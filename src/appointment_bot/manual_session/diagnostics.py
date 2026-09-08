@@ -200,7 +200,7 @@ class ManualDiagnosticRecorder:
     def __init__(self, settings: Settings, session_id: str, order_id: str) -> None:
         day = datetime.now().strftime("%d-%m-%Y")
         self.report_path = (
-            settings.screenshots_dir
+            settings.evidence.screenshots_dir
             / day
             / "manual-diagnostics"
             / session_id

@@ -255,7 +255,7 @@ def _predict_v6(
         }
     ).encode("utf-8")
     request = Request(
-        f"{settings.captcha_shadow_url.rstrip('/')}/v1/predict/authority",
+        f"{settings.captcha.captcha_shadow_url.rstrip('/')}/v1/predict/authority",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",

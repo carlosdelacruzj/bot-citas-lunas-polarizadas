@@ -91,7 +91,7 @@ def open_manual_session_for_order(
     handle = ManualSessionHandle(
         session_id=session_id,
         order_id=order.order_id,
-        username=session_settings.safe_username,
+        username=session_settings.reservation.safe_username,
         mode=mode,
         order_status=order.status,
         status="opening",
@@ -206,7 +206,7 @@ def _run_manual_session(
         "Manual session opening: session_id=%s order_id=%s username=%s started_at=%s",
         session_id,
         order.order_id,
-        session_settings.safe_username,
+        session_settings.reservation.safe_username,
         started_at,
     )
     diagnostic_error: str | None = None
@@ -345,7 +345,7 @@ def _prepare_manual_session(
         program_plate=order.program_plate,
     )
     open_appointment_panel(page)
-    select_available_site(page, required_site=settings.observer_required_site)
+    select_available_site(page, required_site=settings.runtime.observer_required_site)
     _set_session_status(
         session_id,
         "active",
@@ -355,7 +355,7 @@ def _prepare_manual_session(
         "Manual session ready at appointment panel: session_id=%s order_id=%s site=%s",
         session_id,
         order.order_id,
-        settings.observer_required_site,
+        settings.runtime.observer_required_site,
     )
 
 

@@ -44,7 +44,7 @@ PAYLOAD_DETAIL_KEYS = (
 class TelegramAlertDispatcher:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.enabled = settings.telegram_enabled
+        self.enabled = settings.telegram.telegram_enabled
         self._stop_event = threading.Event()
         self._wake_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -292,11 +292,11 @@ def _send_alert_message(
     reply_markup: dict[str, Any] | None,
     timeout_seconds: int,
 ) -> bool:
-    if not settings.telegram_enabled:
+    if not settings.telegram.telegram_enabled:
         return False
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendMessage"
     payload: dict[str, Any] = {
-        "chat_id": settings.telegram_chat_id,
+        "chat_id": settings.telegram.telegram_chat_id,
         "text": message,
         "disable_web_page_preview": True,
     }

@@ -92,7 +92,7 @@ def update_captcha_sampling_control(
 
 
 def _environment_fallback(settings: Settings) -> CaptchaSamplingControl:
-    configured_limit = max(int(settings.reservation_captcha_sample_limit), 1)
+    configured_limit = max(int(settings.captcha.reservation_captcha_sample_limit), 1)
     enabled = configured_limit > 1
     sample_limit = min(
         max(configured_limit, MIN_SAMPLE_LIMIT),

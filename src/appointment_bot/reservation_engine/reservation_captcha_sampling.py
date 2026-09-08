@@ -196,7 +196,7 @@ def _resolve_sample_limit(
     settings: Settings,
     captcha_authority: CaptchaAuthority | None,
 ) -> int:
-    if not settings.reservation_captcha_runtime_control_enabled:
+    if not settings.captcha.reservation_captcha_runtime_control_enabled:
         return 1
     try:
         if captcha_authority is None:
@@ -207,7 +207,7 @@ def _resolve_sample_limit(
             "Could not read runtime CAPTCHA sampling control; using configured fallback: %s",
             exc,
         )
-        return settings.reservation_captcha_sample_limit
+        return settings.captcha.reservation_captcha_sample_limit
 
 
 def _ensure_reservation_can_continue(

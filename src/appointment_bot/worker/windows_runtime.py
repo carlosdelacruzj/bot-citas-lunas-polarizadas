@@ -30,14 +30,14 @@ def hot_window_wait_decision(
     *,
     extended_until: datetime | None,
 ) -> HotWindowDecision:
-    windows = settings.observer_hot_windows
+    windows = settings.runtime.observer_hot_windows
     now = datetime.now(WORKER_TIMEZONE)
     if now.weekday() not in SEARCH_WEEKDAYS:
         return HotWindowDecision(
             should_wait=True,
             wait_seconds=random.randint(
-                settings.outside_hot_window_min_seconds,
-                settings.outside_hot_window_max_seconds,
+                settings.runtime.outside_hot_window_min_seconds,
+                settings.runtime.outside_hot_window_max_seconds,
             ),
             extended_until=None,
         )
@@ -57,8 +57,8 @@ def hot_window_wait_decision(
     seconds_to_window = seconds_until_next_window(now, windows)
     wait_seconds = min(
         random.randint(
-            settings.outside_hot_window_min_seconds,
-            settings.outside_hot_window_max_seconds,
+            settings.runtime.outside_hot_window_min_seconds,
+            settings.runtime.outside_hot_window_max_seconds,
         ),
         seconds_to_window,
     )
@@ -70,11 +70,11 @@ def hot_window_wait_decision(
 
 
 def extended_hot_window_until(settings: Settings) -> datetime | None:
-    extension_seconds = settings.observer_hot_window_extension_seconds
+    extension_seconds = settings.runtime.observer_hot_window_extension_seconds
     if extension_seconds <= 0:
         return None
     now = datetime.now(WORKER_TIMEZONE)
-    window_end = current_window_end(now, settings.observer_hot_windows)
+    window_end = current_window_end(now, settings.runtime.observer_hot_windows)
     if window_end is None:
         return None
     return window_end + timedelta(seconds=extension_seconds)

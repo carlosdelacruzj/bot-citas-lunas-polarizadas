@@ -199,7 +199,7 @@ def _prepare_persistence_request(
 
     return ServiceOrderPersistenceRequest(
         document_number=document_number,
-        encrypted_password=CredentialCipher(settings.credential_encryption_keys).encrypt(
+        encrypted_password=CredentialCipher(settings.runtime.credential_encryption_keys).encrypt(
             request.password
         ),
         document_type=normalize_document_type(request.document_type),

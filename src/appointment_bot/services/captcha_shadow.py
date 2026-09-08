@@ -67,18 +67,18 @@ class CaptchaShadowDispatcher:
 
     @classmethod
     def from_settings(cls, settings: Settings) -> CaptchaShadowDispatcher:
-        enabled = settings.captcha_shadow_enabled
-        if enabled and not _is_local_http_url(settings.captcha_shadow_url):
+        enabled = settings.captcha.captcha_shadow_enabled
+        if enabled and not _is_local_http_url(settings.captcha.captcha_shadow_url):
             logger.error(
                 "CAPTCHA shadow disabled because URL is not local HTTP: %s",
-                settings.captcha_shadow_url,
+                settings.captcha.captcha_shadow_url,
             )
             enabled = False
         return cls(
             enabled=enabled,
-            base_url=settings.captcha_shadow_url,
-            max_queue_size=settings.captcha_shadow_queue_size,
-            timeout_seconds=settings.captcha_shadow_timeout_seconds,
+            base_url=settings.captcha.captcha_shadow_url,
+            max_queue_size=settings.captcha.captcha_shadow_queue_size,
+            timeout_seconds=settings.captcha.captcha_shadow_timeout_seconds,
             settings=settings,
         )
 

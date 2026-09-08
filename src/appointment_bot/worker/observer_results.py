@@ -71,7 +71,7 @@ def notify_confirmed_observer_availability(
     screenshot_path = Path(report.screenshot_path) if report.screenshot_path else None
     delivered = notify_result(result, settings, screenshot_path)
     remove_screenshot_paths(report_screenshot_paths(report))
-    if delivered or not settings.telegram_enabled:
+    if delivered or not settings.telegram.telegram_enabled:
         return signature
     return None
 

@@ -57,7 +57,7 @@ def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]
         ),
         "worker_running": worker_running,
         "reason": reason,
-        "captcha_shadow_enabled": settings.captcha_shadow_enabled,
+        "captcha_shadow_enabled": settings.captcha.captcha_shadow_enabled,
     }
 
 
@@ -67,7 +67,7 @@ def worker_payload(worker_controller: Any | None) -> dict[str, Any]:
     settings = load_settings(require_login=False)
     payload = asdict(get_worker_state(settings))
     payload["worker_running"] = is_worker_lease_active(settings)
-    payload["continuous_worker_enabled"] = settings.continuous_worker_enabled
+    payload["continuous_worker_enabled"] = settings.runtime.continuous_worker_enabled
     return public_worker_payload(payload)
 
 

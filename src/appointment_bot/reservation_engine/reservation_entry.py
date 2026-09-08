@@ -29,7 +29,7 @@ def click_preverified_reservation(
     can_submit, on_submission_intent, on_submission_started, audit, timing,
 ) -> None:
     """Send the known pre-access-only form once, under the durable submit guards."""
-    if not settings.auto_reserve:
+    if not settings.reservation.auto_reserve:
         raise AppointmentWorkflowCancelled("La reserva automatica esta desactivada.")
     if not (expected_details or {}).get("canonical_slot_capture"):
         raise PortalContractChanged("Falta la captura canonica antes del boton de reserva.")

@@ -45,12 +45,12 @@ def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
                 logger.info("No captcha image resource was changed using selector %s", selector)
                 return ensure_reservation_captcha_loaded(
                     panel,
-                    timeout=settings.read_timeout_seconds * 1_000,
+                    timeout=settings.reservation.read_timeout_seconds * 1_000,
                 )
             return wait_for_reservation_captcha_changed(
                 panel,
                 previous_signature=previous_signature,
-                timeout=settings.read_timeout_seconds * 1_000,
+                timeout=settings.reservation.read_timeout_seconds * 1_000,
             )
         except PlaywrightError as exc:
             logger.info("Could not refresh captcha with selector %s: %s", selector, exc)

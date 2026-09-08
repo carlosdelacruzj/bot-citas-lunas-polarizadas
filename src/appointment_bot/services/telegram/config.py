@@ -14,12 +14,14 @@ from appointment_bot.services.telegram.models import TelegramControlConfig
 
 
 def load_control_config(settings: Settings) -> TelegramControlConfig:
-    if not settings.telegram_enabled:
+    if not settings.telegram.telegram_enabled:
         raise TelegramControlError("Telegram is disabled.")
     chat_ids_text = os.getenv("TELEGRAM_CONTROL_CHAT_IDS", "").strip()
     chat_ids = {
         item.strip()
-        for item in (chat_ids_text.split(",") if chat_ids_text else [settings.telegram_chat_id])
+        for item in (
+            chat_ids_text.split(",") if chat_ids_text else [settings.telegram.telegram_chat_id]
+        )
         if item.strip()
     }
     if not chat_ids:
@@ -42,7 +44,7 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
         default=DEFAULT_POLL_TIMEOUT_SECONDS,
     )
     return TelegramControlConfig(
-        bot_token=settings.telegram_bot_token,
+        bot_token=settings.telegram.telegram_bot_token,
         authorized_chat_ids=frozenset(chat_ids),
         authorized_user_ids=user_ids,
         admin_api_url=_validated_admin_api_url(
@@ -54,7 +56,9 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
         worker_monitor_enabled=os.getenv(
             "TELEGRAM_WORKER_MONITOR_ENABLED",
             "false",
-        ).strip().lower()
+        )
+        .strip()
+        .lower()
         in {"1", "true", "yes", "on"},
     )
 
@@ -69,9 +73,7 @@ def _validated_admin_api_url(value: str) -> str:
         return normalized
     if parsed.scheme == "https":
         return normalized
-    raise TelegramControlError(
-        "TELEGRAM_CONTROL_ADMIN_API_URL must use loopback HTTP or HTTPS."
-    )
+    raise TelegramControlError("TELEGRAM_CONTROL_ADMIN_API_URL must use loopback HTTP or HTTPS.")
 
 
 def _positive_int(value: str | None, *, default: int) -> int:

@@ -44,7 +44,7 @@ logger = logging.getLogger("appointment_bot.services.telegram_control")
 
 def run_control(*, check_only: bool = False) -> int:
     settings = load_settings(require_login=False)
-    setup_logging(settings)
+    setup_logging(settings.runtime)
     config = load_control_config(settings)
     telegram = TelegramBotApi(config.bot_token)
     admin_api = AdminApiClient(config.admin_api_url, config.admin_api_token)

@@ -421,7 +421,7 @@ class WhatsAppAutomationDispatcher:
             message_text=message_text,
         )
         attempt.absorb_result(result)
-        self._stop_event.wait(self.settings.appointment_reminders_send_interval_seconds)
+        self._stop_event.wait(self.settings.whatsapp.appointment_reminders_send_interval_seconds)
         return message_id, result
 
     def _revalidate_appointment_reminder(

@@ -140,7 +140,7 @@ class OpportunityBurstCoordinator:
             return self._started
 
     def maybe_start(self, result: AvailabilityResult) -> bool:
-        if not self.settings.auto_reserve:
+        if not self.settings.reservation.auto_reserve:
             return False
         if self.cancel_event is not None and self.cancel_event.is_set():
             return False
@@ -160,8 +160,8 @@ class OpportunityBurstCoordinator:
 
         candidate_limit = (
             None
-            if self.settings.opportunity_burst_max_clients == 0
-            else max(self.settings.opportunity_burst_max_clients - 1, 0)
+            if self.settings.runtime.opportunity_burst_max_clients == 0
+            else max(self.settings.runtime.opportunity_burst_max_clients - 1, 0)
         )
         candidates = list_compatible_orders_for_opportunities(
             opportunities,
@@ -208,7 +208,7 @@ class OpportunityBurstCoordinator:
                 return True
             self._started = True
             self._started_at = time.monotonic()
-            self._deadline = self._started_at + self.settings.opportunity_burst_max_seconds
+            self._deadline = self._started_at + self.settings.runtime.opportunity_burst_max_seconds
             self._candidates.extend(candidates)
             self._candidate_count = len(candidates)
             self.detector_context.update(
@@ -221,14 +221,14 @@ class OpportunityBurstCoordinator:
             self._last_admitted_execution_id = self.detector_execution_id
             self._executor = ThreadPoolExecutor(
                 max_workers=min(
-                    self.settings.opportunity_burst_max_sessions,
+                    self.settings.runtime.opportunity_burst_max_sessions,
                     OPPORTUNITY_BURST_SESSION_LIMIT,
                 ),
                 thread_name_prefix="opportunity-burst",
             )
             initial_slots = (
                 min(
-                    self.settings.opportunity_burst_max_sessions,
+                    self.settings.runtime.opportunity_burst_max_sessions,
                     OPPORTUNITY_BURST_SESSION_LIMIT,
                 )
                 - self._active_sessions_locked()
@@ -342,7 +342,7 @@ class OpportunityBurstCoordinator:
         return len(self._futures) + int(self._detector_active)
 
     def _client_limit_reached_locked(self) -> bool:
-        max_clients = self.settings.opportunity_burst_max_clients
+        max_clients = self.settings.runtime.opportunity_burst_max_clients
         return max_clients > 0 and self._scheduled_clients >= max_clients
 
     def _submit_next_locked(self) -> bool:
@@ -356,7 +356,7 @@ class OpportunityBurstCoordinator:
         if self._client_limit_reached_locked():
             return False
         if self._active_sessions_locked() >= min(
-            self.settings.opportunity_burst_max_sessions,
+            self.settings.runtime.opportunity_burst_max_sessions,
             OPPORTUNITY_BURST_SESSION_LIMIT,
         ):
             return False
@@ -627,23 +627,23 @@ def _create_burst(
         detector_order_id=detector_order_id,
         started_at=started_at,
         admission_deadline_at=(
-            started_at + timedelta(seconds=settings.opportunity_burst_max_seconds)
+            started_at + timedelta(seconds=settings.runtime.opportunity_burst_max_seconds)
         ),
         opportunities=opportunities,
         configured_max_sessions=min(
-            settings.opportunity_burst_max_sessions,
+            settings.runtime.opportunity_burst_max_sessions,
             OPPORTUNITY_BURST_SESSION_LIMIT,
         ),
-        configured_max_clients=settings.opportunity_burst_max_clients,
+        configured_max_clients=settings.runtime.opportunity_burst_max_clients,
         config={
             "max_sessions": min(
-                settings.opportunity_burst_max_sessions,
+                settings.runtime.opportunity_burst_max_sessions,
                 OPPORTUNITY_BURST_SESSION_LIMIT,
             ),
-            "max_clients": settings.opportunity_burst_max_clients,
-            "max_seconds": settings.opportunity_burst_max_seconds,
-            "session_seconds": settings.opportunity_burst_session_seconds,
-            "attempts": settings.opportunity_burst_attempts,
+            "max_clients": settings.runtime.opportunity_burst_max_clients,
+            "max_seconds": settings.runtime.opportunity_burst_max_seconds,
+            "session_seconds": settings.runtime.opportunity_burst_session_seconds,
+            "attempts": settings.runtime.opportunity_burst_attempts,
             "trigger_kind": trigger_kind,
         },
         burst_id=burst_id,
@@ -894,7 +894,7 @@ def _apply_auxiliary_result(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.captcha_rejection_cooldown_seconds,
+            backoff_seconds=settings.captcha.captcha_rejection_cooldown_seconds,
             settings=settings,
         )
         return False, None
@@ -904,7 +904,7 @@ def _apply_auxiliary_result(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.error_backoff_seconds,
+            backoff_seconds=settings.runtime.error_backoff_seconds,
             settings=settings,
         )
         return False, "auxiliary_reservation_unconfirmed"

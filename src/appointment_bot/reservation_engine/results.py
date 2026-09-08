@@ -41,7 +41,7 @@ def with_client_context(
 
     details = dict(result.details or {})
     details.setdefault("orden", order_id)
-    details.setdefault("cuenta", settings.safe_username)
+    details.setdefault("cuenta", settings.reservation.safe_username)
     if program_expediente:
         details.setdefault("program_expediente", program_expediente)
     if program_plate:

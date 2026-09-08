@@ -19,7 +19,7 @@ def cleanup_database_history(settings: Settings | None = None) -> dict[str, int]
     settings = _settings(settings)
     init_database(settings)
     now = datetime.now(UTC)
-    history_cutoff = now - timedelta(days=settings.cleanup_retention_days)
+    history_cutoff = now - timedelta(days=settings.evidence.cleanup_retention_days)
     captcha_shadow_cutoff = now - timedelta(days=CAPTCHA_SHADOW_RETENTION_DAYS)
     worker_command_cutoff = now - timedelta(days=WORKER_COMMAND_RETENTION_DAYS)
     removed: dict[str, int] = {}

@@ -48,7 +48,7 @@ def screenshot_artifact_dir_for_date(
 ) -> Path:
     month = artifact_date.strftime("%Y-%m")
     day = artifact_date.strftime("%d-%m-%Y")
-    return settings.screenshots_dir.joinpath(month, day, *parts)
+    return settings.evidence.screenshots_dir.joinpath(month, day, *parts)
 
 
 def _artifact_path(settings: Settings, label: str) -> Path:
@@ -59,7 +59,7 @@ def artifact_filename(settings: Settings, label: str, extension: str = ".png") -
     suffix = extension if extension.startswith(".") else f".{extension}"
     parts = [
         _short_artifact_label(label),
-        *_short_artifact_prefix(settings.artifact_prefix),
+        *_short_artifact_prefix(settings.evidence.artifact_prefix),
         uuid4().hex[:6],
     ]
     return f"{'-'.join(part for part in parts if part)}{suffix}"
@@ -600,7 +600,7 @@ def save_revealed_centered_modal_screenshot(
 
 
 def save_error_screenshot(page: Page, settings: Settings, label: str = "error") -> Path | None:
-    if not settings.screenshot_on_error:
+    if not settings.evidence.screenshot_on_error:
         return None
 
     return save_screenshot(page, settings, label)
@@ -612,7 +612,7 @@ def save_result_screenshot(
     label: str,
     selectors: list[str] | None = None,
 ) -> Path | None:
-    if not settings.screenshot_on_relevant_result:
+    if not settings.evidence.screenshot_on_relevant_result:
         return None
 
     if selectors:

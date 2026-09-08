@@ -28,8 +28,8 @@ LEASE_UNAVAILABLE_EXIT_CODE = 76
 def run_host(external_stop_event: threading.Event | None = None) -> int:
     _set_working_directory()
     settings = load_settings(require_login=True)
-    setup_logging(settings)
-    if not settings.continuous_worker_enabled:
+    setup_logging(settings.runtime)
+    if not settings.runtime.continuous_worker_enabled:
         raise RuntimeError("CONTINUOUS_WORKER_ENABLED must be true to run the continuous worker.")
 
     stop_event = external_stop_event or threading.Event()
@@ -37,7 +37,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     worker = ContinuousWorker(settings)
     server = None
     server_thread = None
-    if settings.worker_embedded_api_enabled:
+    if settings.runtime.worker_embedded_api_enabled:
         server = create_local_api_server(
             worker_controller=worker,
             restart_callback=restart_event.set,
@@ -108,7 +108,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             if worker_status.get("phase") == DAILY_CUTOFF_REASON:
                 if not daily_cutoff_review_completed:
                     try:
-                        if settings.final_ready_review_enabled:
+                        if settings.runtime.final_ready_review_enabled:
                             _run_final_ready_review(settings)
                         else:
                             logger.info("Final ready-order review skipped by configuration.")
@@ -128,17 +128,17 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         worker.stop()
         worker_thread.join(
             timeout=(
-                settings.reservation_timeout_seconds
-                + settings.login_timeout_seconds
-                + settings.postback_timeout_seconds
-                + settings.read_timeout_seconds
+                settings.reservation.reservation_timeout_seconds
+                + settings.reservation.login_timeout_seconds
+                + settings.reservation.postback_timeout_seconds
+                + settings.reservation.read_timeout_seconds
                 + 30
             )
         )
         if worker.shutdown_reason == DAILY_CUTOFF_REASON:
             try:
                 if not daily_cutoff_review_completed:
-                    if settings.final_ready_review_enabled:
+                    if settings.runtime.final_ready_review_enabled:
                         _run_final_ready_review(settings)
                     else:
                         logger.info("Final ready-order review skipped by configuration.")

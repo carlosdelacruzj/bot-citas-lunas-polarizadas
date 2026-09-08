@@ -81,7 +81,7 @@ class AppointmentReminderScheduler:
         self._thread.start()
         logger.info(
             "Appointment reminder scheduler started: runtime_control=database time=%s",
-            self.settings.appointment_reminders_time.isoformat(timespec="minutes"),
+            self.settings.whatsapp.appointment_reminders_time.isoformat(timespec="minutes"),
         )
 
     def stop(self, *, timeout: float = 2.0) -> None:
@@ -98,12 +98,12 @@ class AppointmentReminderScheduler:
     def _run(self) -> None:
         while not self._stop_event.is_set():
             now = datetime.now(LIMA_TIMEZONE)
-            if now.time() >= self.settings.appointment_reminders_time:
+            if now.time() >= self.settings.whatsapp.appointment_reminders_time:
                 try:
                     reconcile_appointment_reminders(self.settings, now=now)
                 except Exception:
                     logger.exception("Could not reconcile appointment reminders")
-            self._stop_event.wait(self.settings.appointment_reminders_reconcile_seconds)
+            self._stop_event.wait(self.settings.whatsapp.appointment_reminders_reconcile_seconds)
 
 
 def reconcile_appointment_reminders(
@@ -172,11 +172,11 @@ def reconcile_appointment_reminders(
             )
         elif control.mode == "dry_run":
             status = "dry_run"
-        elif len(valid_candidates) > settings.appointment_reminders_daily_limit:
+        elif len(valid_candidates) > settings.whatsapp.appointment_reminders_daily_limit:
             status = "blocked"
             error = (
                 "El total de recordatorios supera el limite diario configurado: "
-                f"{len(valid_candidates)}/{settings.appointment_reminders_daily_limit}."
+                f"{len(valid_candidates)}/{settings.whatsapp.appointment_reminders_daily_limit}."
             )
         else:
             for candidate, phone, username, message_text in valid_candidates:
@@ -336,11 +336,11 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     payload["configuration"] = {
         "enabled": control.mode == "live",
         "dry_run": control.mode == "dry_run",
-        "time": settings.appointment_reminders_time.isoformat(timespec="minutes"),
-        "summary_grace_minutes": settings.appointment_reminders_summary_grace_minutes,
-        "reconcile_seconds": settings.appointment_reminders_reconcile_seconds,
-        "send_interval_seconds": settings.appointment_reminders_send_interval_seconds,
-        "daily_limit": settings.appointment_reminders_daily_limit,
+        "time": settings.whatsapp.appointment_reminders_time.isoformat(timespec="minutes"),
+        "summary_grace_minutes": settings.whatsapp.appointment_reminders_summary_grace_minutes,
+        "reconcile_seconds": settings.whatsapp.appointment_reminders_reconcile_seconds,
+        "send_interval_seconds": settings.whatsapp.appointment_reminders_send_interval_seconds,
+        "daily_limit": settings.whatsapp.appointment_reminders_daily_limit,
         "timezone": "America/Lima",
     }
     payload["control"] = {
@@ -367,18 +367,18 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     payload["control"]["applies_from"] = applies_from.isoformat()
     payload["allowed_variables"] = list(definition.allowed_variables)
     payload["current_time"] = now.isoformat()
-    payload["scheduler_window_open"] = now.time() >= settings.appointment_reminders_time
+    payload["scheduler_window_open"] = now.time() >= settings.whatsapp.appointment_reminders_time
     return payload
 
 
 def _summary_grace_expired(settings: Settings, now: datetime) -> bool:
     cutoff = datetime.combine(
         now.date(),
-        settings.appointment_reminders_time,
+        settings.whatsapp.appointment_reminders_time,
         tzinfo=LIMA_TIMEZONE,
     )
     return now >= cutoff + timedelta(
-        minutes=settings.appointment_reminders_summary_grace_minutes
+        minutes=settings.whatsapp.appointment_reminders_summary_grace_minutes
     )
 
 

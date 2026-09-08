@@ -212,45 +212,45 @@ def run_service_order(
     elif burst_mode:
         order_settings = replace(
             order_settings,
-            auto_reserve=settings.auto_reserve,
-            monitor_window_seconds=settings.opportunity_burst_session_seconds,
-            monitor_max_attempts=settings.opportunity_burst_attempts,
+            auto_reserve=settings.reservation.auto_reserve,
+            monitor_window_seconds=settings.runtime.opportunity_burst_session_seconds,
+            monitor_max_attempts=settings.runtime.opportunity_burst_attempts,
             monitor_interval_min_seconds=(
-                settings.observer_site_toggle_interval_min_seconds
+                settings.runtime.observer_site_toggle_interval_min_seconds
             ),
             monitor_interval_max_seconds=(
-                settings.observer_site_toggle_interval_max_seconds
+                settings.runtime.observer_site_toggle_interval_max_seconds
             ),
             monitor_site_toggle_enabled=True,
             monitor_reload_probe_after_attempt=(
-                settings.opportunity_burst_reload_probe_after_attempt
+                settings.runtime.opportunity_burst_reload_probe_after_attempt
             ),
             reservation_captcha_sample_limit=1,
             reservation_captcha_runtime_control_enabled=False,
         )
     elif observer_mode:
-        site_toggle_enabled = settings.observer_site_toggle_enabled
+        site_toggle_enabled = settings.runtime.observer_site_toggle_enabled
         order_settings = replace(
             order_settings,
-            auto_reserve=settings.auto_reserve,
-            monitor_window_seconds=settings.observer_session_seconds,
+            auto_reserve=settings.reservation.auto_reserve,
+            monitor_window_seconds=settings.runtime.observer_session_seconds,
             monitor_max_attempts=(
-                settings.observer_site_toggle_attempts
+                settings.runtime.observer_site_toggle_attempts
                 if site_toggle_enabled
-                else settings.observer_max_attempts
+                else settings.runtime.observer_max_attempts
             ),
             monitor_interval_min_seconds=(
-                settings.observer_site_toggle_interval_min_seconds
+                settings.runtime.observer_site_toggle_interval_min_seconds
                 if site_toggle_enabled
-                else settings.observer_interval_min_seconds
+                else settings.runtime.observer_interval_min_seconds
             ),
             monitor_interval_max_seconds=(
-                settings.observer_site_toggle_interval_max_seconds
+                settings.runtime.observer_site_toggle_interval_max_seconds
                 if site_toggle_enabled
-                else settings.observer_interval_max_seconds
+                else settings.runtime.observer_interval_max_seconds
             ),
             monitor_site_toggle_enabled=site_toggle_enabled,
-            monitor_reload_probe_after_attempt=settings.observer_reload_probe_after_attempt,
+            monitor_reload_probe_after_attempt=settings.runtime.observer_reload_probe_after_attempt,
         )
 
     if pending_submission:
@@ -264,7 +264,7 @@ def run_service_order(
         details.setdefault("orden", order.order_id)
         details.setdefault("cliente", order.notification_name)
         details.setdefault("nombre", order.name)
-        details.setdefault("cuenta", order_settings.safe_username)
+        details.setdefault("cuenta", order_settings.reservation.safe_username)
         if order.contact_name:
             details.setdefault("contact_name", order.contact_name)
         if order.contact_whatsapp:

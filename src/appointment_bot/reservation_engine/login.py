@@ -20,7 +20,7 @@ SUBMIT_SELECTOR = (
 POST_LOGIN_SELECTOR = (
     'input[type="image"][onclick*="gvProgramacion"], '
     'a[id^="MainContent_gvProgramacion_btnAccion_"][href*="__doPostBack"], '
-    'input#MainContent_BtnNuevo'
+    "input#MainContent_BtnNuevo"
 )
 INVALID_CREDENTIAL_TEXTS = (
     "clave incorrecta o no se ha registrado",
@@ -33,19 +33,23 @@ class InvalidPortalCredentials(RuntimeError):
 
 
 def login(page: Page, settings: Settings) -> None:
-    timeout = settings.login_timeout_seconds * 1_000
+    timeout = settings.reservation.login_timeout_seconds * 1_000
     logger.info("Opening target URL")
-    page.goto(settings.target_url, wait_until="domcontentloaded", timeout=timeout)
+    page.goto(settings.reservation.target_url, wait_until="domcontentloaded", timeout=timeout)
 
     logger.info("Filling login form")
     try:
-        document_type = normalize_document_type(settings.login_document_type)
+        document_type = normalize_document_type(settings.reservation.login_document_type)
         page.locator(DOCUMENT_TYPE_SELECTOR).select_option(
             PORTAL_DOCUMENT_TYPE_VALUES[document_type],
             timeout=timeout,
         )
-        page.locator(USERNAME_SELECTOR).first.fill(settings.login_username, timeout=timeout)
-        page.locator(PASSWORD_SELECTOR).first.fill(settings.login_password, timeout=timeout)
+        page.locator(USERNAME_SELECTOR).first.fill(
+            settings.reservation.login_username, timeout=timeout
+        )
+        page.locator(PASSWORD_SELECTOR).first.fill(
+            settings.reservation.login_password, timeout=timeout
+        )
         page.locator(SUBMIT_SELECTOR).first.click(timeout=timeout)
         outcome = page.wait_for_function(
             """({ selector, rejectionTexts }) => {
