@@ -18,11 +18,8 @@ from appointment_bot.services.api.http import (
     send_json,
 )
 from appointment_bot.services.api.post_routes import POST_ROUTES
+from appointment_bot.services.api.put_routes import PUT_ROUTES
 from appointment_bot.services.api.routing import ApiRequest, Route, dispatch
-from appointment_bot.services.api.whatsapp_message_template_routes import (
-    update_whatsapp_message_template_payload,
-    whatsapp_message_template_action_path,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -34,53 +31,36 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     server_version = "AppointmentBotLocalApi/0.1"
 
     def do_GET(self) -> None:
-        self._dispatch(GET_ROUTES, "Use GET /health or the /api/v1 endpoints.")
+        self._dispatch(GET_ROUTES, "Use GET /health or the /api/v1 endpoints.", parse_query=True)
 
     def do_POST(self) -> None:
         try:
-            self._handle_post()
+            self._dispatch(POST_ROUTES, "Use the /api/v1/worker control endpoints.")
         except RequestBodyError as exc:
             self._send_json(
                 exc.status,
                 error_payload("bad_request", str(exc)),
             )
-
-    def _handle_post(self) -> None:
-        self._dispatch(POST_ROUTES, "Use the /api/v1/worker control endpoints.")
 
     def do_PUT(self) -> None:
         try:
-            self._handle_put()
+            self._dispatch(PUT_ROUTES, "Use los endpoints de plantillas de WhatsApp.")
         except RequestBodyError as exc:
             self._send_json(
                 exc.status,
                 error_payload("bad_request", str(exc)),
             )
 
-    def _handle_put(self) -> None:
-        path = urlparse(self.path).path
-        template_key = whatsapp_message_template_action_path(path)
-        if template_key is None:
-            self._send_json(
-                HTTPStatus.NOT_FOUND,
-                error_payload(
-                    "not_found",
-                    "Use los endpoints de plantillas de WhatsApp.",
-                ),
-            )
-            return
-        if not self._require_authorized(strict=True):
-            return
-        status, payload = update_whatsapp_message_template_payload(
-            template_key,
-            self._read_json(),
-            requested_by=self._authenticated_actor(),
-        )
-        self._send_json(status, payload)
-
-    def _dispatch(self, routes: Sequence[Route], not_found_message: str) -> None:
+    def _dispatch(
+        self,
+        routes: Sequence[Route],
+        not_found_message: str,
+        *,
+        parse_query: bool = False,
+    ) -> None:
         parsed = urlparse(self.path)
-        request = ApiRequest(self, parsed.path, parse_qs(parsed.query))
+        query = parse_qs(parsed.query) if parse_query else {}
+        request = ApiRequest(self, parsed.path, query)
         if not dispatch(request, routes):
             self._send_json(
                 HTTPStatus.NOT_FOUND,
