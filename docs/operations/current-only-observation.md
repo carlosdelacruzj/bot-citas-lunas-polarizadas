@@ -1,6 +1,8 @@
 # Observacion para retirar compatibilidad anterior
 
-Vigencia: `2026-08-31` a `2026-09-06`, zona `America/Lima`.
+La ventana inicial `2026-08-31` a `2026-09-06` no acredito cero consumidores.
+La nueva ventana comprende siete dias completos despues de migrar los accesos
+antiguos, conforme al [`roadmap`](../roadmap/README.md), zona `America/Lima`.
 
 Objetivo: demostrar que la operacion actual no depende de contratos anteriores
 antes de retirar definitivamente codigo, puerto y respuestas compatibles. No
@@ -23,8 +25,8 @@ crear reservas ni envios de prueba para completar esta lista.
 
 ## Umbrales para retirar
 
-- Resumen mensual v1: cero accesos hasta el cierre del `2026-09-03`; puede
-  retirarse desde el `2026-09-04`.
+- Resumen mensual v1: cero accesos durante siete dias completos. La fecha
+  historica del header `Sunset` no sustituye esta comprobacion.
 - API embebida `8765`: cero accesos naturales durante siete dias, con Telegram
   y Admin API saludables. Los chequeos manuales deben anotarse aparte.
 - Ordenes sin proyeccion y post-cita sin query: cero consumidores identificados

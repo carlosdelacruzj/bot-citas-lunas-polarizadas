@@ -55,10 +55,13 @@ El catálogo exacto vive en los routers. Los grupos estables son:
 - sesiones manuales controladas;
 - reporte mensual v2.
 
-`GET /api/v1/monthly-summary` permanece disponible hasta el final del
-`2026-09-03`; su retiro esta previsto desde el `2026-09-04`. Los consumidores deben usar
-`GET /api/v2/monthly-summary`; v1 emite `Deprecation`, `Sunset` y un enlace a
-la version sucesora.
+`GET /api/v1/monthly-summary` permanece disponible por compatibilidad. Los
+consumidores deben usar `GET /api/v2/monthly-summary`; v1 conserva los headers
+`Deprecation`, `Sunset` y el enlace a la version sucesora. La fecha historica de
+`Sunset` no acredita ausencia de consumidores ni autoriza el retiro automatico.
+El retiro exige la ventana de observacion y el cierre definidos en
+[`../roadmap/README.md`](../roadmap/README.md) y
+[`../operations/current-only-observation.md`](../operations/current-only-observation.md).
 
 No mantener aqui un inventario exhaustivo de URLs: debe verificarse en
 `local_api.py` y los routers antes de agregar o retirar una ruta.
