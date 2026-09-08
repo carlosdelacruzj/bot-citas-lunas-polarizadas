@@ -120,9 +120,10 @@ Cerrar 5.5.5: observar el siguiente caso natural de WhatsApp con la version
 extraida cargada en Admin API antes de retirar los reexports.
 No generar envios para forzar la aceptacion. Conservar tambien `2.6` pendiente
 hasta reunir su evidencia integral natural.
-Siguiente bloque del dashboard: `6.2`, dividir contratos y clientes HTTP por
-dominio, con autoridad de estados, validacion de respuestas criticas y rutas
-codificadas. Cierre: consumidores migrados y validacion contractual vigente.
+Siguiente bloque del dashboard: `6.3`, separar cargas esenciales y auxiliares,
+mostrar error y frescura por tarjeta y completar cancelacion de detalle.
+Cierre: navegacion rapida y respuestas fuera de orden verificadas, sin invalidar
+una vista completa cuando falla un widget auxiliar.
 Las fases 6 a 8 restantes cubren contratos, cargas, accesibilidad, consultas y cierre.
 No combinar estas extracciones con cambios funcionales del portal.
 

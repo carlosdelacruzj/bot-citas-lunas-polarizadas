@@ -1012,11 +1012,22 @@ Esto no cierra contratos HTTP (`6.2`), cargas parciales (`6.3`), accesibilidad
 
 Objetivo: evitar un archivo de API con todos los DTO y endpoints.
 
-- [ ] Separar contratos por dominio.
-- [ ] Compartir unions de estados desde una autoridad consistente.
-- [ ] Validar en runtime respuestas criticas o mantener fixtures contractuales.
-- [ ] Conservar detalle sensible separado de listas resumidas.
-- [ ] Codificar siempre identificadores de ruta.
+- [x] Separar contratos por dominio.
+- [x] Compartir unions de estados desde una autoridad consistente.
+- [x] Validar en runtime respuestas criticas o mantener fixtures contractuales.
+- [x] Conservar detalle sensible separado de listas resumidas.
+- [x] Codificar siempre identificadores de ruta.
+
+Los 81 contratos y 69 metodos anteriores estan repartidos entre seis dominios,
+con transporte HTTP y errores compartidos. Se migraron todos los consumidores
+y se retiro `AppointmentApiService`. Unions cerradas compartidas tienen una
+sola definicion; los estados extensibles del servidor conservan `string`.
+Se eligio la alternativa de fixtures contractuales tipados: incluyen alta,
+credenciales, pagos, lista/detalle, paquete WhatsApp y 18 respuestas de navegacion.
+Las pruebas existentes verifican contratos sensibles y el smoke recorre ocho
+pantallas. No se agregan reintentos ni se adelanta la cancelacion de `6.3`.
+Arquitectura y limites: [HTTP por dominio](../architecture/dashboard-http.md).
+Medicion: [cierre de 6.2](../../reports/architecture/dashboard-http-contracts-2026-09-08.md).
 
 ### 6.3 Cargas parciales y cancelacion
 

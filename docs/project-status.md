@@ -143,9 +143,9 @@ especial de ordenes de prueba.
 Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups.md).
 
 El [dashboard por dominio](architecture/dashboard-domains.md) conserva `App`
-como shell. Ordenes, Finanzas, Mensajes, Seguimiento, CAPTCHA y Operaciones
-poseen estado y comandos; vistas y modales consumen puertos estrechos. La
-proyeccion de ordenes, compatibilidad y detalle autorizado permanecen separados.
+como shell. Los seis dominios poseen estado, comandos y [clientes HTTP propios](architecture/dashboard-http.md).
+Vistas y modales consumen puertos estrechos; contratos y fixtures tipados conservan
+la separacion entre proyeccion de ordenes, compatibilidad y detalle autorizado.
 
 Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
 confirmaciones y la copia diagnostica no muestran esos datos personales.
