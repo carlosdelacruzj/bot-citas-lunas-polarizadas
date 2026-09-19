@@ -17,6 +17,7 @@ def open_page(
     evidence_settings: EvidenceSettings,
     headless: bool | None = None,
     block_heavy_assets: bool | None = None,
+    block_service_workers: bool = False,
     init_script: str | None = None,
     video_dir: Path | None = None,
     video_width: int | None = None,
@@ -38,6 +39,8 @@ def open_page(
         context_options = {
             "device_scale_factor": evidence_settings.screenshot_device_scale_factor,
         }
+        if block_service_workers:
+            context_options["service_workers"] = "block"
         if video_dir is not None:
             width = video_width or evidence_settings.client_video_width
             height = video_height or evidence_settings.client_video_height

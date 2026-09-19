@@ -1,4 +1,4 @@
-export type ManualSessionMode = 'appointment' | 'portal' | 'diagnostic';
+export type ManualSessionMode = 'appointment' | 'portal' | 'diagnostic' | 'review';
 
 export type DocumentType = 'dni' | 'foreign_resident_card';
 export type ServiceType = 'standard' | 'selected_weekday' | 'custom';

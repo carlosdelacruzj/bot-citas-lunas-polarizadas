@@ -5,6 +5,7 @@ import threading
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from playwright.sync_api import Error as PlaywrightError
@@ -15,13 +16,22 @@ from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import ServiceOrderRuntime
+from appointment_bot.core.program_eligibility import program_key
+from appointment_bot.db.browser_ownership import BrowserOwnershipConflict
+from appointment_bot.db.program_eligibility import get_booked_programs
 from appointment_bot.manual_session.diagnostics import ManualDiagnosticRecorder
+from appointment_bot.manual_session.review import ManualReviewGuard
 from appointment_bot.reservation_engine.appointments import (
     open_appointment_panel,
     select_available_site,
 )
 from appointment_bot.reservation_engine.login import login
-from appointment_bot.reservation_engine.programs import click_program_action
+from appointment_bot.reservation_engine.program_review import read_program_appointment
+from appointment_bot.reservation_engine.programs import (
+    click_program_action,
+    open_program_detail_for_review,
+)
+from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +94,18 @@ def open_manual_session_for_order(
         document_type=order.document_type,
         reservation_settings=reservation_settings,
     )
-    browser_lease = BrowserOwnershipLease.acquire(
-        runtime_settings, order.order_id, owner_token=session_id, purpose="manual"
-    )
+    try:
+        browser_lease = BrowserOwnershipLease.acquire(
+            runtime_settings, order.order_id, owner_token=session_id,
+            purpose="manual_review" if mode == "review" else "manual",
+        )
+    except BrowserOwnershipConflict as exc:
+        if exc.code != "active_reservation_attempt" or mode == "review":
+            raise
+        mode = "review"
+        browser_lease = BrowserOwnershipLease.acquire(
+            runtime_settings, order.order_id, owner_token=session_id, purpose="manual_review",
+        )
     now = datetime.now(UTC).isoformat(timespec="seconds")
     handle = ManualSessionHandle(
         session_id=session_id,
@@ -221,9 +240,14 @@ def _run_manual_session(
         with open_page(
             headless=False,
             block_heavy_assets=False,
+            block_service_workers=handle.mode == "review",
             runtime_settings=session_runtime_settings,
             evidence_settings=session_evidence_settings,
         ) as page:
+            review_guard = (
+                ManualReviewGuard(page, session_reservation_settings.target_url)
+                if handle.mode == "review" else None
+            )
             if diagnostic is not None:
                 diagnostic.attach(page)
             try:
@@ -234,10 +258,16 @@ def _run_manual_session(
                     mode=handle.mode,
                     runtime_settings=session_runtime_settings,
                     reservation_settings=session_reservation_settings,
+                    review_guard=review_guard,
                 )
                 if diagnostic is not None:
                     diagnostic.record("portal_ready", path="/lunasoscurecidas/Seguimiento.aspx")
             except Exception as exc:
+                if review_guard is not None:
+                    review_guard.locked = True
+                    save_screenshot(
+                        page, "review-error", evidence_settings=session_evidence_settings,
+                    )
                 if diagnostic is not None:
                     diagnostic.record("preparation_error", error=type(exc).__name__)
                 _set_session_status(
@@ -251,6 +281,9 @@ def _run_manual_session(
                     session_id,
                     order.order_id,
                 )
+            finally:
+                if review_guard is not None:
+                    review_guard.freeze(page)
             _wait_until_manual_session_closed(page, handle, diagnostic=diagnostic)
     except Exception as exc:
         diagnostic_error = type(exc).__name__
@@ -309,6 +342,8 @@ def _wait_until_manual_session_closed(
         try:
             if page.is_closed() or not page.context.pages:
                 break
+            if handle.mode == "review":
+                page.wait_for_timeout(100)
             if diagnostic is not None:
                 diagnostic.poll(page)
                 _sync_diagnostic_status(handle.session_id, diagnostic)
@@ -330,8 +365,20 @@ def _prepare_manual_session(
     mode: str,
     runtime_settings: RuntimeSettings,
     reservation_settings: ReservationSettings,
+    review_guard: ManualReviewGuard | None = None,
 ) -> None:
     login(page, reservation_settings=reservation_settings)
+    if review_guard is not None:
+        review_guard.login_complete = True
+        review_guard.listing_path = urlsplit(page.url).path
+        open_program_detail_for_review(
+            page, program_expediente=order.program_expediente, program_plate=order.program_plate,
+        )
+        _set_session_status(
+            session_id, "active",
+            "Consulta protegida del expediente; no permite reservar, cancelar ni reprogramar.",
+        )
+        return
     if mode in {"portal", "diagnostic"}:
         _set_session_status(
             session_id,
@@ -349,11 +396,21 @@ def _prepare_manual_session(
             order.status,
         )
         return
+    booked = get_booked_programs(order.order_id, settings=runtime_settings)
+
+    def check_program(row: dict) -> None:
+        if program_key(row.get("expediente")) in booked:
+            raise RuntimeError("El expediente ya tiene una cita; no admite una nueva reserva.")
+
     click_program_action(
         page,
+        on_program_selected=check_program,
         program_expediente=order.program_expediente,
         program_plate=order.program_plate,
     )
+    assessment = read_program_appointment(page)
+    if assessment["eligibility"] != "eligible":
+        raise RuntimeError(assessment["eligibility_reason"])
     open_appointment_panel(page)
     select_available_site(page, required_site=runtime_settings.observer_required_site)
     _set_session_status(

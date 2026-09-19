@@ -945,10 +945,13 @@ export class OrdersFacade {
         this.activeManualSessionIds.add(response.session_id);
       }
       await this.navigation.refreshAll();
+      const openedMode = response.mode ?? mode;
       this.ui.showToast(
-        mode === 'diagnostic'
+        openedMode === 'review'
+          ? 'Consulta protegida: acciones de reserva bloqueadas'
+          : openedMode === 'diagnostic'
           ? 'Medición activa'
-          : mode === 'appointment'
+          : openedMode === 'appointment'
             ? 'Sesión manual abierta'
             : 'Portal abierto para consulta',
       );
@@ -1053,6 +1056,9 @@ export class OrdersFacade {
   }
 
   public manualSessionTypeLabel(session: ManualSession): string {
+    if (session.mode === 'review') {
+      return 'Consulta protegida';
+    }
     if (session.mode === 'diagnostic') {
       return 'Diagnóstico protegido';
     }

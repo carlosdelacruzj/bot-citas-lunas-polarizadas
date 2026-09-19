@@ -19,7 +19,7 @@ from appointment_bot.manual_session.session import (
 from appointment_bot.services.api.http import error_payload
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
-MANUAL_SESSION_MODES = {"appointment", "portal", "diagnostic"}
+MANUAL_SESSION_MODES = {"appointment", "portal", "diagnostic", "review"}
 
 
 def list_manual_sessions_payload() -> tuple[HTTPStatus, dict[str, Any]]:
@@ -59,7 +59,7 @@ def open_manual_session_payload(
     if mode not in MANUAL_SESSION_MODES:
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
-            "Manual session mode must be appointment, portal, diagnostic, or auto.",
+            "Manual session mode must be appointment, portal, diagnostic, review, or auto.",
         )
     if mode == "appointment" and order.status != "ready":
         return HTTPStatus.CONFLICT, error_payload(
@@ -76,6 +76,10 @@ def open_manual_session_payload(
         )
     except BrowserOwnershipConflict as exc:
         return HTTPStatus.CONFLICT, error_payload(exc.code, exc.message)
+    mode = next(
+        (item["mode"] for item in list_manual_sessions() if item["session_id"] == session_id),
+        mode,
+    )
     return HTTPStatus.ACCEPTED, {
         "status": "opening",
         "session_id": session_id,
@@ -83,7 +87,9 @@ def open_manual_session_payload(
         "order_status": order.status,
         "mode": mode,
         "message": (
-            "Sanitized manual diagnostic session is opening locally."
+            "Consulta protegida: reservar, cancelar y reprogramar estan bloqueados."
+            if mode == "review"
+            else "Sanitized manual diagnostic session is opening locally."
             if mode == "diagnostic"
             else "Manual browser session is opening locally."
         ),

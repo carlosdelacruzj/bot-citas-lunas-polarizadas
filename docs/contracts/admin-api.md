@@ -67,8 +67,7 @@ El retiro exige la ventana de observacion y el cierre definidos en
 [`../operations/current-only-observation.md`](../operations/current-only-observation.md).
 
 No mantener aqui un inventario exhaustivo de URLs: debe verificarse en
-los registros GET/POST/PUT y los parsers de dominio antes de agregar o retirar
-una ruta. Un parser que devuelve `None` no coincide; una cadena vacia puede
+los registros GET/POST/PUT y parsers antes de agregar o retirar una ruta. Un parser que devuelve `None` no coincide; una cadena vacia puede
 coincidir y producir un error despues de autenticar. No cambiar ese orden ni
 leer el body antes de las barreras existentes durante una extraccion.
 
@@ -172,15 +171,15 @@ API por conveniencia.
 
 ## Sesion manual
 
-La apertura controlada admite modos `auto`, `appointment`, `portal` y
-`diagnostic`. El modo de cita exige una orden apta; portal y diagnostico se
-detienen en limites definidos y conservan trazas sanitizadas. Solo puede existir
+La apertura controlada admite `auto`, `appointment`, `portal`, `review` y `diagnostic`.
+El modo de cita exige una orden apta; portal y diagnostico se detienen en limites definidos y conservan trazas sanitizadas. Solo puede existir
 una sesion compatible con los recursos activos.
 
 La apertura responde `409` con codigo estable si encuentra lease de worker,
 intento activo, preflight incompatible, trabajo de navegador u otra sesion de
-la misma cuenta. El listado conserva sesiones `opening`, `active`, `closing` y
-`close_timeout`; solicitar cierre no equivale a que Chromium ya termino.
+la misma cuenta. `unknown` sin trabajo activo degrada la apertura a `review`; la respuesta informa el modo efectivo.
+La consulta abre el expediente y bloquea modificaciones; no concilia ni reintenta. `intent` y `pending` conservan el rechazo.
+El listado conserva `opening`, `active`, `closing` y `close_timeout`; solicitar cierre no equivale a que Chromium ya termino.
 `POST /api/v1/worker/restart` responde `409 manual_session_active` mientras el
 inventario contenga una de esas sesiones.
 
@@ -189,20 +188,13 @@ inventario contenga una de esas sesiones.
 Las respuestas de error usan mensaje claro y codigo estable cuando existe. No
 incluyen credenciales, tokens, DOM completo ni datos internos innecesarios.
 
-Codigos HTTP esperados:
-
-- `400`: payload o transicion invalida;
-- `401/403`: autenticacion o permiso;
-- `404`: recurso inexistente;
-- `409`: conflicto, revision obsoleta o trabajo activo incompatible;
-- `422`: regla de dominio incumplida;
-- `500/503`: fallo interno o dependencia no disponible.
+Codigos HTTP: `400` payload/transicion invalida; `401/403` autenticacion/permiso;
+`404` recurso inexistente; `409` conflicto, revision obsoleta o trabajo activo;
+`422` regla incumplida; `500/503` fallo interno o dependencia no disponible.
 
 Un cliente no debe convertir automaticamente `409`, timeout o error ambiguo en
 un segundo submit.
 
 ## Auditoria de controles remotos
-`POST /api/v1/remote-control-audit` recibe accion, estado y contexto opcional.
-Autentica antes de leer el body; el actor nunca procede del JSON. Devuelve `201`
-al persistir, `400` ante datos invalidos y `503` sin exponer errores internos.
-Telegram persiste auditoria por este endpoint, sin acceso directo a PostgreSQL.
+`POST /api/v1/remote-control-audit` autentica antes del body; el actor nunca procede del JSON.
+Recibe accion, estado y contexto opcional; devuelve `201`, `400` o `503` sin exponer errores. Telegram audita por este endpoint, nunca por SQL.

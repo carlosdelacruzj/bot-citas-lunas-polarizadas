@@ -166,6 +166,15 @@ La admision se serializa por cuenta del portal mediante un bloqueo de fila y un
 propietario persistido en el lease de la orden. Debe rechazar antes de abrir
 Chromium si la cuenta tiene lease de worker, intento activo o incierto,
 preflight pendiente/en curso, revision post-cita activa u otra sesion manual.
+Un intento `unknown` sin trabajo activo admite exclusivamente el modo `review`:
+abre el expediente exacto para consulta protegida, sin cambiar el intento ni
+atribuir una cita externa al servicio. La apertura manual se convierte a este
+modo si encuentra incertidumbre; `intent` y `pending` siguen bloqueando.
+La consulta permite solo autenticacion y lectura del expediente durante su
+preparacion; despues bloquea solicitudes de red y acciones de reserva,
+cancelacion y reprogramacion. Para actualizar se cierra y vuelve a abrir.
+Si falla la preparacion, conserva captura y bloqueo de red.
+
 El propietario se renueva mientras el navegador vive y se libera solamente
 despues de cerrar el contexto.
 

@@ -114,9 +114,10 @@ def acquire_browser_ownership(
             JOIN service_orders so ON so.order_id = ra.order_id
             WHERE so.portal_account_id = %s
               AND ra.status IN ('intent', 'pending', 'unknown')
+              AND NOT (%s = 'manual_review' AND ra.status = 'unknown')
             LIMIT 1
             """,
-            (account_id,),
+            (account_id, purpose),
         ).fetchone()
         if active_attempt is not None:
             raise BrowserOwnershipConflict(
