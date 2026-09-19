@@ -1051,6 +1051,10 @@ Evidencia: [cierre de 6.3](../../reports/architecture/dashboard-partial-loading-
 
 Objetivo: reducir CSS global y hacer que los modales cumplan su semantica.
 
+Preparacion solicitada el `2026-09-19`: [base y limites](../../reports/architecture/pre64-readiness-2026-09-19.md).
+No iniciada. El operador indicara cuando comenzar este bloque independiente;
+2.6, 5.5.5 y la compatibilidad mantienen sus propios criterios de cierre.
+
 - [ ] Mover estilos por dominio al extraer cada vista.
 - [ ] Reducir `ViewEncapsulation.None` sin redisenar simultaneamente.
 - [ ] Implementar focus trap e `inert` mediante CDK o solucion probada.

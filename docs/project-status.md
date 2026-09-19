@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-08`.
+Estado verificado documentalmente: `2026-09-19`; [corte de preparacion para 6.4](../reports/architecture/pre64-readiness-2026-09-19.md).
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -9,7 +9,6 @@ cerradas, incidentes y mediciones fechadas se recuperan desde Git mediante
 [`history/`](history/) o viven como generados en `reports/`.
 
 ## Resumen ejecutivo
-
 El sistema administra ordenes de busqueda y reserva de citas para lunas
 polarizadas, conserva su estado en PostgreSQL y ofrece operacion mediante el
 dashboard y Telegram. El worker ejecuta monitoreo y reservas; Admin API es la
@@ -17,13 +16,12 @@ frontera unica para controles, consultas y comandos; n8n solo orquesta desde el
 exterior.
 
 Estado general:
-
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa, con locks, CI reproducible y cobertura critica por riesgo;
-- esquema PostgreSQL requerido por el codigo y base operativa: `v74`; [registro secuencial](architecture/database-migrations.md) con 60 pasos desde `v14`;
+- esquema PostgreSQL requerido por el codigo: `v75`; [registro secuencial](architecture/database-migrations.md) con 61 pasos desde `v14`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
-- propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
-  sesiones manuales, con cierre visible hasta terminar Chromium;
+- propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y sesiones manuales, con cierre visible hasta terminar Chromium;
+- intentos inciertos admiten consulta manual protegida del expediente, sin nuevos envios ni conciliacion automatica;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
 - reservas, pagos, comunicaciones y seguimiento post-cita persistidos;
@@ -45,7 +43,7 @@ El worker inyecta al motor puertos de runs, alertas, CAPTCHA y oportunidad; el
 motor conserva Playwright, reglas y resultados sin importar DB ni servicios.
 Claims, leases e intentos protegen cada submit. La cuenta observadora generica abre
 el primer expediente disponible sin filtrar su estado porque solo consulta; las
-cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exactamente.
+cuentas de clientes exigen expediente exacto, sin cita verificada e historial conciliado.
 ### Admin API
 
 Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva solo el entrypoint; su auditoria pasa por Admin API.
@@ -69,14 +67,15 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 
 ## Flujo de una orden
 
-1. Se crea con contacto, credenciales, servicio, precio y restricciones.
+1. Se crea con contacto, credenciales, servicio, precio y restricciones; una cuenta con servicios terminados abre otra orden sin reutilizar su expediente ni pago.
 2. El preflight valida identidad y acceso antes de habilitar la busqueda.
-3. Un unico expediente `PENDIENTE` sigue el flujo normal; varios pendientes
-   pausan la orden hasta elegir uno, todos o mantenerla pausada desde Dashboard
-   o Telegram, sin WhatsApp automatico.
-4. El worker monitorea dentro de los limites configurados.
-5. Cada cupo se contrasta con las reglas exactas de la orden.
-6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica disparan el aviso antes del CAPTCHA o del boton de reserva.
+3. El preflight descuenta reservas anteriores y consulta citas incluso con un
+   expediente. Uno elegible se guarda automaticamente; varios requieren decidir
+   uno o todos. Citas existentes e historial incierto bloquean nuevas reservas.
+   Dashboard muestra motivos; avisos incluyen solo el alcance seleccionado.
+4. El worker monitorea dentro de los limites; seleccionar el expediente habitual no genera aviso Telegram.
+5. Cada cupo se contrasta con las reglas exactas de la orden; cupos en `0` antes del envio bloquean el clic como `unavailable`, sin backoff tecnico.
+6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica disparan el aviso antes del CAPTCHA o del boton de reserva. Avisos y evidencia se deduplican por dia de deteccion en Lima, sin bloquear reapariciones en dias posteriores.
 7. Una seleccion valida archiva su screenshot canonico; antes de resolver o
    enviar exige formulario, tokens, honeypot y firma estructural conocidos. Si
    falla la evidencia o el contrato, pausa sin iniciar el intento.
@@ -88,7 +87,8 @@ Una incompatibilidad de fecha es `partial / blocked_by_order_rule`; no activa
 backoff general. Si la seleccion incompatible quedo sincronizada, posee captura
 canonica previa y no inicio reserva, puede activar auxiliares compatibles; un
 `partial` generico conserva el fallback secuencial. Un submit ambiguo nunca se
-reintenta automaticamente.
+reintenta automaticamente. El rechazo explicito por demasiadas solicitudes
+resuelve el intento y aplica una espera de 15 minutos solo a esa orden. "Operacion no disponible temporalmente. Intente mas tarde." aplica al menos 3 minutos a toda la cuenta antes de una consulta nueva; los demas resultados ambiguos siguen bloqueados.
 
 ## Servicios y precios
 
@@ -159,7 +159,7 @@ disponibilidad restringida.
 
 ## Comunicaciones WhatsApp
 
-Las plantillas editables se versionan en PostgreSQL. Cada trabajo nuevo congela
+Registro individual y conjunto son plantillas editables en Mensajes, versionadas en PostgreSQL. Cada trabajo congela
 texto, clave y revision al prepararse; editar una plantilla no modifica trabajos
 historicos ni ya encolados. Los paquetes postpago historicos tambien conservan
 texto congelado. El runtime ya no reconstruye mensajes desde pasos antiguos ni
@@ -175,14 +175,13 @@ Reglas vigentes:
   confirmacion persistida; solo la preparacion demostrable puede quedar
   `failed`;
 - `uncertain` preserva contexto y nunca genera reintento automatico;
-- conciliacion manual registra la decision sin reescribir el resultado tecnico;
+- conciliacion conserva el resultado tecnico; registro, album y postpago admiten reintento manual deduplicado de fallo total, con revision del chat si es incierto;
 - llegada al destinatario y lectura son afirmaciones separadas.
 
 La aceptacion natural se rige por
 [`operations/whatsapp-natural-acceptance.md`](operations/whatsapp-natural-acceptance.md).
 
 ## Citas, recordatorios y post-cita
-
 Los recordatorios usan plantilla versionada, modos separados y barreras de
 deduplicacion. El scheduler post-cita usa una sesion de solo lectura, pausas de
 `4-7` segundos y maximo `20` casos diarios. Un lote ambiguo se detiene.
@@ -190,8 +189,9 @@ deduplicacion. El scheduler post-cita usa una sesion de solo lectura, pausas de
 Estado de cita, recordatorio, revision post-cita y comunicacion permanece
 separado para no presentar una preparacion como envio ni un envio como lectura.
 
-## Finanzas
+La [consulta manual de empresas](operations/company-reservations.md) revisa reservas pasadas con hasta cuatro sesiones aisladas y reporte local actualizable.
 
+## Finanzas
 Cobros realizados, saldos pendientes, costos reconocidos y overhead no medido
 son categorias distintas. Un cierre mensual solo se consolida con datos
 suficientes y conciliados; snapshots no sustituyen PostgreSQL.
@@ -227,13 +227,13 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
   persistidos por tarea;
 - la aceptacion natural ya cubre la rama sin CAPTCHA final, rafagas, album, postpago, recordatorios, post-cita y recuperacion; su [muestra y limites](../reports/acceptance/natural-acceptance-2026-09-07.md) no garantizan resultados futuros;
 - la comparacion de rafagas no prueba mayor eficacia y es anterior al cambio de CAPTCHA del portal;
-- falta el aviso sin solicitud pendiente y el cierre diario completo; hay seis cierres y un album ambiguos sin conciliacion al corte;
+- existen avisos `no_pending_request` enviados tecnicamente; falta revisar sus componentes y los de WhatsApp posteriores a la extraccion. El cierre diario sigue sin aceptacion completa; los conteos fechados estan en el corte de preparacion;
 - el primer tramite integral natural posterior a `v74` debe validar abono, tasa, saldo, mensaje y resumen sin crear un caso de prueba;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
-- quedan validaciones visuales y de accesibilidad en anchos representativos;
+- 6.4 no esta iniciada: quedan encapsulacion, foco, teclado, contraste, responsive y presupuestos de bundle/CSS;
 - no quedan ciclos; un import inverso conocido sigue baselinado y CI impide deuda nueva.
-- `pip check` del Python compartido detecta `torch 2.12.1+cu130` incompatible con `setuptools 84`; torch no pertenece al lock del proyecto. Las pruebas del proyecto pasan, pero ese entorno compartido no esta conciliado.
+- el entorno aislado del lock pasa pruebas, cobertura, `pip check` y auditoria Python; el Python compartido conserva el conflicto ajeno `torch/setuptools`. Auditoria frontend: 11 avisos moderados, sin altos ni criticos al corte.
 
 La prioridad y criterios de cierre estan en [`roadmap/README.md`](roadmap/README.md).
 

@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-09-08`.
+Ultima priorizacion: `2026-09-19`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -24,6 +24,16 @@ La fase 2.6 conserva pendiente su aceptacion funcional: el esquema `v74` ya esta
 activo, pero el paquete integral debe cerrar su primer caso natural posterior
 antes de otro crecimiento funcional.
 
+### Entrada al punto 6.4
+
+Iniciar solo cuando el operador lo indique; esta preparacion no inicia 6.4.
+Su alcance independiente queda limitado a encapsulacion visual y accesibilidad,
+sin features comerciales, cambios del portal ni retiro de compatibilidad.
+Antes de editar, comprobar el corte de [preparacion](../../reports/architecture/pre64-readiness-2026-09-19.md),
+Git y cambios posteriores. Usar dependencias del lock en entorno aislado.
+Conservar 2.6, 5.5.5 y la ventana de compatibilidad abiertos hasta su evidencia;
+no forzar casos reales ni usar el refactor visual para cerrarlos.
+
 ## P0 - Aceptacion natural y seguridad
 
 ### Ventana de retiro de compatibilidad actual
@@ -46,11 +56,18 @@ rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
 
 Observar o conciliar sin crear envios de prueba:
 
+- primer aviso conjunto natural tras resolver expedientes: texto revisado,
+  precios, restricciones y confirmacion tecnica de un unico trabajo;
 - primer integral nuevo posterior a `v74`: abono, tasa, saldo, mensaje y resumen;
-- variante de registro `no_pending_request`;
-- primer cierre diario completo: investigar la falta de confirmacion de la
-  publicacion final y conciliar componentes de los seis casos `uncertain`;
-- album ambiguo pendiente: revisar componentes antes de cualquier recuperacion.
+- revisar texto y evidencia retenida de los dos `no_pending_request` con estado
+  tecnico `sent` del 10 de septiembre antes de cerrar su aceptacion;
+- siguiente alta natural con exclusiones: comprobar objetivo, motivo por
+  expediente y aviso unico; conciliar identidades antiguas cuando exista
+  evidencia exacta, conservando en revision las cuentas no resueltas;
+- primer cierre diario completo: investigar la confirmacion de la publicacion
+  final y conciliar componentes; refrescar el inventario, no reutilizar seis casos historicos;
+- revisar albumes, postpagos y avisos ambiguos antes de cualquier recuperacion;
+- observar el siguiente "Operacion no disponible temporalmente" natural: descanso por cuenta de al menos 180 segundos y consulta nueva sin duplicar citas; no generar reservas de prueba.
 
 Cierre: revisiones congeladas, evidencia tecnica suficiente y ningun reintento
 automatico de resultados `uncertain`. El
@@ -115,6 +132,10 @@ Separar cobrado, pendiente, costo reconocido y overhead no medido.
 Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
+
+Evaluar por familia los 11 avisos moderados del lock frontend observados el
+19 de septiembre; validar cada actualizacion sin `npm audit fix --force` ni
+mezclar una migracion mayor con 6.4. Cierre: auditoria y puertas del frontend aprobadas.
 
 Cerrar 5.5.5: observar el siguiente caso natural de WhatsApp con la version
 extraida cargada en Admin API antes de retirar los reexports.
