@@ -86,8 +86,7 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 Una incompatibilidad es `partial / blocked_by_order_rule`, sin backoff general.
 Sin fetch alternativo, reload, reobservacion tras submit ni segundo envio por CAPTCHA rechazado. Cada revision
 nueva vuelve a las fechas mas proximas; no recorre todo el calendario por partes.
-Un submit ambiguo nunca se reintenta. Demasiadas solicitudes aplican 15 minutos a
-la orden; indisponibilidad temporal aplica al menos 3 minutos a toda la cuenta.
+Un submit ambiguo nunca se reintenta. Demasiadas solicitudes aplican 15 minutos a la orden; indisponibilidad temporal aplica al menos 3 minutos a toda la cuenta.
 El observador persiste descansos y detiene globalmente la rotacion ante defensas.
 
 ## Servicios y precios
@@ -231,6 +230,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - el primer tramite integral natural posterior a `v74` debe validar abono, tasa, saldo, mensaje y resumen sin crear un caso de prueba;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
+- busqueda acotada y rotacion estan validadas en aislamiento; [corte de activacion](../reports/architecture/bounded-search-rotation-2026-09-19.md), worker pausado y aceptacion natural pendiente.
 - 6.4 no esta iniciada: quedan encapsulacion, foco, teclado, contraste, responsive y presupuestos de bundle/CSS;
 - no quedan ciclos; un import inverso conocido sigue baselinado y CI impide deuda nueva.
 - el entorno aislado del lock pasa pruebas, cobertura, `pip check` y auditoria Python; el Python compartido conserva el conflicto ajeno `torch/setuptools`. Auditoria frontend: 11 avisos moderados, sin altos ni criticos al corte.

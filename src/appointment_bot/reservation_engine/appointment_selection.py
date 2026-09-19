@@ -378,6 +378,9 @@ def select_available_appointment(
                 require_change=True, timeout=timeout,
             )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
+        date_snapshot = read_stable_appointment_snapshot(page)
+        if slots_exhausted(date_snapshot.slots):
+            known_empty = (date_snapshot.date, date_snapshot.hour)
         all_real_hour_options = real_options(hour_options)
         real_hour_options = [
             option

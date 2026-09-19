@@ -85,7 +85,9 @@ revision real en navegador.
 Runbooks activos:
 
 - [`opportunity-bursts.md`](opportunity-bursts.md);
-- [`reservation-critical-path.md`](reservation-critical-path.md).
+- [`reservation-critical-path.md`](reservation-critical-path.md);
+- [presupuesto de busqueda](../contracts/bounded-search.md) y
+  [rotacion del observador](../contracts/worker-control.md#observador-rotativo).
 
 ## WhatsApp
 
