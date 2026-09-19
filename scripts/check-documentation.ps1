@@ -77,7 +77,7 @@ if (Test-Path -LiteralPath $roadmapPath -PathType Leaf) {
     }
 }
 
-$excludedPattern = "[\\/](\.git|\.venv|node_modules)[\\/]"
+$excludedPattern = "[\\/](\.git|\.venv|\.runtime|node_modules)[\\/]"
 $markdownFiles = Get-ChildItem -LiteralPath $repositoryRoot -Recurse -File -Filter "*.md" |
     Where-Object { $_.FullName -notmatch $excludedPattern }
 
