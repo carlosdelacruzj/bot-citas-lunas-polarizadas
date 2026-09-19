@@ -3,10 +3,10 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-09-08 07:37:58 America/Lima`.
+- Generado: `2026-09-19 16:42:28 America/Lima`.
 - Ventana solicitada: mes activo 2026-09 (America/Lima).
-- Rango real de eventos indexados: `2026-09-01 09:04:52` a `2026-09-07 18:00:11` (America/Lima).
-- Cobertura temporal verificable: 467/467 eventos con hora de cierre.
+- Rango real de eventos indexados: `2026-09-01 09:04:52` a `2026-09-19 16:39:48` (America/Lima).
+- Cobertura temporal verificable: 2936/2936 eventos con hora de cierre.
 - Fuente: filas sanitizadas del indice compacto de evidencia.
 
 ## Limites
@@ -16,37 +16,55 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - La ausencia de un evento no demuestra que el portal no haya sido consultado.
 
 ## Totales
-- Eventos indexados: 467
-- Reservas registradas: 61
-- Reservas no confirmadas: 0
-- Disponibilidades completas: 327
-- Disponibilidades parciales: 36
-- Senales de defensa: 3
+- Eventos indexados: 2936
+- Reservas registradas: 139
+- Reservas no confirmadas: 2
+- Disponibilidades completas: 369
+- Disponibilidades parciales: 2372
+- Senales de defensa: 14
 
 ## Origen de deteccion
-- fetch_probe: 22
-- normal: 433
+- fetch_probe: 2444
+- normal: 480
 - reload_probe: 4
 - slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
-- 2026-09-07 18:00:11 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:59:58 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:59:07 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:58:54 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:58:03 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:57:50 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:56:59 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:56:46 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
-- 2026-09-07 17:55:26 | sin orden | available | normal | 20/10/2026 09:00 | sin outcome
-- 2026-09-07 17:55:13 | sin orden | available | normal | 20/10/2026 09:00 | sin outcome
+- 2026-09-19 16:39:48 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:39:31 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:39:13 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:38:57 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:38:43 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:38:27 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:38:10 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:37:55 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:37:40 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
+- 2026-09-19 16:37:26 | order-*** | partial | fetch_probe | 06/11/2026 08:00 | blocked_by_order_rule
 
 ## Senales de defensa
-- 2026-09-03 13:02:34 | order-*** | http_429 | La reserva fue confirmada por mensaje de exito del portal.
-- 2026-09-02 15:02:23 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
+- 2026-09-19 15:14:50 | order-*** | network | Locator.wait_for: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#MainContent_idUcitas_btgSiguiente") to be visible
+    14 × locator resolved to hidden <input type="submit" value="Reservar Cita" id="MainContent_idUcitas_btgSiguiente" onclick="if(this.disabled){return false;};" name="ctl00$MainContent$idUcitas$btgSiguiente" class="btn btn-primary btn-lg px-5 rounded-pill shadow"/>
+- 2026-09-19 15:08:33 | order-*** | network | Locator.wait_for: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#MainContent_idUcitas_btgSiguiente") to be visible
+    14 × locator resolved to hidden <input type="submit" value="Reservar Cita" id="MainContent_idUcitas_btgSiguiente" onclick="if(this.disabled){return false;};" name="ctl00$MainContent$idUcitas$btgSiguiente" class="btn btn-primary btn-lg px-5 rounded-pill shadow"/>
+- 2026-09-19 15:04:11 | order-*** | network | Locator.wait_for: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#MainContent_idUcitas_btgSiguiente") to be visible
+    14 × locator resolved to hidden <input type="submit" value="Reservar Cita" id="MainContent_idUcitas_btgSiguiente" onclick="if(this.disabled){return false;};" name="ctl00$MainContent$idUcitas$btgSiguiente" class="btn btn-primary btn-lg px-5 rounded-pill shadow"/>
+- 2026-09-18 11:18:30 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
-- 2026-09-01 09:59:40 | order-*** | http_429 | La reserva fue confirmada por mensaje de exito del portal.
+- 2026-09-17 09:30:36 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
+- 2026-09-12 10:18:49 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
+- 2026-09-09 13:29:11 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
+- 2026-09-09 11:36:26 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
+- 2026-09-09 11:00:08 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
+- 2026-09-09 10:45:51 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
 
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.
