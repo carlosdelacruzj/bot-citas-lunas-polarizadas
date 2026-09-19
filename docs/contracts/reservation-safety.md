@@ -34,6 +34,9 @@ worker y dashboard.
   guardar la captura canonica y avisar antes del CAPTCHA o del submit. Si el cupo
   no se reproduce, queda como no accionable y nunca inicia CAPTCHA ni submit.
 
+El [presupuesto de busqueda](bounded-search.md) limita cada revision a dos fechas,
+dos horarios en total y un envio; no permite reiniciar el limite por fallback.
+
 ## Elegibilidad por expediente
 
 Preflight, worker, reapertura, sesion manual de cita y decision administrativa

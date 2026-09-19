@@ -16,6 +16,10 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.appointment_budget import (
+    bounded_appointment_review,
+    current_appointment_budget,
+)
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
@@ -79,6 +83,7 @@ class ReservationAttemptOutcome:
     selected_result: AvailabilityResult | None = None
 
 
+@bounded_appointment_review()
 def monitor_appointment_availability(
     page,
     process_stages_screenshot_path: Path | None,
@@ -102,6 +107,7 @@ def monitor_appointment_availability(
     evidence_settings: EvidenceSettings,
     ports: ReservationEnginePorts,
 ):
+    budget = current_appointment_budget()
     deadline = time.monotonic() + reservation_settings.monitor_window_seconds
     session_started = time.monotonic()
     attempt = 1
@@ -158,7 +164,7 @@ def monitor_appointment_availability(
             not reservation_settings.monitor_site_toggle_enabled
             or attempt == reservation_settings.monitor_reload_probe_after_attempt
         )
-        if result.status == "unavailable" and should_reload_probe:
+        if result.status == "unavailable" and should_reload_probe and budget is None:
             reload_started = time.monotonic()
             reload_result = reload_and_recheck_appointment_availability(
                 page,
@@ -213,7 +219,7 @@ def monitor_appointment_availability(
 
         fetch_probe_candidate = bool((result.details or {}).get("fetch_probe"))
         can_attempt_reservation = result.status == "available" or (
-            result.status == "partial"
+            result.status in {"partial", "unavailable"}
             and (fetch_probe_candidate or has_available_date_options(page))
         )
         if can_attempt_reservation:
@@ -258,7 +264,8 @@ def monitor_appointment_availability(
             return result, screenshot_path, screenshot_paths
 
         if (
-            reservation_settings.monitor_window_seconds <= 0
+            budget is not None
+            or reservation_settings.monitor_window_seconds <= 0
             or attempt >= reservation_settings.monitor_max_attempts
         ):
             if on_check is not None:
@@ -497,7 +504,9 @@ def _try_reservation_from_availability(
                 captcha_settings=captcha_settings,
                 evidence_settings=evidence_settings,
             )
-            if not _is_explicit_slot_lost(completed_result[0]):
+            if current_appointment_budget() is not None or not _is_explicit_slot_lost(
+                completed_result[0]
+            ):
                 return ReservationAttemptOutcome(
                     completed_result=completed_result,
                     selected_result=selected_result,

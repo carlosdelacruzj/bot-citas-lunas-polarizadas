@@ -8,6 +8,7 @@ from playwright.sync_api import Error as PlaywrightError
 
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.core.appointment_budget import current_appointment_budget
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     PortalContractChanged,
@@ -107,6 +108,11 @@ def click_preverified_reservation(
         interaction["clicked"] = True
         if timing is not None:
             timing.mark("reserve_click_started")
+        budget = current_appointment_budget()
+        if budget is not None and not budget.admit_submission():
+            raise ReservationSubmissionUncertain(
+                "La revision ya consumio su unico envio de reserva; no se repetira."
+            )
         button.click(timeout=15000)
         collector.wait_for_response(page)
         if timing is not None:

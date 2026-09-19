@@ -11,6 +11,7 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.appointment_budget import current_appointment_budget
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.statuses import redact_captcha_answers
 from appointment_bot.reservation_engine.appointment_contracts import (
@@ -169,7 +170,10 @@ def complete_available_reservation(
     }
     portal_response: dict[str, object] = {}
     additional_screenshot_paths: list[Path] = []
-    max_captcha_attempts = captcha_settings.reservation_captcha_max_attempts
+    max_captcha_attempts = (
+        1 if current_appointment_budget() is not None
+        else captcha_settings.reservation_captcha_max_attempts
+    )
 
     def collected_screenshots(*paths: Path | None) -> list[Path]:
         return _collect_screenshots(additional_screenshot_paths, screenshot_path, *paths)

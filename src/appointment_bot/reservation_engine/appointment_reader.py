@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Page
 
+from appointment_bot.core.appointment_budget import current_appointment_budget
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointment_contracts import (
     AVAILABLE_TEXTS,
@@ -84,7 +85,7 @@ def apply_fetch_probe_if_needed(
     *,
     include_person: bool,
 ) -> AvailabilityResult:
-    if result.status == "available":
+    if current_appointment_budget() is not None or result.status == "available":
         return result
     if (result.details or {}).get("cascade_stage") == "site_selected_no_dates":
         return result

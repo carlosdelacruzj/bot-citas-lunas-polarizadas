@@ -16,6 +16,7 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.appointment_budget import current_appointment_budget
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     PortalContractChanged,
@@ -583,6 +584,11 @@ def solve_reservation_captcha_and_click_reserve(
         if timing is not None:
             timing.mark("reserve_click_started")
         try:
+            budget = current_appointment_budget()
+            if budget is not None and not budget.admit_submission():
+                raise ReservationSubmissionUncertain(
+                    "La revision ya consumio su unico envio de reserva; no se repetira."
+                )
             reserve_button.click(timeout=15_000)
         except PlaywrightError as exc:
             if on_submission_started is not None:

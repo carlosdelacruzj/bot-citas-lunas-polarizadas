@@ -11,6 +11,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from appointment_bot.core.appointment_budget import AppointmentBudget, current_appointment_budget
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.rules import parse_appointment_date, parse_appointment_time
 from appointment_bot.reservation_engine.appointment_contracts import (
@@ -288,6 +289,7 @@ def select_available_appointment(
     preferred_hour: str | None = None,
     timeout: int = 15_000,
 ) -> AvailabilityResult:
+    budget = current_appointment_budget() or AppointmentBudget(predicate=is_allowed_appointment)
     observation_started = time.monotonic()
     observation: dict[str, Any] = {
         "observed_at": datetime.now(UTC).isoformat(timespec="milliseconds"),
@@ -309,15 +311,25 @@ def select_available_appointment(
     date_options = [
         option
         for option in all_date_options
-        if preferred_date is None
-        or same_option(str(option["text"]), preferred_date)
+        if budget.allowed_date(str(option["text"]))
     ]
+    date_options = date_options[:budget.date_limit]
+    if preferred_date is not None:
+        date_options = [option for option in date_options
+                        if same_option(str(option["text"]), preferred_date)]
     observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
     observation["date_candidate_count"] = len(all_date_options)
     observation["visible_dates"] = [str(option["text"]) for option in all_date_options]
     observation["preferred_date"] = preferred_date
     observation["preferred_hour"] = preferred_hour
     if not date_options:
+        if all_date_options and is_allowed_appointment is not None:
+            return AvailabilityResult(
+                status="partial", message="Las fechas listadas no cumplen las reglas de la orden.",
+                details={"blocked_by_order_rule": True, "reservation_attempted": False,
+                         "date_options": observation["visible_dates"],
+                         "review_budget": budget.details()},
+            )
         if preferred_date is not None:
             snapshot = read_stable_appointment_snapshot(page)
             details = snapshot_details(snapshot, include_person=include_person)
@@ -339,32 +351,38 @@ def select_available_appointment(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
         )
 
+    initial_snapshot = read_stable_appointment_snapshot(page)
+    known_empty = (initial_snapshot.date, initial_snapshot.hour) if slots_exhausted(
+        initial_snapshot.slots
+    ) else None
     blocked_evidence_candidate: dict[str, str] | None = None
     for date_option in date_options:
+        if budget.exhausted or budget.hours >= budget.hour_limit or not budget.admit_date(
+            str(date_option["text"]), "dom"
+        ):
+            budget.exhausted = True
+            break
         previous_date = selected_option_text(page, DATE_SELECTOR)
         previous_hour_signature = options_signature(select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
         logger.info("Selecting appointment date: %s", date_option["text"])
         postback_started = time.monotonic()
-        select_appointment_option(
-            date_select,
-            date_option["value"],
-            allow_hidden=allow_hidden,
-        )
-        hour_options = _wait_for_options_after_selection(
-            page,
-            HOUR_SELECTOR,
-            previous_signature=previous_hour_signature,
-            require_change=not same_option(previous_date, date_option["text"]),
-            timeout=timeout,
-        )
+        if same_option(previous_date, date_option["text"]):
+            hour_options = select_options(page, HOUR_SELECTOR)
+        else:
+            select_appointment_option(
+                date_select, date_option["value"], allow_hidden=allow_hidden,
+            )
+            hour_options = _wait_for_options_after_selection(
+                page, HOUR_SELECTOR, previous_signature=previous_hour_signature,
+                require_change=True, timeout=timeout,
+            )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
         all_real_hour_options = real_options(hour_options)
         real_hour_options = [
             option
             for option in all_real_hour_options
-            if preferred_hour is None
-            or same_option(str(option["text"]), preferred_hour)
+            if preferred_hour is None or same_option(str(option["text"]), preferred_hour)
         ]
         for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
             _remember_observed_appointment(
@@ -380,6 +398,8 @@ def select_available_appointment(
             continue
 
         for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
+            if known_empty == (str(date_option["text"]), str(hour_option["text"])):
+                continue
             if is_allowed_appointment is not None and not is_allowed_appointment(
                 str(date_option["text"]),
                 str(hour_option["text"]),
@@ -397,6 +417,8 @@ def select_available_appointment(
                 continue
 
             hour_select = page.locator(HOUR_SELECTOR)
+            if not budget.admit_hour():
+                break
             logger.info("Selecting appointment hour: %s", hour_option["text"])
             probe_token = _start_selection_stability_probe(page)
             try:
@@ -434,6 +456,8 @@ def select_available_appointment(
             if same_option(snapshot.date, date_option["text"]) and same_option(
                 snapshot.hour, hour_option["text"]
             ):
+                if slots_exhausted(snapshot.slots):
+                    continue
                 return _with_selection_observation(
                     AvailabilityResult(
                         status="available",
@@ -450,7 +474,7 @@ def select_available_appointment(
                 hour_option["text"],
             )
 
-    if blocked_evidence_candidate is not None:
+    if blocked_evidence_candidate is not None and current_appointment_budget() is None:
         blocked_evidence_result = _select_blocked_appointment_for_evidence(
             page,
             blocked_evidence_candidate,
@@ -466,12 +490,12 @@ def select_available_appointment(
     snapshot = read_stable_appointment_snapshot(page)
     details = snapshot_details(snapshot, include_person=include_person)
     details["cascade_stage"] = "dates_selected_no_hours"
+    details["review_budget"] = budget.details()
     return _with_selection_observation(
         AvailabilityResult(
             status="unavailable",
             message=(
-                "Se seleccionaron una por una las fechas disponibles, pero ninguna "
-                "cargo una hora seleccionable. No hay cupos por el momento."
+                "No se verifico un cupo dentro del limite de fechas y horarios de esta revision."
             ),
             details=details,
         ),
