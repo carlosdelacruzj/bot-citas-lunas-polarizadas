@@ -15,6 +15,7 @@ from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.db.orders import (
     claim_service_order,
     list_active_orders,
@@ -251,8 +252,15 @@ def run_rapid_queue_with_settings(
                         cancel_event=cancel_event, runtime_settings=runtime_settings
                     )
                 continue
-            if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-                cooldown = captcha_settings.captcha_rejection_cooldown_seconds
+            if outcome in {
+                OrderReportOutcome.CAPTCHA_REJECTED, OrderReportOutcome.RATE_LIMITED,
+                OrderReportOutcome.TEMPORARILY_UNAVAILABLE,
+            }:
+                cooldown = (
+                    TEMPORARY_RESERVATION_COOLDOWNS[outcome.value]
+                    if outcome is not OrderReportOutcome.CAPTCHA_REJECTED
+                    else captcha_settings.captcha_rejection_cooldown_seconds
+                )
                 failed_orders += 1
                 dependencies.update_order_state(
                     order.order_id,
@@ -264,7 +272,7 @@ def run_rapid_queue_with_settings(
                 )
                 logger.warning(
                     (
-                        "Order %s had an explicit CAPTCHA rejection; appl"
+                        "Order %s had an explicit temporary rejection; appl"
                         "ying a %s-second order cooldown and continuing t"
                         "he queue"
                     ),

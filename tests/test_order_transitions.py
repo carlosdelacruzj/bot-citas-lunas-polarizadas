@@ -59,6 +59,7 @@ class OrderTransitionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             result = create_service_order(
                 document_number="12345678",
+                program_expediente="TRANSITION-1",
                 password="password",
                 applicant_name="Test",
                 priority=1,

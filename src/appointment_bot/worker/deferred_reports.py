@@ -57,4 +57,6 @@ class DeferredOrderReports:
 
 def _has_final_submission_evidence(report: RunReport) -> bool:
     details = report.details or {}
-    return details.get("submission_outcome") in {"captcha_invalid", "slot_lost", "rejected"}
+    return details.get("submission_outcome") in {
+        "captcha_invalid", "slot_lost", "rejected", "rate_limited", "temporarily_unavailable"
+    }

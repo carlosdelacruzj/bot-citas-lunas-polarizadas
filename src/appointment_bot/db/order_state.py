@@ -421,6 +421,7 @@ def mark_order_submission_intent(
 def clear_order_submission_state(
     order_id: str,
     *,
+    preserve_backoff: bool = False,
     settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
@@ -429,10 +430,11 @@ def clear_order_submission_state(
         connection.execute(
             """
             UPDATE order_state
-            SET last_status = NULL, last_message = NULL, next_allowed_at = NULL
+            SET last_status = NULL, last_message = NULL,
+                next_allowed_at = CASE WHEN %s THEN next_allowed_at ELSE NULL END
             WHERE order_id = %s
             """,
-            (order_id,),
+            (preserve_backoff, order_id),
         )
 
 

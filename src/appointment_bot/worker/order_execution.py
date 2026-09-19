@@ -14,6 +14,7 @@ from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.credential_cipher import CredentialDecryptionError
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.core.rules import ReservationConstraints, appointment_filter_from_constraints
 from appointment_bot.db.orders import (
     clear_order_submission_state,
@@ -386,19 +387,34 @@ def run_service_order(
         submission_outcome = str((report.details or {}).get("submission_outcome") or "")
         if report.status == "registered":
             attempt_status = "confirmed"
-        elif submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
+        elif (
+            not lease_lost and report.status != "reservation_unconfirmed"
+            and submission_outcome in {
+                "captcha_invalid", "slot_lost", "rejected", "rate_limited",
+                "temporarily_unavailable",
+            }
+        ):
             attempt_status = "rejected"
         else:
             attempt_status = "unknown"
+        account_cooldown = (
+            TEMPORARY_RESERVATION_COOLDOWNS[submission_outcome]
+            if attempt_status == "rejected" and submission_outcome == "temporarily_unavailable"
+            else None
+        )
         resolve_reservation_attempt(
             active_attempt_id,
             attempt_status,
             run_id=report.run_id,
             evidence_path=report.screenshot_path,
+            account_cooldown_seconds=account_cooldown,
             settings=runtime_settings,
         )
         if attempt_status in {"confirmed", "rejected"}:
-            clear_order_submission_state(order.order_id, settings=runtime_settings)
+            clear_order_submission_state(
+                order.order_id, preserve_backoff=account_cooldown is not None,
+                settings=runtime_settings,
+            )
     if pending_submission:
         if reconcile_pending_submission(order.order_id, report, runtime_settings=runtime_settings):
             return report

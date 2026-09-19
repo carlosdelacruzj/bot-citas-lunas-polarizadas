@@ -7,6 +7,7 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.db.orders import (
     list_compatible_orders_for_opportunities,
     mark_order_done,
@@ -103,8 +104,15 @@ def handle_observer_order_report(
             telegram_settings=telegram_settings,
         )
         return ObserverOrderDecision(reset_errors=True)
-    if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-        cooldown = captcha_settings.captcha_rejection_cooldown_seconds
+    if outcome in {
+        OrderReportOutcome.CAPTCHA_REJECTED, OrderReportOutcome.RATE_LIMITED,
+        OrderReportOutcome.TEMPORARILY_UNAVAILABLE,
+    }:
+        cooldown = (
+            TEMPORARY_RESERVATION_COOLDOWNS[outcome.value]
+            if outcome is not OrderReportOutcome.CAPTCHA_REJECTED
+            else captcha_settings.captcha_rejection_cooldown_seconds
+        )
         update_order_state(
             order.order_id,
             status=report.status,
@@ -117,7 +125,7 @@ def handle_observer_order_report(
             (
                 "La orden "
                 f"{order.order_id}"
-                " tuvo dos rechazos explicitos de CAPTCHA. Se rei"
+                " tuvo un rechazo temporal del portal. Se rei"
                 "ntentara esa orden en "
                 f"{cooldown}"
                 " segundos; el worker continuara de inmediato con"

@@ -21,6 +21,7 @@ from appointment_bot.core.models import (
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.db.orders import (
     claim_service_order,
     list_compatible_orders_for_opportunities,
@@ -871,13 +872,20 @@ def _apply_auxiliary_result(
             order.order_id, status=order_done_status_from_report(report), settings=runtime_settings
         )
         return (False, None)
-    if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
+    if outcome in {
+        OrderReportOutcome.CAPTCHA_REJECTED, OrderReportOutcome.RATE_LIMITED,
+        OrderReportOutcome.TEMPORARILY_UNAVAILABLE,
+    }:
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=captcha_settings.captcha_rejection_cooldown_seconds,
+            backoff_seconds=(
+                TEMPORARY_RESERVATION_COOLDOWNS[outcome.value]
+                if outcome is not OrderReportOutcome.CAPTCHA_REJECTED
+                else captcha_settings.captcha_rejection_cooldown_seconds
+            ),
             settings=runtime_settings,
         )
         return (False, None)

@@ -43,6 +43,12 @@ SUBMISSION_REJECTION_TEXTS = [
 def wait_for_reservation_submission_outcome(page: Page, *, timeout: int = 10_000) -> str:
     outcome_texts = {
         "confirmed": CONFIRMATION_TEXTS,
+        "rate_limited": [
+            "Ha realizado demasiadas solicitudes. Espere un momento e intente nuevamente."
+        ],
+        "temporarily_unavailable": [
+            "Operacion no disponible temporalmente. Intente mas tarde."
+        ],
         "captcha_invalid": CAPTCHA_REJECTION_TEXTS,
         "slot_lost": SLOT_LOST_TEXTS,
         "rejected": SUBMISSION_REJECTION_TEXTS,

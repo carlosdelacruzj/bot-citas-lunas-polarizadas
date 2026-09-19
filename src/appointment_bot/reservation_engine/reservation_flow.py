@@ -394,7 +394,10 @@ def complete_available_reservation(
 
             if submission_outcome != "unknown":
                 dismiss_reservation_confirmation(page)
-            if submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
+            if submission_outcome in {
+                "captcha_invalid", "slot_lost", "rejected", "rate_limited",
+                "temporarily_unavailable",
+            }:
                 if timing is not None:
                     timing.mark("reservation_finished")
                 details = reservation_details()
@@ -405,6 +408,15 @@ def complete_available_reservation(
                     ),
                     "slot_lost": "El cupo dejo de estar disponible antes de completar la reserva.",
                     "rejected": "El portal rechazo explicitamente la solicitud de reserva.",
+                    "rate_limited": (
+                        "El portal rechazo la reserva por demasiadas solicitudes. "
+                        "La busqueda de esta cuenta se habilitara en 15 minutos."
+                    ),
+                    "temporarily_unavailable": (
+                        "El portal indico: Operacion no disponible temporalmente. "
+                        "Intente mas tarde. "
+                        "La cuenta descansara al menos 3 minutos antes de volver a buscar."
+                    ),
                 }
                 return (
                     AvailabilityResult(

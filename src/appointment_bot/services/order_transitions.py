@@ -1,11 +1,13 @@
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import RunReport
+from appointment_bot.core.program_eligibility import ProgramHistoryUnresolved, program_key
 from appointment_bot.core.statuses import ResultStatus
 from appointment_bot.db.orders import (
     clear_order_submission_state,
     get_service_order_runtime,
     service_order_claim_owned,
 )
+from appointment_bot.db.program_eligibility import get_booked_programs
 from appointment_bot.db.reservations import (
     get_active_reservation_attempt,
     resolve_reservation_attempt,
@@ -15,9 +17,15 @@ from appointment_bot.utils.sanitization import normalize_option
 
 def order_can_submit(order_id: str, owner_token: str, *, runtime_settings: RuntimeSettings) -> bool:
     order = get_service_order_runtime(order_id, settings=runtime_settings)
+    try:
+        booked = get_booked_programs(order_id, settings=runtime_settings) if order else {}
+    except ProgramHistoryUnresolved:
+        return False
     return (
         order is not None
         and order.status == "ready"
+        and bool(program_key(order.program_expediente))
+        and program_key(order.program_expediente) not in booked
         and service_order_claim_owned(order_id, owner_token=owner_token, settings=runtime_settings)
     )
 

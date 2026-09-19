@@ -11,6 +11,7 @@ from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.db.opportunity_bursts import reconcile_stale_opportunity_bursts
 from appointment_bot.db.orders import (
     claim_service_order,
@@ -847,6 +848,8 @@ class ContinuousWorker:
     def _maybe_recovery_backoff(self, report: RunReport) -> bool:
         if self._maybe_pause_for_portal_change(report):
             return True
+        if (report.details or {}).get("submission_outcome") in TEMPORARY_RESERVATION_COOLDOWNS:
+            return False
         defense_signal = portal_defense_signal(report.message)
         if defense_signal is not None:
             wait_seconds = recovery_wait_seconds(runtime_settings=self.runtime_settings)

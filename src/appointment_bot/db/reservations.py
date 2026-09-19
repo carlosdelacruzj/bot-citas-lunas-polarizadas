@@ -112,26 +112,57 @@ def resolve_reservation_attempt(
     *,
     run_id: str | None = None,
     evidence_path: str | None = None,
+    account_cooldown_seconds: int | None = None,
     settings: RuntimeSettings | None = None,
 ) -> None:
     if status not in {"confirmed", "rejected", "unknown"}:
         raise ValueError(f"Invalid reservation attempt status: {status}")
+    if account_cooldown_seconds is not None and (
+        status != "rejected" or account_cooldown_seconds <= 0
+    ):
+        raise ValueError("Account cooldown requires a rejected attempt and positive seconds.")
     settings = _settings(settings)
     init_database(settings)
     now = _now()
     resolved_at = now if status in {"confirmed", "rejected"} else None
     with _connection(_database_url(settings)) as connection:
-        connection.execute(
+        resolved = connection.execute(
             """
             UPDATE reservation_attempts
             SET status = %s, run_id = COALESCE(%s, run_id),
                 evidence_path = COALESCE(%s, evidence_path),
-                resolved_at = %s, updated_at = %s
+                resolved_at = %s, updated_at = %s,
+                details_json = CASE WHEN %s::integer IS NULL THEN details_json
+                    ELSE COALESCE(details_json, '{}'::jsonb) || jsonb_build_object(
+                        'account_cooldown_until',
+                        CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                    ) END
             WHERE attempt_id = %s
               AND status IN ('intent', 'pending', 'unknown')
+            RETURNING order_id
             """,
-            (status, run_id, evidence_path, resolved_at, now, attempt_id),
-        )
+            (
+                status, run_id, evidence_path, resolved_at, now,
+                account_cooldown_seconds, account_cooldown_seconds, attempt_id,
+            ),
+        ).fetchone()
+        if resolved is not None and account_cooldown_seconds is not None:
+            connection.execute(
+                """
+                UPDATE order_state os
+                SET next_allowed_at = GREATEST(
+                    os.next_allowed_at,
+                    CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
+                )
+                FROM service_orders so
+                WHERE so.order_id = os.order_id
+                  AND so.portal_account_id = (
+                      SELECT portal_account_id FROM service_orders WHERE order_id = %s
+                  )
+                  AND so.status IN ('ready', 'paused')
+                """,
+                (account_cooldown_seconds, resolved["order_id"]),
+            )
 
 
 def get_active_reservation_attempt(

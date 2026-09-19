@@ -19,7 +19,10 @@ def update_state_from_report(
     if report.status in {"skipped", "unknown", "reservation_unconfirmed"}:
         return
     outcome = classify_order_report(report)
-    if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
+    if outcome in {
+        OrderReportOutcome.CAPTCHA_REJECTED, OrderReportOutcome.RATE_LIMITED,
+        OrderReportOutcome.TEMPORARILY_UNAVAILABLE,
+    }:
         return
     update_order_state(
         order.order_id,

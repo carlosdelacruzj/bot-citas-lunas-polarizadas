@@ -8,6 +8,7 @@ from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderRuntime
+from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
 from appointment_bot.db.orders import update_order_state
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.worker.recovery import is_network_error, portal_defense_signal
@@ -40,6 +41,18 @@ class WorkerErrorPolicy:
         self._stop_event = stop_event
 
     def handle_order_error(self, order: ServiceOrderRuntime, report: RunReport) -> None:
+        if (report.details or {}).get("submission_outcome") in TEMPORARY_RESERVATION_COOLDOWNS and (
+            report.status != "reservation_unconfirmed"
+        ):
+            update_order_state(
+                order.order_id, status=report.status, message=report.message,
+                exit_code=report.exit_code, backoff_seconds=TEMPORARY_RESERVATION_COOLDOWNS[
+                    (report.details or {})["submission_outcome"]
+                ],
+                settings=self.runtime_settings,
+            )
+            self._reset_errors()
+            return
         defense_signal = portal_defense_signal(report.message)
         if defense_signal is not None:
             self._increase_errors(report.message)

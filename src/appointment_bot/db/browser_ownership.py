@@ -62,6 +62,25 @@ def acquire_browser_ownership(
             (account_id,),
         ).fetchone()
 
+        if purpose in {"worker", "preflight"}:
+            cooldown = connection.execute(
+                """
+                SELECT ra.attempt_id
+                FROM reservation_attempts ra
+                JOIN service_orders so ON so.order_id = ra.order_id
+                WHERE so.portal_account_id = %s AND ra.status = 'rejected'
+                  AND (ra.details_json ->> 'account_cooldown_until')::timestamptz
+                      > CURRENT_TIMESTAMP
+                LIMIT 1
+                """,
+                (account_id,),
+            ).fetchone()
+            if cooldown is not None:
+                raise BrowserOwnershipConflict(
+                    "portal_account_cooldown",
+                    "La cuenta esta descansando tras un rechazo temporal del portal.",
+                )
+
         active_lease = connection.execute(
             """
             SELECT order_id, lease_owner

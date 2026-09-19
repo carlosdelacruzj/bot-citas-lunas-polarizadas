@@ -91,6 +91,20 @@ intento durable y las mismas barreras de identidad, reglas y lease. El boton
 Reservar Cita puede confirmar directamente; no se presume que solo abre un modal.
 Un resultado ambiguo conserva pending/unknown sin repetir el clic.
 
+El rechazo explicito "Ha realizado demasiadas solicitudes. Espere un momento e
+intente nuevamente." se clasifica como `rate_limited`: conserva evidencia,
+resuelve el intento como `rejected` y habilita la orden tras 900 segundos en una
+sesion nueva. Otros resultados ambiguos mantienen el bloqueo `unknown`. La
+reanudacion efectiva respeta la pausa global, el horario y la rotacion de cola.
+
+Por decision operativa, el mensaje exacto "Operacion no disponible temporalmente.
+Intente mas tarde." se clasifica como `temporarily_unavailable`: resuelve el
+intento como `rejected` y aplica al menos 180 segundos de descanso a toda la
+cuenta. El vencimiento se persiste atomicamente con el intento; worker y
+preflight no admiten esa cuenta antes de vencer, incluso con otra orden nueva.
+Despues vuelve a consultar en una sesion nueva y exige expediente sin cita
+antes de reservar. No reclasifica intentos historicos ni reabre ordenes cerradas.
+
 ## Confirmacion
 
 La confirmacion primaria es el texto explicito de exito devuelto por el portal
