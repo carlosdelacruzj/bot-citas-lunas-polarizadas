@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
+from typing import Any
 
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.registration_messages import (
+    _monitoring_started_context,
+    _registration_name_context,
+    program_registration_context,
+)
 from appointment_bot.core.service_packages import (
     DEFAULT_RESERVATION_PRICE_TEXT,
     SERVICE_PACKAGE_STANDARD,
-    service_package_label,
 )
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
@@ -40,6 +44,8 @@ def enqueue_registration_notice(
     maximum_reservation_date: str | None = None,
     allowed_weekdays: tuple[int, ...] | None = None,
     excluded_date_ranges: tuple[dict[str, str], ...] = (),
+    selected_program: dict[str, Any] | None = None,
+    charge_required: bool = True,
     runtime_settings: RuntimeSettings,
 ) -> bool:
     if not recipient_phone and not recipient_username:
@@ -63,10 +69,29 @@ def enqueue_registration_notice(
         if notice_type == "monitoring_started"
         else _registration_name_context(display_name)
     )
+    if notice_type == "monitoring_started" and selected_program is not None:
+        context = program_registration_context(
+            display_name or "", [selected_program], {
+                str(selected_program["expediente"]): {
+                    "service_type": service_type, "service_package": service_package,
+                    "reservation_price": reservation_price, "charge_required": charge_required,
+                    "minimum_reservation_date": minimum_reservation_date,
+                    "maximum_reservation_date": maximum_reservation_date,
+                    "allowed_weekdays": allowed_weekdays,
+                    "excluded_date_ranges": excluded_date_ranges,
+                },
+            },
+        )
+    elif notice_type == "monitoring_started":
+        context.update(
+            placa="Por confirmar", expediente="Por confirmar",
+            precio=f"S/{reservation_price}" if charge_required else "Sin cobro adicional",
+        )
     message_text = render_whatsapp_template(
         definition,
         template.message_template,
         context,
+        preserve_variables=frozenset({"expediente", "placa"}),
     )
     return enqueue_registration_notice_job(
         order_id=order_id,
@@ -79,108 +104,6 @@ def enqueue_registration_notice(
         template_revision=template.revision,
         settings=runtime_settings,
     )
-
-
-def _monitoring_started_context(
-    *,
-    display_name: str | None,
-    service_type: str,
-    service_package: str,
-    reservation_price: str,
-    minimum_reservation_date: str | None,
-    maximum_reservation_date: str | None,
-    allowed_weekdays: tuple[int, ...] | None,
-    excluded_date_ranges: tuple[dict[str, str], ...],
-) -> dict[str, str]:
-    name = " ".join((display_name or "").split())
-    if not name:
-        raise ValueError("El aviso de registro validado requiere el nombre del solicitante.")
-    exclusions = _excluded_dates_text(excluded_date_ranges)
-    return {
-        "nombre": name,
-        "servicio": _service_label(service_type, service_package),
-        "monto": str(reservation_price or DEFAULT_RESERVATION_PRICE_TEXT),
-        "condiciones": _search_conditions_text(
-            minimum_reservation_date,
-            maximum_reservation_date,
-            allowed_weekdays,
-        ),
-        "fechas_excluidas": f"Fechas excluidas: {exclusions}" if exclusions else "",
-    }
-
-
-def _registration_name_context(display_name: str | None) -> dict[str, str]:
-    name = " ".join((display_name or "").split())
-    if not name:
-        raise ValueError("El aviso de registro requiere un nombre para el saludo.")
-    return {"nombre": name}
-
-
-def _service_label(
-    service_type: str,
-    service_package: str = SERVICE_PACKAGE_STANDARD,
-) -> str:
-    return service_package_label(service_package, service_type)
-
-
-def _weekday_name(value: int) -> str:
-    return {
-        1: "los lunes",
-        2: "los martes",
-        3: "los miércoles",
-        4: "los jueves",
-        5: "los viernes",
-        6: "los sábados",
-        7: "los domingos",
-    }.get(int(value), "el día indicado")
-
-
-def _search_conditions_text(
-    minimum_date: str | None,
-    maximum_date: str | None,
-    allowed_weekdays: tuple[int, ...] | None,
-) -> str:
-    conditions = []
-    if allowed_weekdays:
-        weekday_names = [_weekday_name(day) for day in allowed_weekdays]
-        if len(weekday_names) == 1:
-            conditions.append(f"Solo {weekday_names[0]}")
-        else:
-            conditions.append("Días permitidos: " + ", ".join(weekday_names))
-    if minimum_date and maximum_date:
-        conditions.append(
-            f"desde el {_display_date(minimum_date)} hasta el {_display_date(maximum_date)}"
-        )
-    elif minimum_date:
-        conditions.append(f"a partir del {_display_date(minimum_date)}")
-    elif maximum_date:
-        conditions.append(f"hasta el {_display_date(maximum_date)}")
-    if not conditions:
-        return "Cualquier fecha disponible."
-    return ", ".join(conditions) + "."
-
-
-def _excluded_dates_text(excluded_date_ranges: tuple[dict[str, str], ...]) -> str:
-    values = []
-    for item in excluded_date_ranges:
-        start = str(item.get("start_date") or "")
-        end = str(item.get("end_date") or "")
-        if not start or not end:
-            continue
-        if start == end:
-            values.append(_display_date(start))
-        else:
-            values.append(f"{_display_date(start)} al {_display_date(end)}")
-    return "; ".join(values)
-
-
-def _display_date(value: str) -> str:
-    try:
-        return date.fromisoformat(value).strftime("%d/%m/%Y")
-    except ValueError:
-        return value
-
-
 __all__ = [
     "REGISTRATION_NOTICE_TEMPLATE_KEYS",
     "enqueue_registration_notice",

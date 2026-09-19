@@ -38,6 +38,7 @@ _COLLECTION_PATH = "/api/v1/whatsapp-message-templates"
 _CONNECTED_TEMPLATE_KEYS = frozenset(
     (
         *REGISTRATION_NOTICE_TEMPLATE_KEYS.values(),
+        "registration_monitoring_started_multiple",
         RESERVATION_CONFIRMATION_TEMPLATE_KEY,
         RESERVATION_PAYMENT_TEMPLATE_KEY,
         POST_PAYMENT_TEMPLATE_KEY,

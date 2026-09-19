@@ -211,7 +211,7 @@ class DatabaseTests(unittest.TestCase):
                     "SELECT service_type FROM service_orders WHERE order_id = %s",
                     (integral_result.order_id,),
                 ).fetchone()
-            self.assertEqual(version, 74)
+            self.assertEqual(version, SCHEMA_VERSION)
             for constraint_name in (
                 "ck_service_orders_integral_terms",
                 "uq_payments_payment_order",

@@ -212,6 +212,7 @@ def enqueue_registration_notice_job(
     template_revision: int | None = None,
     settings: RuntimeSettings | None = None,
     _connection_override=None,
+    deduplication_scope: str | None = None,
 ) -> bool:
     if preflight_cycle < 1:
         raise ValueError("preflight_cycle must be greater than or equal to 1.")
@@ -223,6 +224,8 @@ def enqueue_registration_notice_job(
     init_database(effective_settings)
     now = datetime.now(UTC)
     job_key = f"registration_notice:{order_id}:cycle-{preflight_cycle}:{notice_type}"
+    if deduplication_scope is not None:
+        job_key = f"registration_notice:{order_id}:{deduplication_scope}:{notice_type}"
     phone, username = resolve_whatsapp_recipient(recipient_phone, recipient_username)
     if phone is not None:
         phone = _international_phone(phone)

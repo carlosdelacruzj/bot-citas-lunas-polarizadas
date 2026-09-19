@@ -8,6 +8,7 @@ from pathlib import Path
 
 from appointment_bot.db.common import _INITIALIZED_URLS, init_database
 from appointment_bot.db.finance import finance_data_quality, finance_month_summary
+from appointment_bot.db.migrations import SCHEMA_VERSION
 from appointment_bot.db.monthly_dashboard_v2 import monthly_dashboard_summary_v2
 from appointment_bot.services.application.create_service_order import create_service_order
 from tests.helpers import database_connection, make_settings
@@ -224,7 +225,7 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                 date(2026, 8, 1), date(2026, 9, 1), settings=settings.runtime
             )["receipt_date_quality"]
 
-            self.assertEqual(version, 74)
+            self.assertEqual(version, SCHEMA_VERSION)
             self.assertEqual(len(receipts), 2)
             self.assertEqual({row["source"] for row in receipts}, {"historical_backfill"})
             self.assertEqual(sum((row["amount"] for row in receipts), Decimal("0")), Decimal("70"))

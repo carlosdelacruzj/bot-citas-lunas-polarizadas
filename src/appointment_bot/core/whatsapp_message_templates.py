@@ -35,20 +35,6 @@ class WhatsAppTemplateDefinition:
     preview_context: dict[str, str]
 
 
-_REGISTRATION_MONITORING_STARTED = "\n\n".join(
-    (
-        "Hola, {nombre} 👋",
-        "Pudimos ingresar correctamente y verificar tu solicitud ✅",
-        "Tu solicitud quedó registrada y desde ahora comenzaremos con el monitoreo.",
-        "Servicio: {servicio}\nPrecio acordado: S/{monto}\n"
-        "Condiciones de búsqueda: {condiciones}\n{fechas_excluidas}",
-        "Buscaremos únicamente citas que cumplan estas condiciones. "
-        "No reservaremos una fecha fuera de ellas.",
-        "La disponibilidad depende de la PNP y no podemos garantizar que "
-        "aparezca un cupo. Te escribiremos apenas consigamos la cita.",
-    )
-)
-
 _REGISTRATION_NO_PENDING_REQUEST = "\n\n".join(
     (
         "Hola, {nombre} 👋",
@@ -57,6 +43,20 @@ _REGISTRATION_NO_PENDING_REQUEST = "\n\n".join(
         "Por favor, revisa si el trámite fue registrado y confírmanos cuando "
         "aparezca. Luego realizaremos una nueva validación.",
     )
+)
+
+_REGISTRATION_SINGLE = (
+    "Hola, {nombre}.\n\n"
+    "Tu solicitud quedó registrada. Ya estamos buscando una cita para tu vehículo.\n\n"
+    "Placa: {placa}\nExpediente: {expediente}\nServicio: {servicio}\n"
+    "Precio acordado: {precio}\nDisponibilidad: {condiciones}\n{fechas_excluidas}\n\n"
+    "Te avisaremos cuando tu cita esté confirmada."
+)
+_REGISTRATION_MULTIPLE = (
+    "Hola, {nombre}.\n\n"
+    "Tus solicitudes quedaron registradas. Ya estamos buscando citas para estos vehículos:\n\n"
+    "{tramites}\n\nTotal acordado: {precio}\n{disponibilidad}\n\n"
+    "Te avisaremos al confirmar cada cita. Pueden quedar en fechas u horarios distintos."
 )
 
 _REGISTRATION_INVALID_CREDENTIALS = "\n\n".join(
@@ -114,6 +114,12 @@ _RECOMMENDED_APPOINTMENT_REMINDER = (
 )
 
 _COMMON_PREVIEW_CONTEXT = {
+    "placa": "ABC123",
+    "expediente": "12345",
+    "precio": "S/50.00",
+    "tramites": "1. Placa ABC123 · Expediente 12345\n   Servicio regular: S/50.00\n\n"
+    "2. Placa DEF456 · Expediente 12346\n   Servicio regular: S/50.00",
+    "disponibilidad": "Disponibilidad para todos: Cualquier fecha disponible.",
     "nombre": "Carlos",
     "servicio": service_package_label(SERVICE_PACKAGE_RESTRICTED),
     "monto": money_text(RESTRICTED_TOTAL_AMOUNT) or "",
@@ -164,13 +170,29 @@ WHATSAPP_TEMPLATE_DEFINITIONS = {
     for definition in (
         _definition(
             "registration_monitoring_started",
-            "Registro validado e inicio de monitoreo",
-            _REGISTRATION_MONITORING_STARTED,
-            ("nombre", "servicio", "monto", "condiciones", "fechas_excluidas"),
-            ("nombre", "servicio", "monto", "condiciones"),
+            "Registro: un trámite",
+            _REGISTRATION_SINGLE,
+            ("nombre", "placa", "expediente", "servicio", "precio", "monto",
+             "condiciones", "fechas_excluidas"),
+            ("nombre", "servicio", "condiciones"),
             "Aviso de registro validado enviado después del preflight.",
             "next_prepared_job",
             optional_line_variables=("fechas_excluidas",),
+            preview_context_overrides={
+                "servicio": "Regular", "precio": "S/50.00", "monto": "50.00",
+                "condiciones": "Cualquier fecha disponible.", "fechas_excluidas": "",
+            },
+        ),
+        _definition(
+            "registration_monitoring_started_multiple",
+            "Registro: varios trámites",
+            _REGISTRATION_MULTIPLE,
+            ("nombre", "tramites", "precio", "disponibilidad"),
+            ("nombre", "tramites", "precio", "disponibilidad"),
+            "Aviso conjunto de los trámites seleccionados.",
+            "next_prepared_job",
+            optional_line_variables=("disponibilidad",),
+            preview_context_overrides={"precio": "S/100.00"},
         ),
         _definition(
             "registration_no_pending_request",
@@ -280,6 +302,8 @@ def render_whatsapp_template(
     definition: WhatsAppTemplateDefinition,
     message_template: str,
     context: dict[str, object],
+    *,
+    preserve_variables: frozenset[str] = frozenset(),
 ) -> str:
     template = normalize_template(message_template)
     errors = validate_whatsapp_template(definition, template)
@@ -300,7 +324,7 @@ def render_whatsapp_template(
         value = str(context.get(variable) or "").strip()
         if not value:
             raise ValueError(f"El valor de {{{variable}}} no puede quedar vacío.")
-        if variable not in _SAFE_UNSANITIZED_VARIABLES:
+        if variable not in _SAFE_UNSANITIZED_VARIABLES and variable not in preserve_variables:
             value = sanitize_text(value)
         return value
 

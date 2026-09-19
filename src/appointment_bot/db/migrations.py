@@ -65,10 +65,11 @@ from appointment_bot.db.migration_steps.v70_to_v71 import v70_to_v71
 from appointment_bot.db.migration_steps.v71_to_v72 import v71_to_v72
 from appointment_bot.db.migration_steps.v72_to_v73 import v72_to_v73
 from appointment_bot.db.migration_steps.v73_to_v74 import v73_to_v74
+from appointment_bot.db.migration_steps.v74_to_v75 import v74_to_v75
 from appointment_bot.db.schema_definition import create_current_schema
 from appointment_bot.db.schema_validation import validate_current_schema
 
-SCHEMA_VERSION = 74
+SCHEMA_VERSION = 75
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -140,6 +141,7 @@ MIGRATION_STEPS = (
     MigrationStep(71, 72, v71_to_v72),
     MigrationStep(72, 73, v72_to_v73),
     MigrationStep(73, 74, v73_to_v74),
+    MigrationStep(74, 75, v74_to_v75),
 )
 
 

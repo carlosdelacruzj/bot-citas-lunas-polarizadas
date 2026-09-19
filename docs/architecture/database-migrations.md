@@ -1,7 +1,7 @@
 # Migraciones PostgreSQL
 
 `db/migrations.py` conserva la version requerida y el registro explicito de
-60 pasos consecutivos desde `v14` hasta `v74`. El registro se valida al importar:
+61 pasos consecutivos desde `v14` hasta `v75`. El registro se valida al importar:
 rechaza saltos, duplicados, desorden y una version final distinta de la requerida.
 
 Una base sin fila de version se crea directamente con `schema_definition.py`.

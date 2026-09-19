@@ -175,7 +175,9 @@ class LocalApiTests(unittest.TestCase):
                 mark_order_preflight_validated(
                     order_id,
                     applicant_name="Client Two",
-                    details={"source": "api_test"},
+                    details={"source": "api_test", "programs": [{
+                        "expediente": "API-1", "status": "PENDIENTE", "eligibility": "eligible",
+                    }]},
                     settings=settings.runtime,
                 )
 
