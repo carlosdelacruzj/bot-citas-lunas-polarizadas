@@ -5,6 +5,7 @@ from typing import Any
 from psycopg.types.json import Jsonb
 
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.program_eligibility import program_is_eligible, program_key
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -12,6 +13,7 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
+from appointment_bot.db.program_eligibility import booked_programs_in_connection
 
 
 def mark_order_preflight_pending(
@@ -56,11 +58,21 @@ def mark_order_preflight_validated(
     applicant_name = " ".join(applicant_name.split())
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
-            "SELECT applicant_id FROM service_orders WHERE order_id = %s",
+            "SELECT applicant_id, program_expediente FROM service_orders "
+            "WHERE order_id = %s FOR UPDATE",
             (order_id,),
         ).fetchone()
         if row is None:
             raise ValueError(f"Service order not found: {order_id}")
+        programs = details.get("programs", [])
+        if len(programs) != 1 or not program_is_eligible(programs[0]):
+            raise ValueError("La validación requiere un único expediente sin cita verificado.")
+        selected = programs[0]
+        key = program_key(selected.get("expediente"))
+        if row["program_expediente"] and program_key(row["program_expediente"]) != key:
+            raise ValueError("El expediente objetivo cambió durante la validación.")
+        if key in booked_programs_in_connection(connection, order_id):
+            raise ValueError("El expediente ya tiene una reserva previa.")
         connection.execute(
             "UPDATE applicants SET full_name = %s, updated_at = %s WHERE applicant_id = %s",
             (applicant_name, now, row["applicant_id"]),
@@ -90,10 +102,11 @@ def mark_order_preflight_validated(
             """
             UPDATE service_orders
             SET status = CASE WHEN status = 'paused' THEN 'ready' ELSE status END,
+                program_expediente = %s, program_plate = %s,
                 updated_at = %s
             WHERE order_id = %s
             """,
-            (now, order_id),
+            (selected["expediente"], selected.get("placa") or None, now, order_id),
         )
 
 

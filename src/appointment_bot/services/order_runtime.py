@@ -10,6 +10,8 @@ class OrderReportOutcome(StrEnum):
     TERMINAL_STAGE = "terminal_stage"
     REGISTERED = "registered"
     RESERVATION_UNCONFIRMED = "reservation_unconfirmed"
+    RATE_LIMITED = "rate_limited"
+    TEMPORARILY_UNAVAILABLE = "temporarily_unavailable"
     CAPTCHA_REJECTED = "captcha_rejected"
     ROUTINE = "routine"
     FAILURE = "failure"
@@ -51,6 +53,10 @@ def classify_order_report(report: RunReport) -> OrderReportOutcome:
         return OrderReportOutcome.RESERVATION_UNCONFIRMED
     if str((report.details or {}).get("submission_outcome") or "") == "captcha_invalid":
         return OrderReportOutcome.CAPTCHA_REJECTED
+    if (report.details or {}).get("submission_outcome") == "rate_limited":
+        return OrderReportOutcome.RATE_LIMITED
+    if (report.details or {}).get("submission_outcome") == "temporarily_unavailable":
+        return OrderReportOutcome.TEMPORARILY_UNAVAILABLE
     if report.status in ROUTINE_ORDER_STATUSES:
         return OrderReportOutcome.ROUTINE
     return OrderReportOutcome.FAILURE

@@ -104,6 +104,7 @@ class ServiceOrderRuntime:
     maximum_reservation_date: str | None = None
     allowed_weekdays: tuple[int, ...] | None = None
     excluded_date_ranges: tuple[dict[str, str], ...] = ()
+    charge_required: bool = True
 
     @property
     def notification_name(self) -> str:

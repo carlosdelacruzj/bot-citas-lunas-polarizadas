@@ -11,6 +11,7 @@ from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
+from appointment_bot.core.program_eligibility import ProgramHistoryUnresolved
 from appointment_bot.db.captcha_authority import resolve_captcha_authority_decision
 from appointment_bot.db.captcha_sampling_control import get_captcha_sampling_control
 from appointment_bot.db.opportunity_bursts import record_burst_event
@@ -18,7 +19,13 @@ from appointment_bot.db.opportunity_controls import (
     is_opportunity_admission_allowed,
     trip_opportunity_circuit_breaker,
 )
+from appointment_bot.db.order_preflight import mark_order_preflight_failed
 from appointment_bot.db.orders import record_order_program_listing
+from appointment_bot.db.program_eligibility import (
+    bind_eligible_program,
+    get_booked_programs,
+    remember_booked_programs,
+)
 from appointment_bot.reports.run_reporting import finalize_report, report_from_result
 from appointment_bot.reservation_engine.ports import (
     CaptchaSolveResult,
@@ -103,6 +110,11 @@ class WorkerAlertSink:
         runtime_settings: RuntimeSettings,
         telegram_settings: TelegramSettings,
     ) -> None:
+        if details.get("decision") in {
+            "single_pending_selected", "target_selected", "observer_first_available_selected",
+        }:
+            logger.info("Routine program selection for %s; no operator alert needed", order_id)
+            return
         should_notify = True
         if order_id is not None:
             try:
@@ -183,12 +195,45 @@ class WorkerOpportunityControl:
         )
 
 
+class WorkerProgramRegistry:
+    def booked(self, order_id: str, *, runtime_settings: RuntimeSettings) -> dict[str, Any]:
+        try:
+            return get_booked_programs(order_id, settings=runtime_settings)
+        except ProgramHistoryUnresolved as exc:
+            mark_order_preflight_failed(
+                order_id, str(exc), details={
+                    "error_type": "program_history_unresolved",
+                    "unresolved_reservation_ids": exc.reservation_ids,
+                }, settings=runtime_settings,
+            )
+            raise
+
+    def record(
+        self, order_id: str, row: dict[str, Any], *, runtime_settings: RuntimeSettings
+    ) -> None:
+        if row.get("eligibility") == "eligible":
+            bind_eligible_program(order_id, row, settings=runtime_settings)
+            return
+        remember_booked_programs(order_id, [row], settings=runtime_settings)
+        if row.get("eligibility") in {"booked", "unknown"}:
+            mark_order_preflight_failed(
+                order_id, str(row.get("eligibility_reason") or "Revisar expediente."),
+                details={
+                    "error_type": "program_already_booked"
+                    if row["eligibility"] == "booked" else "program_eligibility_unverified",
+                    "program_assessments": [row],
+                },
+                settings=runtime_settings,
+            )
+
+
 def build_reservation_engine_ports() -> ReservationEnginePorts:
     return ReservationEnginePorts(
         runs=WorkerRunSink(),
         alerts=WorkerAlertSink(),
         captcha=WorkerCaptchaAuthority(),
         opportunities=WorkerOpportunityControl(),
+        programs=WorkerProgramRegistry(),
     )
 
 
@@ -198,11 +243,9 @@ def _program_notification_text(
     rows = details.get("rows") if isinstance(details.get("rows"), list) else []
     pending_count = int(details.get("pending_count") or 0)
     title = (
-        "UN SOLO TRAMITE PENDIENTE"
-        if pending_count == 1
-        else "MULTIPLES TRAMITES PENDIENTES DETECTADOS"
+        "MULTIPLES TRAMITES PENDIENTES DETECTADOS"
         if pending_count > 1
-        else "LISTADO SIN TRAMITES PENDIENTES"
+        else "REVISION DE EXPEDIENTES REQUERIDA"
     )
     lines = [title, f"Orden: {order_id or 'observer'}"]
     if client_name:

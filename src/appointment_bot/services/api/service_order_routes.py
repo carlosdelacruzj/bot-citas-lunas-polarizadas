@@ -609,6 +609,8 @@ def resolve_service_order_programs_payload(
             listing_signature=str(payload.get("listing_signature") or ""),
             communication_decision=str(payload.get("communication_decision") or ""),
             actor=actor,
+            preview_only=_optional_bool(payload, "preview_only", default=False),
+            preview_token=_optional_text(payload, "preview_token"),
             program_expediente=_optional_text(payload, "program_expediente"),
             program_plate=_optional_text(payload, "program_plate"),
             children=payload.get("children"),

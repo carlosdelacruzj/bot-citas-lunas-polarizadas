@@ -35,6 +35,7 @@ def _row(expediente: str, plate: str, status: str) -> dict[str, object]:
         "expediente": expediente,
         "placa": plate,
         "status": status,
+        "eligibility": "eligible" if status == "PENDIENTE" else "not_pending",
     }
 
 
@@ -47,6 +48,7 @@ class ProgramPreflightTests(unittest.TestCase):
                 return_value=nullcontext(object()),
             ),
             patch("appointment_bot.services.order_preflight.login"),
+            patch("appointment_bot.services.order_preflight.review_programs", return_value=rows),
             patch(
                 "appointment_bot.services.order_preflight._read_portal_applicant_name",
                 return_value="Cliente Prueba",
@@ -341,7 +343,7 @@ class ProgramResolutionTests(unittest.TestCase):
             self.assertEqual(len(children), 2)
             self.assertEqual(summaries[order.order_id].status, "archived")
             self.assertTrue(first["parent_archived"])
-            self.assertIn("aun no fue enviado", first["communication_preview"])
+            self.assertIn("S/100.00", first["communication_preview"])
             self.assertEqual(jobs, 0)
 
     def test_different_resolution_cannot_replace_applied_revision(self) -> None:

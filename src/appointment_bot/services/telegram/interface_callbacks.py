@@ -9,6 +9,7 @@ from typing import Any
 
 from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient
+from appointment_bot.services.telegram.audit import _telegram_actor
 from appointment_bot.services.telegram.bot_api import TelegramBotApi
 from appointment_bot.services.telegram.captcha_conversation import (
     _clear_captcha_review_buttons,
@@ -105,10 +106,12 @@ def _process_interface_callback(
     prefix, subject, action = parts
     telegram.answer_callback_query(callback_id, "Procesando...")
     if prefix == "pr":
-        if action in {"informed", "keep"}:
+        if action in {"informed", "keep", "send"}:
             telegram_program_resolution.set_communication_decision(
                 chat_id, subject, action, telegram,
                 pending_order_changes, confirmation_lock,
+                admin_api=admin_api,
+                actor=_telegram_actor(chat_id),
             )
         elif not _valid_order_id(subject):
             telegram.send_message(chat_id, "La orden seleccionada no es valida.")

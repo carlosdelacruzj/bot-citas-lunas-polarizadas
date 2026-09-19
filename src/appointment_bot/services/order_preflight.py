@@ -18,6 +18,7 @@ from appointment_bot.configuration.loading import (
 from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.core.program_eligibility import ProgramHistoryUnresolved, program_is_eligible
 from appointment_bot.db.orders import (
     get_order_program_listing,
     get_service_order_runtime,
@@ -28,8 +29,14 @@ from appointment_bot.db.orders import (
     mark_order_preflight_validated,
     record_order_program_listing,
 )
+from appointment_bot.db.program_eligibility import (
+    get_booked_programs,
+    reconcile_program_history,
+    remember_booked_programs,
+)
 from appointment_bot.reservation_engine.appointment_dom import read_person_name
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
+from appointment_bot.reservation_engine.program_review import review_programs
 from appointment_bot.reservation_engine.programs import read_program_action_rows
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.registration_notices import enqueue_registration_notice
@@ -194,40 +201,81 @@ def _validate_order_preflight_owned(
             if not applicant_name or _looks_like_document(applicant_name, order.username):
                 raise RuntimeError("El portal no mostro un nombre completo verificable.")
             rows = read_program_action_rows(page)
+            if not rows:
+                raise RuntimeError("No se pudo verificar el listado de expedientes del portal.")
+            reconcile_program_history(order_id, settings=runtime_settings)
+            rows = review_programs(
+                page, rows, get_booked_programs(
+                    order_id, settings=runtime_settings, require_complete=False,
+                ),
+                on_review=lambda reviewed: remember_booked_programs(
+                    order_id, reviewed, settings=runtime_settings,
+                ),
+            )
             pending_rows = [
                 row
                 for row in rows
-                if str(row.get("status") or "").strip().casefold() == "pendiente"
+                if program_is_eligible(row)
             ]
+            excluded_rows = [row for row in rows if row.get("eligibility") == "booked"]
+            unknown_rows = [row for row in rows if row.get("eligibility") == "unknown"]
             listing = {
                 "program_count": len(rows),
                 "pending_count": len(pending_rows),
+                "portal_pending_count": sum(
+                    str(row.get("status") or "").strip().casefold() == "pendiente"
+                    for row in rows
+                ),
                 "rows": rows,
                 "source": "registration_preflight",
             }
-            record_order_program_listing(order_id, listing, settings=runtime_settings)
+            record_order_program_listing(
+                order_id, listing, applicant_name=applicant_name, settings=runtime_settings
+            )
+            reconcile_program_history(order_id, settings=runtime_settings, reviewed=rows)
+            get_booked_programs(order_id, settings=runtime_settings)
             stored_listing = get_order_program_listing(order_id, settings=runtime_settings) or {}
             listing_signature = str(stored_listing.get("signature") or "")
             listing_revision = int(stored_listing.get("revision") or 1)
+            assessment_details = {
+                "program_assessments": rows,
+                "excluded_programs": excluded_rows,
+                "unknown_programs": unknown_rows,
+                "listing_signature": listing_signature,
+                "listing_revision": listing_revision,
+            }
+            if unknown_rows:
+                _save_failure_screenshot(page, order_id, evidence_settings.screenshots_dir)
+                return _fail_preflight(
+                    order_id,
+                    "No se pudo descartar una cita previa en todos los expedientes. "
+                    "Requiere revisión.",
+                    "program_eligibility_unverified",
+                    details=assessment_details,
+                    runtime_settings=runtime_settings,
+                    telegram_settings=telegram_settings,
+                )
             if not pending_rows:
                 result = _fail_preflight(
                     order_id,
                     (
                         "El acceso funciona, pero no se encontro ningun tramite "
-                        "PENDIENTE para reservar."
+                        "sin cita previa para reservar."
                     ),
-                    "no_pending_request",
+                    "program_already_booked" if excluded_rows else "no_pending_request",
+                    details=assessment_details,
                     runtime_settings=runtime_settings,
                     telegram_settings=telegram_settings,
                 )
-                _queue_notice(
-                    order=order,
-                    preflight_cycle=preflight_cycle,
-                    notice_type="no_pending_request",
-                    display_name=applicant_name or order.contact_name or order.name,
-                    runtime_settings=runtime_settings,
-                    telegram_settings=telegram_settings,
-                )
+                if not excluded_rows:
+                    _queue_notice(
+                        order=order,
+                        preflight_cycle=preflight_cycle,
+                        notice_type="no_pending_request",
+                        display_name=applicant_name or order.contact_name or order.name,
+                        runtime_settings=runtime_settings,
+                        telegram_settings=telegram_settings,
+                    )
                 return result
             target = {
                 key: value
@@ -254,6 +302,7 @@ def _validate_order_preflight_owned(
                         "El tramite objetivo no coincide con un unico tramite PENDIENTE.",
                         "program_target_not_unique",
                         details={
+                            **assessment_details,
                             "program_count": len(rows),
                             "pending_count": len(pending_rows),
                             "pending_programs": pending_rows[:10],
@@ -273,6 +322,8 @@ def _validate_order_preflight_owned(
                     ),
                     "multiple_pending_resolution_required",
                     details={
+                        **assessment_details,
+                        "applicant_name": applicant_name,
                         "program_count": len(rows),
                         "pending_count": len(pending_rows),
                         "pending_programs": pending_rows[:10],
@@ -283,6 +334,7 @@ def _validate_order_preflight_owned(
                     telegram_settings=telegram_settings,
                 )
             details = {
+                **assessment_details,
                 "applicant_name": applicant_name,
                 "document_type": order.document_type,
                 "program_count": len(rows),
@@ -294,14 +346,16 @@ def _validate_order_preflight_owned(
             mark_order_preflight_validated(
                 order_id, applicant_name=applicant_name, details=details, settings=runtime_settings
             )
-            _queue_notice(
-                order=order,
-                preflight_cycle=preflight_cycle,
-                notice_type="monitoring_started",
-                display_name=applicant_name,
-                runtime_settings=runtime_settings,
-                telegram_settings=telegram_settings,
-            )
+            if not stored_listing.get("registration_notice_suppressed"):
+                _queue_notice(
+                    order=order,
+                    preflight_cycle=preflight_cycle,
+                    notice_type="monitoring_started",
+                    display_name=applicant_name,
+                    selected_program=selected_pending_rows[0],
+                    runtime_settings=runtime_settings,
+                    telegram_settings=telegram_settings,
+                )
             logger.info(
                 "Order preflight validated: order=%s programs=%s pending=%s",
                 order_id,
@@ -327,6 +381,16 @@ def _validate_order_preflight_owned(
                 telegram_settings=telegram_settings,
             )
             return result
+        except ProgramHistoryUnresolved as exc:
+            _save_failure_screenshot(page, order_id, evidence_settings.screenshots_dir)
+            return _fail_preflight(
+                order_id, str(exc), "program_history_unresolved",
+                details={
+                    "unresolved_reservation_ids": exc.reservation_ids,
+                    "program_assessments": rows,
+                },
+                runtime_settings=runtime_settings, telegram_settings=telegram_settings,
+            )
         except Exception as exc:
             _save_failure_screenshot(page, order_id, evidence_settings.screenshots_dir)
             return _fail_preflight(
@@ -431,6 +495,7 @@ def _fail_preflight(
             "\n".join(
                 [
                     "Se requiere definir el alcance de tramites PENDIENTE.",
+                    f"Cliente: {failure_details.get('applicant_name') or 'Nombre no disponible'}",
                     f"Orden: {order_id}",
                     f"Tramites PENDIENTE detectados: {pending_count}",
                     "Accion requerida: elegir uno, todos o mantener la orden pausada.",
@@ -463,6 +528,7 @@ def _queue_notice(
     display_name: str | None,
     telegram_settings: TelegramSettings,
     runtime_settings: RuntimeSettings,
+    selected_program: dict | None = None,
 ) -> None:
     try:
         queued = enqueue_registration_notice(
@@ -479,6 +545,8 @@ def _queue_notice(
             maximum_reservation_date=order.maximum_reservation_date,
             allowed_weekdays=order.allowed_weekdays,
             excluded_date_ranges=order.excluded_date_ranges,
+            selected_program=selected_program,
+            charge_required=order.charge_required,
             runtime_settings=runtime_settings,
         )
     except Exception as exc:

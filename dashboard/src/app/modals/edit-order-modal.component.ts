@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_EDIT_ORDER_MODAL_FINANCE,
@@ -10,6 +10,7 @@ import {
 import {
   ProgramResolutionPanelComponent,
 } from '../program-resolution/program-resolution-panel.component';
+import type { ProgramResolutionProgram } from '../program-resolution/program-resolution';
 import {
   ReservationRulesEditorComponent,
 } from '../reservation-rules-editor/reservation-rules-editor.component';
@@ -29,5 +30,10 @@ export class EditOrderModalComponent {
   protected readonly ordersDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_ORDERS);
   protected readonly presentationDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_PRESENTATION);
   protected readonly financeDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_FINANCE);
+  protected readonly programAssessments = computed(() => {
+    const details = this.ordersDomain.selectedOrderDetail()?.preflight_details;
+    const rows = (details as Record<string, unknown> | null)?.['program_assessments'];
+    return Array.isArray(rows) ? rows as ProgramResolutionProgram[] : [];
+  });
 
 }

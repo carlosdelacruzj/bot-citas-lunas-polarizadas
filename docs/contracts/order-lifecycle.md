@@ -1,6 +1,6 @@
 # Contrato de ciclo de vida de ordenes
 
-Estado: vigente. Ultima verificacion: `2026-09-02`.
+Estado: vigente. Ultima verificacion: `2026-09-12`.
 
 Codigo propietario: `core/credential_cipher.py`, `core/models.py`, `core/rules.py`, `db/order_*`,
 `db/reservations.py`, `db/reservation_repository.py`, `db/service_order_repository.py`, `db/unit_of_work.py`, `db/payment_repository.py`,
@@ -24,7 +24,7 @@ estados alternativos de esta columna.
 
 `CreateServiceOrder` prepara contacto, credenciales cifradas, servicio, precio
 y reglas; el repositorio no conoce la clave. Con preflight nace pausada y solo
-vuelve a `ready` tras validacion. Un HTTP `201` prueba persistencia, no activacion.
+vuelve a `ready` tras validacion. Un HTTP `201` prueba persistencia, no activacion. Una nueva alta tras servicios terminados crea otra orden; conserva historial y reutiliza solo una solicitud abierta sin objetivo ni reserva, evitando duplicarla.
 
 ## Servicio y precio
 
@@ -68,12 +68,7 @@ un unico dia, mientras `custom` permite reglas mas generales.
 
 ## Restricciones
 
-Reglas positivas:
-
-- `minimum_date` y `maximum_date`;
-- `allowed_weekdays`.
-
-Regla negativa: `excluded_date_ranges`.
+Reglas positivas: `minimum_date`, `maximum_date`, `allowed_weekdays`; negativa: `excluded_date_ranges`.
 
 Las positivas sacan la orden de la cola general y exigen coincidencia; una
 exclusion por si sola no la saca, pero siempre se valida antes de CAPTCHA o
@@ -166,23 +161,28 @@ sin cobro que intente eliminar su pago.
 
 ## Subordenes
 
-Los estados historicos no determinan multiplicidad: solo las filas
-`PENDIENTE` son reservables. Una fila pendiente junto con filas canceladas o
-atendidas conserva el flujo normal. Cero pendientes bloquea; mas de una exige
-una decision interna antes de seleccionar, CAPTCHA o submit.
+Solo son elegibles los `PENDIENTE` con expediente exacto y sin cita verificada,
+incluso con un unico expediente. La reserva previa de la misma cuenta excluye
+su expediente permanentemente, sin depender de fecha, pago o estado del portal.
+Cero elegibles informa que no hay una nueva reserva; uno se vincula; varios
+requieren elegir. La incertidumbre pausa. El worker no cambia el objetivo.
+Dashboard, Telegram y backend comparten la exclusion. Las citas externas
+conservan fuente, datos y fecha de consulta; no crean reserva nuestra ni pago.
+El historial sin identidad bloquea con `program_history_unresolved`; su
+conciliacion exige la evidencia definida en [`reservation-safety.md`](reservation-safety.md).
 
 La decision se aplica contra la revision exacta del listado observado. Resolver
 uno exige expediente exacto o una placa que identifique una sola fila pendiente.
 Resolver todos crea atomicamente una suborden por expediente mediante
 `parent_order_id` y archiva el padre. Cada suborden mantiene objetivo, reglas,
-reserva, evidencia y estado propios.
+reserva, evidencia y estado propios. El nombre verificado se guarda antes del bloqueo por multiplicidad y se usa en avisos, confirmacion conjunta e hijos.
 
 Precio y condiciones no se multiplican implicitamente. El operador debe
 confirmar las mismas condiciones para todos o definir servicio, reglas, precio y
 `charge_required` por hijo. Una orden integral o con historia financiera falla
 cerrado al dividir hasta que exista una regla explicita de asignacion contable.
 Repetir la misma decision es idempotente; una revision obsoleta produce
-conflicto y obliga a actualizar.
+conflicto y obliga a actualizar. Confirmar permite encolar atomicamente un aviso conjunto autorizado, con vista previa, precios y restricciones; las revalidaciones no duplican bienvenidas.
 
 ## Cierre
 

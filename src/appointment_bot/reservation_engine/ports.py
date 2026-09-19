@@ -130,3 +130,12 @@ class ReservationEnginePorts:
     alerts: AlertSink
     captcha: CaptchaAuthority
     opportunities: OpportunityControl
+    programs: ProgramRegistry | None = None
+
+
+class ProgramRegistry(Protocol):
+    def booked(self, order_id: str, *, runtime_settings: RuntimeSettings) -> dict[str, Any]: ...
+
+    def record(
+        self, order_id: str, row: dict[str, Any], *, runtime_settings: RuntimeSettings
+    ) -> None: ...

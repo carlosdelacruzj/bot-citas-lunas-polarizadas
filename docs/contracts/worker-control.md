@@ -107,6 +107,11 @@ Runbook: [`../operations/opportunity-bursts.md`](../operations/opportunity-burst
 
 ## Seguridad
 
+La seleccion normal de un expediente unico o del objetivo guardado es silenciosa
+en Telegram. No reemplaza el listado validado del preflight con filas sin revisar.
+Los bloqueos de identidad, multiplicidad o estado conservan su aviso deduplicado;
+un cambio del formato interno no convierte una seleccion normal en una alerta.
+
 - no matar una sesion durante submit;
 - no liberar backoff como efecto lateral de un comando;
 - no marcar un comando aplicado antes del punto seguro;

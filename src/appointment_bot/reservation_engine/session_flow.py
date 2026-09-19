@@ -12,10 +12,12 @@ from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.core.program_eligibility import program_key
 from appointment_bot.reservation_engine.appointments import open_appointment_panel
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.reservation_engine.monitor import monitor_appointment_availability
 from appointment_bot.reservation_engine.ports import ReservationEnginePorts
+from appointment_bot.reservation_engine.program_review import read_program_appointment
 from appointment_bot.reservation_engine.programs import click_program_action
 from appointment_bot.reservation_engine.results import with_client_context
 from appointment_bot.reservation_engine.stages import appointment_stage_result, read_process_stages
@@ -58,15 +60,31 @@ def execute_session_flow(
 ) -> SessionFlowResult:
     selected_program_expediente = program_expediente
     selected_program_plate = program_plate
+    selected_row: dict[str, object] = {}
 
     def remember_selected_program(row: dict[str, object]) -> None:
         nonlocal selected_program_expediente, selected_program_plate
+        selected_row.update(row)
         selected_program_expediente = (
             str(row.get("expediente") or "").strip() or selected_program_expediente
         )
         selected_program_plate = str(row.get("placa") or "").strip() or selected_program_plate
 
     login(page, reservation_settings=reservation_settings)
+    if ports.programs is not None and order_id and program_expediente:
+        booked = ports.programs.booked(order_id, runtime_settings=runtime_settings)
+        previous = booked.get(program_key(program_expediente))
+        if previous:
+            ports.programs.record(order_id, previous, runtime_settings=runtime_settings)
+            return SessionFlowResult(
+                AvailabilityResult(
+                    status="paused",
+                    message="El expediente ya tiene una cita; se excluyó de la búsqueda.",
+                    details={
+                        "error_type": "program_already_booked", "reservation_attempted": False
+                    },
+                ), None, [],
+            )
     page = click_program_action(
         page,
         on_multiple_programs=lambda details: ports.alerts.notify_programs(
@@ -82,6 +100,22 @@ def execute_session_flow(
     )
     stages = read_process_stages(page)
     stage_result = appointment_stage_result(stages)
+    if ports.programs is not None and order_id:
+        assessment = read_program_appointment(page)
+        known = ports.programs.booked(order_id, runtime_settings=runtime_settings)
+        assessment = known.get(program_key(selected_program_expediente), assessment)
+        ports.programs.record(
+            order_id, {**selected_row, **assessment}, runtime_settings=runtime_settings
+        )
+        if assessment["eligibility"] != "eligible":
+            stage_result = AvailabilityResult(
+                status="paused", message=assessment["eligibility_reason"],
+                details={
+                    "error_type": "program_already_booked"
+                    if assessment["eligibility"] == "booked" else "program_eligibility_unverified",
+                    "reservation_attempted": False,
+                },
+            )
     if stage_result is not None:
         stage_result = with_client_context(
             stage_result,

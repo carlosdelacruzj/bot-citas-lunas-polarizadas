@@ -9,7 +9,7 @@
       <div class="modal wide-modal">
         <div class="modal-header">
           <div>
-            <h2 id="edit-order-title">Editar orden</h2>
+            <h2 id="edit-order-title">{{ ordersDomain.editOrderSection() === 'program-resolution' ? 'Definir expedientes' : 'Editar orden' }}</h2>
             <p>{{ ordersDomain.orderLabel(order) }}</p>
           </div>
           <button
@@ -22,6 +22,7 @@
           </button>
         </div>
 
+        @if (ordersDomain.editOrderSection() !== 'program-resolution') {
         <section class="selected-detail" aria-label="Detalle de orden seleccionada">
           <div>
             <span>Estado</span>
@@ -49,6 +50,21 @@
           </div>
         </section>
 
+        @if (programAssessments().length) {
+          <section class="admin-block" aria-label="Revisión de expedientes">
+            <h3>Expedientes revisados</h3>
+            @for (program of programAssessments(); track $index) {
+              <p>
+                <strong>Expediente {{ program.expediente }}</strong>
+                @if (program.placa) { · {{ program.placa }} }
+                @if (program.expediente === order.program_expediente) { · Objetivo de esta orden }
+                <br />{{ program.eligibility_reason }}
+              </p>
+            }
+          </section>
+        }
+
+        }
         <div class="modal-grid">
           @if (ordersDomain.editOrderSection() === 'program-resolution') {
             <app-program-resolution-panel [order]="order" />

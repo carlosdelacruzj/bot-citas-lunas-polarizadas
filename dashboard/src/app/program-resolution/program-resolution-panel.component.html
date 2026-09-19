@@ -1,11 +1,10 @@
 <section class="admin-block action-card program-resolution-card">
   <div class="program-resolution-heading">
     <div>
-      <p class="eyebrow">Decisión interna obligatoria</p>
-      <h3>Resolver trámites pendientes</h3>
+      <p class="eyebrow">Selección de expedientes</p>
+      <h3>¿Qué expedientes vamos a atender?</h3>
       <p class="muted">
-        Solo aparecen filas PENDIENTE. Una placa repetida nunca elige un trámite:
-        resolver uno exige el expediente exacto.
+        Elige el alcance del servicio. La orden seguirá pausada hasta que confirmes tu decisión.
       </p>
     </div>
     <span class="badge warn">Orden pausada</span>
@@ -16,23 +15,30 @@
       state="loading"
       [compact]="true"
       title="Leyendo el listado validado"
-      message="Recuperando los expedientes y la firma observada en el portal."
+      message="Recuperando los expedientes disponibles de esta cuenta."
     />
   } @else if (programResolutionDetails(); as details) {
     <div class="program-resolution-summary">
       <div>
-        <span>Pendientes</span>
+        <span>Expedientes sin cita</span>
         <strong>{{ pendingResolutionPrograms().length }}</strong>
       </div>
       <div>
-        <span>Filas observadas</span>
-        <strong>{{ details.program_count }}</strong>
+        <span>Titular</span>
+        <strong>{{ ordersDomain.selectedOrderDetail()?.applicant_name || order().applicant_name }}</strong>
       </div>
       <div>
-        <span>Condiciones actuales</span>
+        <span>Precio por expediente</span>
         <strong>{{ ordersDomain.servicePriceLabel(order()) }}</strong>
       </div>
     </div>
+
+    @for (program of details.excluded_programs ?? []; track $index) {
+      <p class="muted">
+        Expediente {{ program.expediente }}: excluido.
+        {{ program.eligibility_reason || 'Ya tiene cita reservada.' }}
+      </p>
+    }
 
     <div class="program-resolution-list" aria-label="Trámites pendientes observados">
       @for (program of pendingResolutionPrograms(); track $index) {
@@ -59,7 +65,7 @@
 
     @if (!programResolutionResult()) {
       <fieldset class="program-resolution-options">
-        <legend>1. Alcance acordado</legend>
+        <legend>1. Elige qué atender</legend>
         <label class="choice-card">
           <input
             type="radio"
@@ -68,7 +74,7 @@
             [ngModel]="programResolutionChoice()"
             (ngModelChange)="chooseProgramResolution($event)"
           />
-          <span><strong>Resolver uno</strong><small>Exige elegir el expediente exacto.</small></span>
+          <span><strong>Atender un expediente</strong><small>Selecciona cuál de los expedientes se buscará.</small></span>
         </label>
         <label class="choice-card">
           <input
@@ -78,7 +84,7 @@
             [ngModel]="programResolutionChoice()"
             (ngModelChange)="chooseProgramResolution($event)"
           />
-          <span><strong>Resolver todos</strong><small>Crea una suborden por expediente y archiva el padre.</small></span>
+          <span><strong>Atender todos</strong><small>Crea una orden independiente por expediente y archiva la orden inicial.</small></span>
         </label>
         <label class="choice-card">
           <input
@@ -88,13 +94,13 @@
             [ngModel]="programResolutionChoice()"
             (ngModelChange)="chooseProgramResolution($event)"
           />
-          <span><strong>Mantener pausado</strong><small>Registra la decisión sin activar ni dividir.</small></span>
+          <span><strong>Decidir más adelante</strong><small>Conserva la orden pausada, sin iniciar la búsqueda.</small></span>
         </label>
       </fieldset>
 
       @if (programResolutionChoice() === 'one') {
         <fieldset class="program-resolution-options">
-          <legend>2. Expediente exacto</legend>
+          <legend>2. Selecciona el expediente</legend>
           @for (program of pendingResolutionPrograms(); track $index) {
             <label class="choice-card" [class.disabled]="!program.expediente">
               <input
@@ -116,9 +122,9 @@
 
       @if (programResolutionChoice() === 'all') {
         <fieldset class="program-resolution-options">
-          <legend>2. Condiciones comerciales por expediente</legend>
+          <legend>2. Confirma precio y condiciones</legend>
           <div class="inherited-terms">
-            <strong>Reglas que heredará cada suborden</strong>
+            <strong>Fechas permitidas para todas las órdenes</strong>
             <span>{{ ordersDomain.restrictionDaysLabel(order()) }}</span>
             <span>{{ ordersDomain.restrictionTimingLabel(order()) }}</span>
           </div>
@@ -201,9 +207,18 @@
         }
       }
 
+      @if (programResolutionChoice()) {
       <fieldset class="program-resolution-options">
-        <legend>{{ programResolutionChoice() === 'all' ? '3' : '2' }}. Comunicación con el cliente</legend>
-        <p class="muted">Esta decisión no envía nada. La previsualización solo muestra el texto para una acción posterior separada.</p>
+        <legend>{{ programResolutionChoice() === 'pause' ? '2' : '3' }}. Comunicación con el cliente</legend>
+        <p class="muted">{{ programResolutionChoice() === 'pause' ? 'La orden seguirá pausada y no se enviará ningún mensaje.' : 'Elige si deseas enviar un aviso. Podrás leer el mensaje completo antes de confirmar.' }}</p>
+        @if (programResolutionChoice() !== 'pause') {
+          <label class="choice-card">
+            <input type="radio" name="programCommunicationDecision" value="send_single_confirmation"
+              [ngModel]="programResolutionCommunicationDecision()"
+              (ngModelChange)="chooseCommunicationDecision($event)" />
+            <span><strong>Enviar confirmación conjunta</strong><small>Revisa expedientes, precios y condiciones antes de autorizar un único aviso.</small></span>
+          </label>
+        }
         <label class="choice-card">
           <input type="radio" name="programCommunicationDecision" value="client_already_informed"
             [ngModel]="programResolutionCommunicationDecision()"
@@ -216,34 +231,39 @@
             (ngModelChange)="chooseCommunicationDecision($event)" />
           <span><strong>Mantener sin envío</strong><small>No prepara ni encola una comunicación.</small></span>
         </label>
+        @if (programResolutionChoice() !== 'pause') {
         <label class="choice-card">
           <input type="radio" name="programCommunicationDecision" value="preview_single_confirmation"
             [ngModel]="programResolutionCommunicationDecision()"
             (ngModelChange)="chooseCommunicationDecision($event)" />
-          <span><strong>Previsualizar confirmación única</strong><small>Muestra un solo texto conjunto; no lo envía.</small></span>
+          <span><strong>Registrar y mostrar el mensaje</strong><small>Aplica la decisión y muestra el texto, sin enviarlo.</small></span>
         </label>
+        }
       </fieldset>
+      }
 
+      <div class="resolution-footer">
+      <p class="muted" aria-live="polite">{{ submissionHint() }}</p>
       <button
         type="button"
         class="primary"
         [disabled]="!canSubmitProgramResolution() || uiDomain.actionBusy()"
         (click)="requestProgramResolution()"
       >
-        Revisar y confirmar decisión
+        {{ uiDomain.actionBusy() ? 'Preparando…' : 'Revisar decisión' }}
       </button>
+      </div>
     } @else if (programResolutionResult(); as result) {
       <section class="program-resolution-result" role="status">
-        <strong>Decisión registrada sin envío</strong>
+        <strong>{{ result.communication_queued ? 'Confirmación conjunta encolada' : 'Decisión registrada sin envío' }}</strong>
         <p>
-          Resolución: {{ result.resolution }} · Comunicación:
-          {{ result.communication_decision }}
+          {{ result.resolution === 'all' ? 'Se creó una orden por expediente.' : result.resolution === 'one' ? 'Se seleccionó el expediente acordado.' : 'La orden se mantiene pausada.' }}
         </p>
         @if (result.communication_preview; as preview) {
           <div class="communication-preview">
             <span>Previsualización única</span>
             <pre>{{ preview }}</pre>
-            <small>No se envió ni se encoló. Una acción posterior separada deberá autorizar cualquier comunicación.</small>
+            <small>{{ result.communication_queued ? 'Aviso encolado. Consulta su estado en Mensajes; encolado no significa enviado.' : 'No se envió ni se encoló.' }}</small>
           </div>
         }
         <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cerrar</button>

@@ -121,8 +121,16 @@ un pendiente de forma unica; `all` exige condiciones comerciales confirmadas y
 archiva el padre tras crear todos los hijos en una sola transaccion. La respuesta
 puede incluir `communication_preview`, que nunca equivale a envio.
 
+`preview_only=true` devuelve texto y `preview_token` sin aplicar la resolucion.
+`communication_decision=send_single_confirmation` exige ese token; un cambio en
+condiciones, contacto o plantilla devuelve `409 program_confirmation_stale`.
+`communication_queued=true` confirma encolado atomico, no envio. Las decisiones
+`client_already_informed`, `keep_without_send` y `preview_single_confirmation`
+siguen sin enviar. Pausar nunca permite confirmacion al cliente.
+
 Conflictos de este flujo usan codigos estables, entre ellos
 `program_listing_stale`, `program_target_not_unique`,
+`program_history_unresolved`, `program_eligibility_unverified`,
 `program_resolution_financial_allocation_required` y
 `program_integral_charge_required`. La ruta anterior `split-programs` permanece
 solo como guardia de compatibilidad y responde

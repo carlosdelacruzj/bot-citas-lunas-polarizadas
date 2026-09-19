@@ -45,9 +45,11 @@ def _multiple_pending_order(**overrides) -> dict:
             "error_type": "multiple_pending_resolution_required",
             "listing_signature": "signed-listing",
             "pending_programs": [
-                {"status": "PENDIENTE", "expediente": "EXP-1", "placa": "AAA111"},
+                {"status": "PENDIENTE", "expediente": "EXP-1", "placa": "AAA111",
+                 "eligibility": "eligible"},
                 {"status": "CANCELADO", "expediente": "EXP-X", "placa": "XXX000"},
-                {"status": "pendiente", "expediente": "EXP-2", "placa": "BBB222"},
+                {"status": "pendiente", "expediente": "EXP-2", "placa": "BBB222",
+                 "eligibility": "eligible"},
             ],
         },
     }
@@ -108,10 +110,10 @@ def test_all_resolution_requires_communication_decision_before_confirmation() ->
         "resolution": "all",
         "confirm_same_commercial_terms": True,
     }
-    assert "Telegram no enviara WhatsApp" in telegram.messages[-1][1]
+    assert "requiere revisar el texto y confirmar el envio" in telegram.messages[-1][1]
     callbacks = telegram.messages[-1][2]["inline_keyboard"]
-    assert callbacks[0][0]["callback_data"].endswith(":informed")
-    assert callbacks[1][0]["callback_data"].endswith(":keep")
+    assert callbacks[1][0]["callback_data"].endswith(":informed")
+    assert callbacks[2][0]["callback_data"].endswith(":keep")
 
 
 def test_one_resolution_uses_canonical_exact_program_fields() -> None:

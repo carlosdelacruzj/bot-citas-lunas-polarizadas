@@ -14,11 +14,31 @@ Otros procesos preparan o encolan trabajos durables; no abren emisores paralelos
 Cada job conserva tipo, orden, payload, deduplicacion, intentos, resultado
 tecnico y, cuando aplica, mensaje o paquete asociado.
 
-Detectar, bloquear o resolver varios expedientes pendientes es una accion
-interna y nunca encola WhatsApp. Si el operador solicita una confirmacion
-conjunta, primero recibe el texto exacto como preview; el envio sigue siendo una
-accion separada y expresamente autorizada. Las subordenes no generan avisos de
-registro individuales al crearse por esta resolucion.
+Detectar o bloquear varios expedientes pendientes no encola WhatsApp. Al
+resolver uno o todos, Dashboard y Telegram permiten revisar y autorizar un unico
+aviso conjunto, o registrar que el cliente ya fue informado y omitirlo. Mantener
+pausado no admite envio. La vista previa no modifica ordenes ni encola trabajos.
+Confirmar verifica una huella del listado, condiciones, contacto, texto y revision
+de plantilla; un cambio exige revisar nuevamente. Resolucion y aviso se guardan
+en una sola transaccion. Repetir la misma decision no duplica el trabajo.
+
+El aviso elige `registration_monitoring_started` para un tramite y
+`registration_monitoring_started_multiple` para varios. Ambas plantillas son
+editables por separado en Mensajes. El texto individual conserva placa,
+expediente, servicio, precio y disponibilidad sin encabezados colectivos. El conjunto
+incluye solo expedientes seleccionados, placas, servicio, precio o ausencia de
+cobro por expediente y total. Agrupa restricciones iguales y separa las distintas.
+Con varios expedientes advierte que las citas pueden tener fechas u horas
+distintas. Los expedientes numericos se conservan completos en el texto dirigido
+al cliente. Las subordenes y las revalidaciones posteriores omiten bienvenidas
+individuales; reserva, cobro y postpago siguen siendo independientes por orden.
+
+La seleccion automatica de un unico expediente incluye su identidad, precio y
+condiciones. El contexto de ejecucion conserva `charge_required` desde la orden
+persistida para preparar correctamente avisos con cobro y sin cobro.
+Si todos los candidatos ya tienen cita, el preflight informa al
+operador y no envia la plantilla que pide crear una solicitud pendiente.
+Las citas externas y el historial incierto nunca generan cobro ni aviso de reserva.
 
 ## Estados y evidencia
 

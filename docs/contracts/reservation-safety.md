@@ -34,6 +34,20 @@ worker y dashboard.
   guardar la captura canonica y avisar antes del CAPTCHA o del submit. Si el cupo
   no se reproduce, queda como no accionable y nunca inicia CAPTCHA ni submit.
 
+## Elegibilidad por expediente
+
+Preflight, worker, reapertura, sesion manual de cita y decision administrativa
+excluyen reservas confirmadas por cuenta y expediente, incluidas citas pasadas.
+La comprobacion previa al submit exige objetivo guardado e historial completo.
+Una cita externa detiene la busqueda sin confirmacion comercial ni cobro.
+Una consulta incierta conserva la pausa; nunca equivale a ausencia de cita.
+La identidad historica se completa con el expediente congelado en la propia
+reserva o una coincidencia unica de cuenta, fecha y hora entre reserva y cita
+observada en el portal. Conserva evidencia y fecha de conciliacion. Placa,
+orden actual o unico pendiente no son pruebas suficientes. La ambiguedad exige
+revision; no se reintenta ni se atribuye una reserva externa a nuestro servicio.
+Cancelacion, reprogramacion y botones ocultos quedan fuera de este flujo.
+
 ## Claim de orden
 
 Antes de ejecutar una orden, el worker debe reclamarla con

@@ -97,6 +97,9 @@ export class DashboardUi {
     const result = await (await this.getSweetAlert()).fire({
       title: action.title,
       text: action.message,
+      customClass: {
+        htmlContainer: action.message.includes('\n') ? 'confirmation-message-multiline' : '',
+      },
       icon: action.title.toLowerCase().includes('cerrar') ? 'warning' : 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, continuar',

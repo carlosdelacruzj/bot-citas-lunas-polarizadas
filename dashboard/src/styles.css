@@ -617,3 +617,39 @@ body {
   font-weight: 700;
   color: #475569;
 }
+
+.swal2-popup:has(.confirmation-message-multiline) {
+  width: min(680px, calc(100vw - 24px));
+  border-radius: 16px;
+}
+
+app-orders-view .panel-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.swal2-popup:has(.confirmation-message-multiline) .swal2-title {
+  padding: 20px 24px 0;
+  font-size: 1.35rem;
+}
+
+.swal2-popup:has(.confirmation-message-multiline) .swal2-icon {
+  margin-top: 24px;
+  font-size: 0.65rem;
+}
+
+.confirmation-message-multiline {
+  font-size: 0.95rem !important;
+  line-height: 1.7;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid #d8e2e9;
+  border-radius: 10px;
+  background: #f7fafc;
+  margin: 20px !important;
+  white-space: pre-wrap;
+  text-align: left;
+  overflow-wrap: anywhere;
+}

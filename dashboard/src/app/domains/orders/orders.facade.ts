@@ -513,20 +513,41 @@ export class OrdersFacade {
     return order.preflight_error_type === 'multiple_pending_resolution_required';
   }
 
-  public requestProgramResolution(
+  public async requestProgramResolution(
     payload: ProgramResolutionPayload,
     confirmationLabel: string,
     onSuccess: (response: ProgramResolutionResponse) => void,
-  ): void {
+  ): Promise<void> {
     const order = this.requireSelectedOrder();
-    if (!order) {
+    if (!order || this.ui.actionBusy()) {
       return;
     }
+    const sending = payload.communication_decision === 'send_single_confirmation';
+    let preview: ProgramResolutionResponse | null = null;
+    if (sending) {
+      this.ui.actionBusy.set(true);
+      try {
+        preview = await this.ordersApi.resolveServiceOrderPrograms(order.order_id, {
+          ...payload, preview_only: true,
+        });
+        if (!preview.preview_token || !preview.communication_preview) {
+          throw new Error('No se pudo preparar el mensaje exacto. Actualiza e intenta nuevamente.');
+        }
+      } catch (error) {
+        this.ui.errorMessage.set(error instanceof Error ? error.message : 'No se pudo preparar el aviso.');
+        return;
+      } finally {
+        this.ui.actionBusy.set(false);
+      }
+    }
+    const confirmedPayload = { ...payload, ...(preview ? { preview_token: preview.preview_token } : {}) };
     this.ui.setPendingAction({
-      title: 'Confirmar alcance de trámites',
-      message: `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
+      title: sending ? 'Confirmar alcance y enviar aviso' : 'Confirmar alcance de trámites',
+      message: sending
+        ? `${confirmationLabel}. Se encolará un único WhatsApp con este texto:\n\n${preview!.communication_preview}`
+        : `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
       execute: async () => {
-        const response = await this.ordersApi.resolveServiceOrderPrograms(order.order_id, payload);
+        const response = await this.ordersApi.resolveServiceOrderPrograms(order.order_id, confirmedPayload);
         onSuccess(response);
         return response;
       },

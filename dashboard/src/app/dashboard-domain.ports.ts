@@ -347,6 +347,7 @@ export const DASHBOARD_EDIT_ORDER_MODAL_UI = new InjectionToken<Pick<DashboardUi
 >>('DASHBOARD_EDIT_ORDER_MODAL_UI');
 
 export const DASHBOARD_EDIT_ORDER_MODAL_ORDERS = new InjectionToken<Pick<OrdersFacade,
+  "selectedOrderDetail" |
   "loads" |
   "modalOrder"
   | "orderLabel"

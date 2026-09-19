@@ -202,6 +202,22 @@ def format_order_detail(order: dict[str, Any]) -> str:
             f"{_format_operator_date(order.get('reservation_date'))} "
             f"{order.get('reservation_hour') or 'sin hora'}"
         )
+    details = order.get("preflight_details") or {}
+    assessments = details.get("program_assessments", [])
+    if assessments:
+        lines.extend(["", "EXPEDIENTES REVISADOS"])
+        for row in assessments[:10]:
+            target = " | Objetivo de esta orden" if (
+                str(row.get("expediente")) == str(order.get("program_expediente"))
+            ) else ""
+            lines.append(
+                f"{row.get('expediente') or 'Sin identificar'}{target}: "
+                f"{row.get('eligibility_reason') or 'Requiere revision.'}"
+            )
+        if len(assessments) > 10:
+            lines.append("Listado completo disponible en el dashboard.")
+    if order.get("preflight_message") and order.get("preflight_status") == "failed":
+        lines.append(f"Revision pendiente: {order['preflight_message']}")
     return "\n".join(lines)
 
 

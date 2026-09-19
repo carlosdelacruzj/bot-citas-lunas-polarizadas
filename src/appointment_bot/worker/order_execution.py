@@ -354,6 +354,20 @@ def run_service_order(
     finally:
         reset_opportunity_execution_context(context_token)
     report = with_order_details(report)
+    assessment = (report.details or {}).get("program_assessment")
+    if isinstance(assessment, dict):
+        registry = build_reservation_engine_ports().programs
+        if registry is not None:
+            registry.record(
+                order.order_id,
+                {
+                    **assessment,
+                    "expediente": (report.details or {}).get("program_expediente")
+                    or order.program_expediente,
+                    "placa": (report.details or {}).get("program_plate") or order.program_plate,
+                },
+                runtime_settings=runtime_settings,
+            )
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":
         failures, paused = record_invalid_credential_failure(
             order.order_id, settings=runtime_settings

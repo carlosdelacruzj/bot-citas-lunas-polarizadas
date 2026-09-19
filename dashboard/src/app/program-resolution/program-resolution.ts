@@ -7,9 +7,12 @@ export type ProgramResolutionCommercialMode = '' | 'same_terms_per_program' | 'c
 export type ProgramResolutionCommunicationDecision =
   | 'client_already_informed'
   | 'keep_without_send'
-  | 'preview_single_confirmation';
+  | 'preview_single_confirmation'
+  | 'send_single_confirmation';
 
 export interface ProgramResolutionProgram {
+  eligibility?: 'eligible' | 'booked' | 'unknown' | 'not_pending';
+  eligibility_reason?: string;
   expediente: string | null;
   placa: string | null;
   status: string;
@@ -17,6 +20,7 @@ export interface ProgramResolutionProgram {
 }
 
 export interface ProgramResolutionPreflightDetails {
+  excluded_programs?: ProgramResolutionProgram[];
   error_type: 'multiple_pending_resolution_required';
   applicant_name?: string | null;
   program_count: number;
@@ -56,6 +60,8 @@ export interface ProgramResolutionChildPayload {
 }
 
 export interface ProgramResolutionPayload {
+  preview_only?: boolean;
+  preview_token?: string;
   resolution: Exclude<ProgramResolutionChoice, ''>;
   listing_signature: string;
   program_expediente?: string;
@@ -73,6 +79,8 @@ export interface ProgramResolutionResponse {
   parent_archived: boolean;
   communication_decision: ProgramResolutionCommunicationDecision;
   communication_preview?: string | null;
+  preview_token?: string;
+  communication_queued?: boolean;
   audit_id?: string | null;
   [key: string]: unknown;
 }
@@ -113,7 +121,8 @@ export function pendingResolutionPrograms(
   details: ProgramResolutionPreflightDetails | null,
 ): ProgramResolutionProgram[] {
   return (details?.pending_programs ?? []).filter(
-    (program) => program.status.trim().toLocaleUpperCase('es') === 'PENDIENTE',
+    (program) => program.status.trim().toLocaleUpperCase('es') === 'PENDIENTE'
+      && program.eligibility === 'eligible',
   );
 }
 
@@ -168,6 +177,9 @@ export function buildProgramResolution(
     return { ok: true, payload, confirmationLabel: `resolver solo ${selected.expediente}` };
   }
   if (resolution === 'pause') {
+    if (communicationDecision === 'send_single_confirmation' || communicationDecision === 'preview_single_confirmation') {
+      return { ok: false, error: 'Una orden pausada no prepara ni envía confirmaciones de registro.' };
+    }
     return { ok: true, payload, confirmationLabel: 'mantener la orden pausada' };
   }
   if (!input.commercialMode) {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from decimal import Decimal
 from typing import Any
@@ -9,6 +10,12 @@ from psycopg.types.json import Jsonb
 
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import ServiceOrderCreateResult
+from appointment_bot.core.program_eligibility import (
+    ProgramHistoryUnresolved,
+    program_is_eligible,
+    program_key,
+)
+from appointment_bot.core.registration_messages import program_registration_context
 from appointment_bot.core.service_packages import (
     SERVICE_PACKAGE_INTEGRAL,
     normalize_service_package,
@@ -17,6 +24,10 @@ from appointment_bot.core.service_packages import (
     validate_service_package_terms,
 )
 from appointment_bot.core.statuses import sanitize_details
+from appointment_bot.core.whatsapp_message_templates import (
+    render_whatsapp_template,
+    whatsapp_template_definition,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -29,6 +40,7 @@ from appointment_bot.db.common import (
     init_database,
 )
 from appointment_bot.db.order_contacts import _optional_clean_text
+from appointment_bot.db.program_eligibility import booked_programs_in_connection
 from appointment_bot.db.remote_control_audit import (
     record_remote_control_audit_in_connection,
 )
@@ -36,11 +48,13 @@ from appointment_bot.db.service_order_repository import (
     ServiceOrderPersistenceRequest,
     persist_service_order,
 )
+from appointment_bot.db.whatsapp_automation import enqueue_registration_notice_job
 
 COMMUNICATION_DECISIONS = {
     "client_already_informed",
     "keep_without_send",
     "preview_single_confirmation",
+    "send_single_confirmation",
 }
 
 PROGRAM_LISTING_ROW_FIELDS = (
@@ -55,6 +69,12 @@ PROGRAM_LISTING_ROW_FIELDS = (
     "color",
     "status",
     "cells",
+    "eligibility",
+    "eligibility_reason",
+    "appointment_source",
+    "appointment_status",
+    "appointment_date",
+    "appointment_message",
 )
 
 
@@ -72,6 +92,7 @@ def record_order_program_listing(
     order_id: str,
     details: dict[str, Any],
     *,
+    applicant_name: str | None = None,
     settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
@@ -84,6 +105,13 @@ def record_order_program_listing(
         default=str,
     )
     with _connection(_database_url(settings)) as connection:
+        if applicant_name and applicant_name.strip():
+            connection.execute(
+                "UPDATE applicants a SET full_name = %s, updated_at = %s "
+                "FROM service_orders so "
+                "WHERE so.applicant_id = a.applicant_id AND so.order_id = %s",
+                (" ".join(applicant_name.split()), _now(), order_id),
+            )
         previous = connection.execute(
             "SELECT program_listing FROM order_state WHERE order_id = %s FOR UPDATE",
             (order_id,),
@@ -104,6 +132,19 @@ def record_order_program_listing(
             "details": listing,
             "updated_at": _now(),
         }
+        booked = {
+            program_key(row.get("expediente")): row
+            for row in (previous_payload or {}).get("booked_programs", [])
+            if program_key(row.get("expediente"))
+        }
+        for row in listing.get("rows", []):
+            if row.get("eligibility") == "booked" and program_key(row.get("expediente")):
+                booked[program_key(row["expediente"])] = dict(row)
+        payload["booked_programs"] = list(booked.values())
+        if isinstance(previous_payload, dict) and previous_payload.get(
+            "registration_notice_suppressed"
+        ):
+            payload["registration_notice_suppressed"] = True
         if not changed and isinstance(previous_payload, dict):
             resolution = previous_payload.get("resolution")
             if isinstance(resolution, dict):
@@ -160,6 +201,8 @@ def resolve_service_order_programs(
     program_plate: str | None = None,
     children: list[dict[str, Any]] | None = None,
     confirm_same_commercial_terms: bool = False,
+    preview_only: bool = False,
+    preview_token: str | None = None,
     settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
@@ -170,9 +213,11 @@ def resolve_service_order_programs(
     if communication_decision not in COMMUNICATION_DECISIONS:
         raise ValueError(
             "communication_decision must be client_already_informed, "
-            "keep_without_send or preview_single_confirmation."
+            "keep_without_send, preview_single_confirmation or send_single_confirmation."
         )
-    if resolution == "pause" and communication_decision == "preview_single_confirmation":
+    if resolution == "pause" and communication_decision in {
+        "preview_single_confirmation", "send_single_confirmation"
+    }:
         raise ValueError("pause cannot prepare a customer confirmation preview.")
     if not listing_signature:
         raise ValueError("listing_signature is required.")
@@ -187,6 +232,8 @@ def resolve_service_order_programs(
             SELECT so.*, pa.username, pa.document_type, pa.password,
                    COALESCE(NULLIF(a.full_name, ''), a.document_number) AS applicant_name,
                    os.program_listing, os.preflight_status, os.preflight_details,
+                   os.preflight_cycle, wc.phone AS contact_phone,
+                   wc.username AS contact_username,
                    (
                        so.lease_owner IS NOT NULL
                        AND so.lease_expires_at > CURRENT_TIMESTAMP
@@ -195,6 +242,9 @@ def resolve_service_order_programs(
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
             JOIN order_state os ON os.order_id = so.order_id
+            LEFT JOIN applicant_contacts ac
+                ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
+            LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
             WHERE so.order_id = %s
             FOR UPDATE OF so, os
             """,
@@ -214,6 +264,26 @@ def resolve_service_order_programs(
                 "El listado de tramites cambio; refresca y confirma nuevamente.",
             )
         pending_rows = _pending_program_rows(listing["details"])
+        if resolution != "pause":
+            rows = listing["details"].get("rows", [])
+            if any(
+                program_key(row.get("status")) == "pendiente"
+                and row.get("eligibility") not in {"eligible", "booked"}
+                for row in rows
+            ):
+                raise ProgramResolutionConflict(
+                    "program_eligibility_unverified",
+                    "Revalida los expedientes: falta comprobar si ya tienen cita.",
+                )
+            try:
+                booked = booked_programs_in_connection(connection, order_id)
+            except ProgramHistoryUnresolved as exc:
+                raise ProgramResolutionConflict("program_history_unresolved", str(exc)) from exc
+            if any(program_key(row.get("expediente")) in booked for row in pending_rows):
+                raise ProgramResolutionConflict(
+                    "program_listing_stale",
+                    "Hay una reserva previa; revalida el listado antes de continuar.",
+                )
         if len(pending_rows) < 2 and resolution in {"all", "pause"}:
             raise ProgramResolutionConflict(
                 "program_resolution_not_required",
@@ -288,7 +358,63 @@ def resolve_service_order_programs(
                 "La orden tiene un intento de reserva activo o ambiguo.",
             )
 
-        preview_rows: list[dict[str, Any]] = []
+        selected = None
+        specs = {}
+        message = None
+        template = None
+        token = None
+        if resolution == "one":
+            selected = _select_pending_program(
+                pending_rows, program_expediente=program_expediente, program_plate=program_plate
+            )
+            preview_programs = [selected]
+            specs = _commercial_specs_for_pending_rows(
+                locked, preview_programs, children=None, confirm_same=True
+            )
+        elif resolution == "all":
+            _ensure_program_split_has_no_financial_history(connection, locked)
+            preview_programs = pending_rows
+            specs = _commercial_specs_for_pending_rows(
+                locked, pending_rows, children=children,
+                confirm_same=confirm_same_commercial_terms,
+            )
+        if communication_decision in {"preview_single_confirmation", "send_single_confirmation"}:
+            if communication_decision == "send_single_confirmation" and not (
+                locked["contact_phone"] or locked["contact_username"]
+            ):
+                raise ValueError("Completa el contacto WhatsApp antes de confirmar el envio.")
+            template = connection.execute(
+                "SELECT template_key, message_template, revision, enabled "
+                "FROM whatsapp_message_templates WHERE template_key = %s FOR SHARE",
+                ("registration_monitoring_started_multiple" if len(preview_programs) > 1
+                 else "registration_monitoring_started",),
+            ).fetchone()
+            if not template or not template["enabled"]:
+                raise ValueError("La plantilla de registro no esta disponible.")
+            message = render_whatsapp_template(
+                whatsapp_template_definition(template["template_key"]),
+                template["message_template"],
+                program_registration_context(locked["applicant_name"], preview_programs, specs),
+                preserve_variables=frozenset({"tramites", "expediente", "placa"}),
+            )
+            token = hashlib.sha256(json.dumps(
+                [order_id, listing_signature, requested_fingerprint, specs,
+                 locked["contact_phone"], locked["contact_username"], message,
+                 template["revision"]], sort_keys=True, default=str,
+            ).encode()).hexdigest()
+        if preview_only:
+            return {
+                "status": "preview", "resolution": resolution,
+                "parent_order_id": order_id, "parent_archived": False,
+                "communication_decision": communication_decision,
+                "communication_preview": message, "preview_token": token,
+            }
+        if communication_decision == "send_single_confirmation" and preview_token != token:
+            raise ProgramResolutionConflict(
+                "program_confirmation_stale",
+                "Revisa nuevamente el mensaje: cambiaron los datos o falta la vista previa.",
+            )
+
         result: dict[str, Any]
         if resolution == "pause":
             connection.execute(
@@ -303,11 +429,6 @@ def resolve_service_order_programs(
                 "preflight_scheduled": False,
             }
         elif resolution == "one":
-            selected = _select_pending_program(
-                pending_rows,
-                program_expediente=program_expediente,
-                program_plate=program_plate,
-            )
             connection.execute(
                 """
                 UPDATE service_orders
@@ -329,15 +450,7 @@ def resolve_service_order_programs(
                 "selected_program": selected,
                 "preflight_scheduled": True,
             }
-            preview_rows = [selected]
         else:
-            _ensure_program_split_has_no_financial_history(connection, locked)
-            specs = _commercial_specs_for_pending_rows(
-                locked,
-                pending_rows,
-                children=children,
-                confirm_same=confirm_same_commercial_terms,
-            )
             created = _create_program_children_in_connection(
                 connection,
                 parent=locked,
@@ -365,11 +478,28 @@ def resolve_service_order_programs(
                 ],
                 "preflight_scheduled": False,
             }
-            preview_rows = pending_rows
-        if communication_decision == "preview_single_confirmation":
-            result["communication_preview"] = _program_resolution_preview(
-                locked["applicant_name"], preview_rows
+        if message is not None:
+            result["communication_preview"] = message
+        if communication_decision == "send_single_confirmation":
+            queued = enqueue_registration_notice_job(
+                order_id=order_id,
+                preflight_cycle=max(int(locked["preflight_cycle"] or 1), 1),
+                notice_type="monitoring_started",
+                recipient_phone=locked["contact_phone"],
+                recipient_username=locked["contact_username"],
+                message_text=message,
+                template_key=template["template_key"],
+                template_revision=template["revision"],
+                deduplication_scope=f"program-resolution-{listing.get('revision') or 1}",
+                settings=settings, _connection_override=connection,
             )
+            if not queued:
+                raise ProgramResolutionConflict(
+                    "program_confirmation_exists",
+                    "Ya existe un aviso para esta decision; revisa su estado antes de continuar.",
+                )
+            result["communication_queued"] = queued
+            result["message"] = "Resolucion registrada; confirmacion conjunta encolada."
         result["communication_decision"] = communication_decision
         audit_id = record_remote_control_audit_in_connection(
             connection,
@@ -390,6 +520,8 @@ def resolve_service_order_programs(
             "decided_at": now,
             "result": result,
         }
+        if resolution != "pause":
+            listing["registration_notice_suppressed"] = True
         listing["resolution"] = resolution_payload
         listing["updated_at"] = now
         connection.execute(
@@ -413,7 +545,7 @@ def _pending_program_rows(details: dict[str, Any]) -> list[dict[str, Any]]:
         dict(row)
         for row in rows
         if isinstance(row, dict)
-        and str(row.get("status") or "").strip().casefold() == "pendiente"
+        and program_is_eligible(row)
     ]
 
 
@@ -657,28 +789,12 @@ def _create_program_children_in_connection(
                         "source": "program_resolution_all",
                     }
                 ),
-                Jsonb(listing),
+                Jsonb({**listing, "registration_notice_suppressed": True}),
                 result.order_id,
             ),
         )
         created.append(result)
     return created
-
-
-def _program_resolution_preview(
-    applicant_name: object,
-    pending_rows: list[dict[str, Any]],
-) -> str:
-    lines = [
-        f"Hola, {str(applicant_name or 'cliente').strip()}.",
-        "Confirmamos que atenderemos los siguientes tramites:",
-    ]
-    for row in pending_rows:
-        expediente = str(row.get("expediente") or "sin expediente").strip()
-        plate = str(row.get("placa") or "sin placa").strip()
-        lines.append(f"- Expediente {expediente} | Placa {plate}")
-    lines.append("Este texto es solo una previsualizacion y aun no fue enviado.")
-    return "\n".join(lines)
 
 
 def split_service_order_programs(

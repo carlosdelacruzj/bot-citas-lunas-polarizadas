@@ -36,6 +36,7 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site,
 )
 from appointment_bot.reservation_engine.ports import OpportunityControl, ReservationEnginePorts
+from appointment_bot.reservation_engine.program_review import read_program_appointment
 from appointment_bot.reservation_engine.programs import click_program_action
 from appointment_bot.reservation_engine.reservation_flow import (
     capture_blocked_captcha_evidence,
@@ -1196,6 +1197,19 @@ def reload_and_recheck_appointment_availability(
             program_expediente=program_expediente,
             program_plate=program_plate,
         )
+        assessment = read_program_appointment(page)
+        if assessment["eligibility"] != "eligible":
+            return AvailabilityResult(
+                status="paused", message=assessment["eligibility_reason"],
+                details={
+                    "error_type": "program_already_booked"
+                    if assessment["eligibility"] == "booked" else "program_eligibility_unverified",
+                    "program_assessment": assessment,
+                    "program_expediente": program_expediente,
+                    "program_plate": program_plate,
+                    "reservation_attempted": False,
+                },
+            )
         page = open_appointment_panel(page, cancel_event=cancel_event)
         page = select_available_site(
             page,

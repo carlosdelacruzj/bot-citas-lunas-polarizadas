@@ -9,12 +9,15 @@ from dataclasses import dataclass, replace
 from threading import Lock
 from typing import Any, Protocol
 
+from appointment_bot.core.program_eligibility import program_is_eligible
+
 logger = logging.getLogger(__name__)
 
 ERROR_TYPE = "multiple_pending_resolution_required"
 COMMUNICATION_DECISIONS = {
     "client_already_informed",
     "keep_without_send",
+    "send_single_confirmation",
 }
 
 
@@ -65,7 +68,7 @@ def pending_programs(details: dict[str, Any]) -> list[dict[str, Any]]:
         program
         for program in programs
         if isinstance(program, dict)
-        and str(program.get("status") or "").strip().casefold() == "pendiente"
+        and program_is_eligible(program)
     ]
 
 
@@ -89,14 +92,23 @@ def build_panel(order_id: str, order: dict[str, Any]) -> tuple[str, dict[str, An
         )
     programs = pending_programs(details)
     listing_token = _listing_token(details)
+    applicant_name = (
+        order.get("applicant_name") or details.get("applicant_name") or "Nombre no disponible"
+    )
     lines = [
         "RESOLVER PROGRAMAS PENDIENTES",
         "",
+        f"Cliente: {applicant_name}",
         f"Orden: {order_id}",
         "La orden seguira pausada hasta confirmar una decision.",
         "",
     ]
     keyboard: list[list[dict[str, str]]] = []
+    for program in details.get("excluded_programs", []):
+        lines.append(
+            f"EXCLUIDO | Expediente {_expediente(program)} | "
+            f"{program.get('eligibility_reason') or 'Ya tiene cita.'}"
+        )
     for index, program in enumerate(programs):
         expediente = _expediente(program)
         if not expediente:
@@ -199,6 +211,8 @@ def with_communication_decision(
 ) -> dict[str, Any]:
     if decision not in COMMUNICATION_DECISIONS:
         raise ProgramResolutionError("La decision de comunicacion no es valida.")
+    if payload.get("resolution") == "pause" and decision == "send_single_confirmation":
+        raise ProgramResolutionError("Mantener pausado no permite enviar una confirmacion.")
     updated = dict(payload)
     updated["communication_decision"] = decision
     return updated
@@ -274,8 +288,11 @@ def request_resolution(
         chat_id,
         "DECISION DE COMUNICACION\n\n"
         f"Accion: {draft.description}.\n"
-        "Telegram no enviara WhatsApp en ningun caso.",
+        "El aviso conjunto requiere revisar el texto y confirmar el envio.",
         reply_markup={"inline_keyboard": [
+            *([[{"text": "Revisar y enviar aviso conjunto",
+                 "callback_data": f"pr:{operation_id}:send"}]]
+              if draft.payload.get("resolution") != "pause" else []),
             [{"text": "Cliente ya informado", "callback_data": f"pr:{operation_id}:informed"}],
             [{"text": "Mantener sin enviar", "callback_data": f"pr:{operation_id}:keep"}],
             [{"text": "Cancelar", "callback_data": f"oc:{operation_id}:no"}],
@@ -290,10 +307,14 @@ def set_communication_decision(
     telegram: TelegramPort,
     pending_changes: dict[str, Any],
     lock: Lock,
+    *,
+    admin_api: AdminApiPort | None = None,
+    actor: str = "",
 ) -> None:
     decision = {
         "informed": "client_already_informed",
         "keep": "keep_without_send",
+        "send": "send_single_confirmation",
     }.get(action, "")
     with lock:
         change = pending_changes.get(operation_id)
@@ -317,6 +338,30 @@ def set_communication_decision(
     if change is None:
         telegram.send_message(chat_id, "La decision ya vencio. Actualiza el cliente.")
         return
+    if decision == "send_single_confirmation":
+        try:
+            if admin_api is None or not actor:
+                raise RuntimeError("No se puede preparar la confirmacion sin Admin API.")
+            preview = admin_api.resolve_service_order_programs(
+                change.order_id, {**change.updated, "preview_only": True}, actor=actor,
+            )
+            if not preview.get("preview_token") or not preview.get("communication_preview"):
+                raise RuntimeError("No se obtuvo una vista previa verificable.")
+            text = str(preview["communication_preview"])
+            if len(text) > 3400:
+                raise RuntimeError("El aviso es extenso; revisalo completo desde el Dashboard.")
+            with lock:
+                if pending_changes.get(operation_id) is not change:
+                    raise RuntimeError("La decision cambio; actualiza el cliente.")
+                change = replace(
+                    change,
+                    updated={**change.updated, "preview_token": preview["preview_token"]},
+                    original={**change.original, "communication_preview": text},
+                )
+                pending_changes[operation_id] = change
+        except RuntimeError as exc:
+            telegram.send_message(chat_id, f"No prepare el envio. {exc}")
+            return
     send_confirmation(change, telegram)
 
 
@@ -324,6 +369,7 @@ def send_confirmation(change: Any, telegram: TelegramPort) -> None:
     decision_label = {
         "client_already_informed": "cliente ya informado",
         "keep_without_send": "mantener sin enviar",
+        "send_single_confirmation": "enviar un unico aviso conjunto",
     }.get(str(change.updated.get("communication_decision") or ""), "no definida")
     telegram.send_message(
         change.chat_id,
@@ -331,7 +377,12 @@ def send_confirmation(change: Any, telegram: TelegramPort) -> None:
         f"Orden: {change.order_id}\n"
         f"Accion: {change.original['description']}\n"
         f"Comunicacion: {decision_label}.\n\n"
-        "No se enviara WhatsApp. La confirmacion vence en 2 minutos.",
+        + (
+            "Se encolara este WhatsApp al confirmar:\n\n"
+            + str(change.original.get("communication_preview") or "")
+            if change.updated.get("communication_decision") == "send_single_confirmation"
+            else "No se enviara WhatsApp."
+        ) + "\n\nLa confirmacion vence en 2 minutos.",
         reply_markup={"inline_keyboard": [[
             {"text": "Confirmar", "callback_data": f"oc:{change.operation_id}:yes"},
             {"text": "Cancelar", "callback_data": f"oc:{change.operation_id}:no"},
@@ -389,9 +440,10 @@ def execute_resolution(
         "Resolucion aplicada.\n"
         f"Solicitud: {change.operation_id[:8]}\n"
         f"Orden: {change.order_id}\n"
-        "WhatsApp: no enviado desde Telegram."
+        + ("WhatsApp: confirmacion conjunta encolada."
+           if result.get("communication_queued") else "WhatsApp: no enviado desde Telegram.")
     )
-    if preview:
+    if preview and not result.get("communication_queued"):
         text += f"\n\nVISTA PREVIA - NO ENVIADA\n{display_text(preview, 1800)}"
     telegram.send_message(
         change.chat_id,

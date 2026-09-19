@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from uuid import uuid4
 
 from psycopg import Connection
 from psycopg.types.json import Jsonb
@@ -104,7 +105,10 @@ def persist_service_order(
             )
             VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT(document_number) DO UPDATE SET
-                full_name = COALESCE(NULLIF(excluded.full_name, ''), applicants.full_name),
+                full_name = COALESCE(
+                    NULLIF(NULLIF(excluded.full_name, ''), excluded.document_number),
+                    applicants.full_name
+                ),
                 updated_at = excluded.updated_at
             """,
             (applicant_id, document_number, applicant_name or document_number, now, now),
@@ -153,21 +157,34 @@ def persist_service_order(
             ).fetchone()["portal_account_id"]
         )
         if not program_key:
-            existing_order = connection.execute(
+            active_orders = connection.execute(
                 """
-                SELECT order_id
+                SELECT order_id, program_expediente, program_plate, status
                 FROM service_orders
                 WHERE applicant_id = %s
                   AND portal_account_id = %s
-                  AND program_expediente IS NULL
-                  AND program_plate IS NULL
-                ORDER BY created_at
-                LIMIT 1
+                  AND status IN ('ready', 'paused', 'reserved_payment_pending')
+                ORDER BY created_at DESC
+                FOR UPDATE
                 """,
                 (applicant_id, portal_account_id),
-            ).fetchone()
-            if existing_order is not None:
-                order_id = str(existing_order["order_id"])
+            ).fetchall()
+            if active_orders:
+                if len(active_orders) != 1 or any(
+                    row["program_expediente"] or row["program_plate"]
+                    or row["status"] == "reserved_payment_pending"
+                    for row in active_orders
+                ):
+                    raise ValueError(
+                        "La cuenta ya tiene tramites en curso. Abre sus ordenes existentes "
+                        "antes de registrar otra solicitud."
+                    )
+                order_id = str(active_orders[0]["order_id"])
+            elif connection.execute(
+                "SELECT 1 FROM service_orders WHERE order_id = %s",
+                (base_order_id,),
+            ).fetchone() is not None:
+                order_id = _id_from_value("order", uuid4().hex[:16])
         if parent_order_id is not None:
             parent_exists = connection.execute(
                 "SELECT 1 FROM service_orders WHERE order_id = %s",
@@ -180,7 +197,8 @@ def persist_service_order(
                     raise ValueError(f"No existe la orden padre: {parent_order_id}")
         existing_commercial_terms = connection.execute(
             """
-            SELECT service_package, service_type, reservation_price, charge_required
+            SELECT service_package, service_type, reservation_price, charge_required,
+                   status, parent_order_id
             FROM service_orders
             WHERE order_id = %s
             FOR UPDATE
@@ -188,6 +206,14 @@ def persist_service_order(
             (order_id,),
         ).fetchone()
         if existing_commercial_terms is not None:
+            if program_key and (
+                existing_commercial_terms["status"] in ("paid", "archived")
+                or existing_commercial_terms["parent_order_id"] != parent_order_id
+            ):
+                raise ValueError(
+                    "El expediente ya pertenece a otro servicio o a uno terminado. "
+                    "Revisa su historial antes de registrarlo nuevamente."
+                )
             _validate_integral_commercial_correction(
                 connection,
                 order_id=order_id,

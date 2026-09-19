@@ -58,6 +58,9 @@ export class ProgramResolutionPanelComponent {
 
   protected chooseProgramResolution(value: ProgramResolutionChoice): void {
     this.programResolutionChoice.set(value);
+    this.programResolutionCommunicationDecision.set(
+      value === 'pause' ? 'keep_without_send' : 'send_single_confirmation',
+    );
     this.programResolutionSelectedExpediente.set('');
     this.programResolutionCommercialMode.set('');
     this.programResolutionSameTermsConfirmed.set(false);
@@ -130,6 +133,11 @@ export class ProgramResolutionPanelComponent {
         chargeRequired: this.order().charge_required,
       }
     );
+  }
+
+  protected submissionHint(): string {
+    const result = buildProgramResolution(this.programResolutionDraftInput());
+    return result.ok ? "Todo listo. Revisa tu decisión antes de aplicarla." : result.error;
   }
 
   protected canSubmitProgramResolution(): boolean {
