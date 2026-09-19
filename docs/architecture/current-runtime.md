@@ -48,7 +48,9 @@ No ejecuta el navegador de reservas.
 Consume ordenes y comandos desde PostgreSQL, mantiene un heartbeat dedicado del
 lease global y un heartbeat separado por claim de orden, y abre una sesion
 Playwright nueva por cliente. Es propietario del monitoreo, seleccion, CAPTCHA
-de la reserva, submit y confirmacion.
+de la reserva, submit y confirmacion. El observador rota cuentas validadas mediante
+`worker/observer_rotation.py`; turnos y descansos persisten en `db/observer_rotation.py`.
+Cierra y libera su cuenta antes de activar la cola de clientes compatibles.
 
 ### Telegram
 

@@ -18,7 +18,7 @@ exterior.
 Estado general:
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa, con locks, CI reproducible y cobertura critica por riesgo;
-- esquema PostgreSQL requerido por el codigo: `v75`; [registro secuencial](architecture/database-migrations.md) con 61 pasos desde `v14`;
+- esquema PostgreSQL requerido por el codigo: `v76`; [registro secuencial](architecture/database-migrations.md) con 62 pasos desde `v14`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y sesiones manuales, con cierre visible hasta terminar Chromium;
 - intentos inciertos admiten consulta manual protegida del expediente, sin nuevos envios ni conciliacion automatica;
@@ -73,8 +73,8 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
    expediente. Uno elegible se guarda automaticamente; varios requieren decidir
    uno o todos. Citas existentes e historial incierto bloquean nuevas reservas.
    Dashboard muestra motivos; avisos incluyen solo el alcance seleccionado.
-4. El worker monitorea dentro de los limites; seleccionar el expediente habitual no genera aviso Telegram.
-5. Cada cupo se contrasta con las reglas exactas de la orden; cupos en `0` antes del envio bloquean el clic como `unavailable`, sin backoff tecnico.
+4. El observador rota cuentas validadas con sesion aislada, descanso por cuenta de 180 segundos y cadencia global de al menos 30 segundos; sus listados activan verificaciones propias de clientes compatibles.
+5. Cada revision filtra localmente las fechas y consulta hasta dos compatibles y dos horarios en total; admite un unico envio. Cupos en `0` conocidos se descartan sin repetir solicitudes ni backoff tecnico.
 6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica disparan el aviso antes del CAPTCHA o del boton de reserva. Avisos y evidencia se deduplican por dia de deteccion en Lima, sin bloquear reapariciones en dias posteriores.
 7. Una seleccion valida archiva su screenshot canonico; antes de resolver o
    enviar exige formulario, tokens, honeypot y firma estructural conocidos. Si
@@ -83,12 +83,12 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 9. Pago y comunicaciones siguen estados independientes.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
-Una incompatibilidad de fecha es `partial / blocked_by_order_rule`; no activa
-backoff general. Si la seleccion incompatible quedo sincronizada, posee captura
-canonica previa y no inicio reserva, puede activar auxiliares compatibles; un
-`partial` generico conserva el fallback secuencial. Un submit ambiguo nunca se
-reintenta automaticamente. El rechazo explicito por demasiadas solicitudes
-resuelve el intento y aplica una espera de 15 minutos solo a esa orden. "Operacion no disponible temporalmente. Intente mas tarde." aplica al menos 3 minutos a toda la cuenta antes de una consulta nueva; los demas resultados ambiguos siguen bloqueados.
+Una incompatibilidad es `partial / blocked_by_order_rule`, sin backoff general.
+Sin fetch alternativo, reload, reobservacion tras submit ni segundo envio por CAPTCHA rechazado. Cada revision
+nueva vuelve a las fechas mas proximas; no recorre todo el calendario por partes.
+Un submit ambiguo nunca se reintenta. Demasiadas solicitudes aplican 15 minutos a
+la orden; indisponibilidad temporal aplica al menos 3 minutos a toda la cuenta.
+El observador persiste descansos y detiene globalmente la rotacion ante defensas.
 
 ## Servicios y precios
 

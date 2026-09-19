@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-import random
 import threading
-import time
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -15,6 +13,7 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.appointment_budget import bounded_appointment_review
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
@@ -66,6 +65,7 @@ def run_observer_with_report(
     evidence_settings: EvidenceSettings,
     cancel_event: threading.Event | None = None,
     capture_captcha_samples: bool = True,
+    rotation_mode: bool = False,
     should_continue_captcha_sampling: Callable[[], bool] | None = None,
     on_check: Callable[[AvailabilityResult, Path | None, int, int | None], None] | None = None,
     ports: ReservationEnginePorts,
@@ -149,6 +149,10 @@ def run_observer_with_report(
             },
             screenshot_path=str(error_screenshot_path) if error_screenshot_path else None,
         )
+    if rotation_mode:
+        report = replace(report, details={**(report.details or {}),
+                         "observer_rotation": True,
+                         "observer_account": reservation_settings.safe_username})
     if recorder is not None:
         video_path = recorder.finalize(report)
         if video_path is not None:
@@ -165,6 +169,7 @@ def run_observer_with_report(
     )
 
 
+@bounded_appointment_review(observer=True)
 def _monitor_observer(
     page,
     cancel_event: threading.Event | None = None,
@@ -180,7 +185,6 @@ def _monitor_observer(
     captcha_authority: CaptchaAuthority,
     alert_sink: AlertSink,
 ) -> tuple[AvailabilityResult, Path | None]:
-    deadline = time.monotonic() + reservation_settings.monitor_window_seconds
     attempt = 1
     screenshot_path = None
 
@@ -206,20 +210,11 @@ def _monitor_observer(
             include_person=False,
             timeout=reservation_settings.read_timeout_seconds * 1_000,
         )
-        if result.status == "unavailable":
-            reload_result = _reload_and_recheck_observer_availability(
-                page,
-                cancel_event=cancel_event,
-                runtime_settings=runtime_settings,
-                reservation_settings=reservation_settings,
-            )
-            if reload_result is not None:
-                result = reload_result
         if result.status == "unknown":
             return result, screenshot_path
 
         if result.status == "available" or (
-            result.status == "partial" and has_available_date_options(page)
+            result.status in {"partial", "unavailable"} and has_available_date_options(page)
         ):
             # El observador puede seleccionar fecha/hora para comprobar
             # cupos, pero esta funcion no importa captcha ni contiene accion de reserva.
@@ -229,29 +224,7 @@ def _monitor_observer(
                 include_person=False,
                 timeout=reservation_settings.postback_timeout_seconds * 1_000,
             )
-            if result.status == "available" and capture_captcha_samples:
-                captcha_paths, shadow_event_ids = _collect_observer_captcha_samples(
-                    page,
-                    cancel_event,
-                    run_id=run_id,
-                    availability_details=dict(result.details or {}),
-                    should_continue=should_continue_captcha_sampling,
-                    captcha_authority=captcha_authority,
-                    alert_sink=alert_sink,
-                    reservation_settings=reservation_settings,
-                    captcha_settings=captcha_settings,
-                    evidence_settings=evidence_settings,
-                )
-                if captcha_paths:
-                    details = dict(result.details or {})
-                    details["observer_captcha_image_paths"] = [str(path) for path in captcha_paths]
-                    details["observer_captcha_shadow_event_ids"] = shadow_event_ids
-                    details["observer_captcha_shadow_enqueued"] = len(shadow_event_ids)
-                    result = AvailabilityResult(
-                        status=result.status,
-                        message=result.message,
-                        details=details,
-                    )
+            if result.status == "available":
                 screenshot_path = _save_available_observer_screenshot(
                     page, evidence_settings=evidence_settings
                 )
@@ -267,40 +240,9 @@ def _monitor_observer(
 
         if result.status not in {"unavailable", "partial"}:
             return result, screenshot_path
-        if (
-            reservation_settings.monitor_window_seconds <= 0
-            or attempt >= reservation_settings.monitor_max_attempts
-        ):
-            if on_check is not None:
-                on_check(result, screenshot_path, attempt, None)
-            return result, screenshot_path
-
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            return result, screenshot_path
-        wait_seconds = min(
-            random.randint(
-                reservation_settings.monitor_interval_min_seconds,
-                reservation_settings.monitor_interval_max_seconds,
-            ),
-            max(1, int(remaining)),
-        )
         if on_check is not None:
-            on_check(result, screenshot_path, attempt, wait_seconds)
-        if cancel_event is not None:
-            if cancel_event.wait(wait_seconds):
-                return (
-                    AvailabilityResult(
-                        status="paused",
-                        message="La revision del observador fue interrumpida.",
-                    ),
-                    screenshot_path,
-                )
-        else:
-            page.wait_for_timeout(wait_seconds * 1_000)
-        if time.monotonic() >= deadline:
-            return result, screenshot_path
-        attempt += 1
+            on_check(result, screenshot_path, attempt, None)
+        return result, screenshot_path
 
 
 def _reload_and_recheck_observer_availability(

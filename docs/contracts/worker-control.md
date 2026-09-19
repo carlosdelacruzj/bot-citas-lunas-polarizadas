@@ -121,3 +121,29 @@ un cambio del formato interno no convierte una seleccion normal en una alerta.
   avisa que la orden ya puede abrirse con medicion para continuar manualmente;
 - no ejecutar controles por SQL, Telegram o PowerShell fuera de Admin API;
 - no asumir salud funcional por PID o HTTP aislado.
+
+## Observador rotativo
+
+Existe un unico observador logico. Elige la cuenta validada menos recientemente
+usada entre todas las cuentas registradas elegibles, incluso sin orden `ready`.
+Exige validacion posterior al cambio de credenciales y ausencia de fallos de acceso,
+leases, intentos activos/inciertos, preflight, revision activa y descansos pendientes.
+La admision se vuelve a comprobar bajo el bloqueo de cuenta. Cada turno abre una
+sesion aislada, verifica la sede exigida y cierra el navegador antes de liberar el
+lease; perderlo cancela la observacion.
+
+Cada observacion consulta como maximo una fecha y un horario, sin submit ni
+muestreo repetido de CAPTCHA. Las fechas listadas permiten seleccionar clientes
+compatibles sin presentar esos listados como cupos verificados. Cada cliente usa
+sus credenciales y el presupuesto de reserva; se conserva el limite de candidatos
+y tiempo de la cola. Las alertas requieren disponibilidad materializada y captura.
+
+La cadencia global conserva el intervalo configurado, con piso de 30 segundos;
+cada cuenta descansa al menos 180 segundos. Ambos tiempos quedan en PostgreSQL
+antes de abrir y despues de cerrar la sesion. No se reinician al cambiar cuenta
+ni al reiniciar el proceso. Si no hay cuenta elegible se espera, sin usar una fija.
+Una defensa detiene globalmente la rotacion: 900 segundos por demasiadas solicitudes,
+180 por indisponibilidad temporal; otras defensas/fallos esperan al menos 180 o el
+maximo de recuperacion configurado. La cuenta que falla queda excluida hasta nueva
+validacion, salvo fallos de red. Cambios de contrato siguen pausando el worker.
+No se rota para continuar solicitudes durante el bloqueo del portal.

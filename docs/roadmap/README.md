@@ -56,6 +56,9 @@ rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
 
 Observar o conciliar sin crear envios de prueba:
 
+- aceptar naturalmente el presupuesto 2 fechas / 2 horarios / 1 envio y la rotacion
+  de cuentas: revisar contadores, restricciones, descansos y exclusiones sin forzar cupos;
+
 - primer aviso conjunto natural tras resolver expedientes: texto revisado,
   precios, restricciones y confirmacion tecnica de un unico trabajo;
 - primer integral nuevo posterior a `v74`: abono, tasa, saldo, mensaje y resumen;

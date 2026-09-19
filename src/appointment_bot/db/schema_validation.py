@@ -6,6 +6,8 @@ from psycopg import Connection
 def validate_current_schema(connection: Connection, schema_version: int) -> None:
     required_tables = {
         "schema_version",
+        "observer_account_state",
+        "observer_rotation_control",
         "applicants",
         "portal_accounts",
         "whatsapp_contacts",
@@ -56,6 +58,10 @@ def validate_current_schema(connection: Connection, schema_version: int) -> None
     }
     required_columns = {
         ("schema_version", "version"),
+        ("observer_account_state", "next_allowed_at"),
+        ("observer_account_state", "blocked_until"),
+        ("observer_account_state", "blocked_at"),
+        ("observer_rotation_control", "next_allowed_at"),
         ("whatsapp_contacts", "contact_source"),
         ("whatsapp_contacts", "username"),
         ("portal_accounts", "applicant_id"),

@@ -40,6 +40,7 @@ from appointment_bot.db.migration_steps.template_schema import (
     _create_whatsapp_message_template_trace_schema,
     _freeze_historical_whatsapp_followup_text,
 )
+from appointment_bot.db.migration_steps.v75_to_v76 import create_observer_rotation_schema
 from appointment_bot.db.migration_steps.whatsapp_schema import (
     _create_whatsapp_automation_jobs_schema,
     _create_whatsapp_followup_messages_schema,
@@ -492,3 +493,4 @@ def create_current_schema(connection: Connection) -> None:
     _create_post_appointment_schema(connection)
     _create_reservation_program_identity_schema(connection)
     _create_opportunity_observability_schema(connection)
+    create_observer_rotation_schema(connection)

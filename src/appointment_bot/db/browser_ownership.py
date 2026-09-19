@@ -62,7 +62,7 @@ def acquire_browser_ownership(
             (account_id,),
         ).fetchone()
 
-        if purpose in {"worker", "preflight"}:
+        if purpose in {"worker", "preflight", "observer"}:
             cooldown = connection.execute(
                 """
                 SELECT ra.attempt_id
@@ -79,6 +79,32 @@ def acquire_browser_ownership(
                 raise BrowserOwnershipConflict(
                     "portal_account_cooldown",
                     "La cuenta esta descansando tras un rechazo temporal del portal.",
+                )
+
+        if purpose != "manual_review":
+            cooling = connection.execute(
+                "SELECT 1 FROM observer_account_state WHERE portal_account_id = %s "
+                "AND blocked_until > CURRENT_TIMESTAMP", (account_id,),
+            ).fetchone()
+            if cooling is not None:
+                raise BrowserOwnershipConflict(
+                    "portal_account_cooldown",
+                    "La cuenta esta descansando tras una defensa del portal.",
+                )
+        if purpose == "observer":
+            validated = connection.execute("""
+                SELECT 1 FROM order_state os
+                JOIN service_orders so USING(order_id)
+                JOIN portal_accounts pa USING(portal_account_id)
+                LEFT JOIN observer_account_state obs USING(portal_account_id)
+                WHERE so.order_id = %s AND os.preflight_status = 'validated'
+                  AND os.preflight_validated_at >= pa.updated_at
+                  AND (obs.blocked_at IS NULL OR os.preflight_validated_at > obs.blocked_at)
+                  AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
+            """, (order_id,)).fetchone()
+            if validated is None:
+                raise BrowserOwnershipConflict(
+                    "observer_access_not_validated", "El acceso observador necesita validacion.",
                 )
 
         active_lease = connection.execute(

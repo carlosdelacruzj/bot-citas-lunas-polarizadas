@@ -1,7 +1,7 @@
 # Migraciones PostgreSQL
 
 `db/migrations.py` conserva la version requerida y el registro explicito de
-61 pasos consecutivos desde `v14` hasta `v75`. El registro se valida al importar:
+62 pasos consecutivos desde `v14` hasta `v76`. El registro se valida al importar:
 rechaza saltos, duplicados, desorden y una version final distinta de la requerida.
 
 Una base sin fila de version se crea directamente con `schema_definition.py`.
@@ -26,3 +26,8 @@ La [verificacion del 2026-09-08](../../reports/architecture/migration-chain-2026
 compara SQL y parametros contra el dispatcher previo corregido, normalizando
 solo timestamps generados durante la ejecucion. Incluye bases temporales, datos
 sinteticos y dump/restore; no acredita un backup externo de la base operativa.
+
+`v76` agrega `observer_rotation_control` y `observer_account_state`: cadencia global,
+turno, descanso, bloqueo y capacidad observada por cuenta. No altera reservas ni
+trabajos de mensajes. Volver a binarios que exigen `v75` requiere una restauracion
+coordinada; no degradar la version ni borrar estas tablas para forzar compatibilidad.

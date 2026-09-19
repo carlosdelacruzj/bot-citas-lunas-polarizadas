@@ -12,12 +12,13 @@ from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
+from appointment_bot.db.observer_rotation import defer_observer_checks
 from appointment_bot.db.opportunity_bursts import reconcile_stale_opportunity_bursts
 from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
     list_active_orders,
-    list_observer_orders,
+    list_compatible_orders_for_opportunities,
     order_backoff_seconds,
     release_service_order_claim,
 )
@@ -41,6 +42,7 @@ from appointment_bot.worker.observer_results import (
     decide_observer_report,
     notify_confirmed_observer_availability,
 )
+from appointment_bot.worker.observer_rotation import observer_defense_wait, rotate_observer
 from appointment_bot.worker.opportunity_burst import OpportunityBurstCoordinator
 from appointment_bot.worker.order_execution import SERVICE_ORDER_LEASE_SECONDS, run_service_order
 from appointment_bot.worker.order_results import handle_observer_order_report
@@ -240,14 +242,43 @@ class ContinuousWorker:
         return False
 
     def _run_available_work(self) -> None:
-        orders = list_observer_orders(self.runtime_settings)
-        if orders:
-            self._run_observer_order_block(orders)
-            return
-        if list_active_orders(self.runtime_settings, include_constrained=False):
-            self._wait_for_order_backoff_gap()
-            return
-        self._monitor_observer()
+        report, wait = rotate_observer(
+            runtime_settings=self.runtime_settings, reservation_settings=self.reservation_settings,
+            captcha_settings=self.captcha_settings, evidence_settings=self.evidence_settings,
+            ports=self._reservation_engine_ports, cancel_event=self._cancel_event,
+            on_start=lambda account: self._set_session_state("monitoring_observer", None, account),
+            on_check=self._state_callbacks.on_observer_check,
+        )
+        if report is not None:
+            self._record_check(report)
+            if self._maybe_pause_for_portal_change(report):
+                return
+            if report.status == "available":
+                signature = notify_confirmed_observer_availability(
+                    report, runtime_settings=self.runtime_settings,
+                    telegram_settings=self.telegram_settings,
+                )
+                if signature is not None:
+                    self._update_state(availability_signature=signature)
+                if self._maybe_pause_after_detection(report):
+                    return
+            details = report.details or {}
+            # Listed dates trigger each customer's own verification, not a claim of free slots.
+            if report.status in {"available", "partial", "unavailable"}:
+                self._reset_errors()
+                dates = details.get("date_options") or [details.get("fecha")]
+                orders = list_compatible_orders_for_opportunities(
+                    [(str(value), "00:00") for value in dates if value],
+                    limit=self.runtime_settings.opportunity_handoff_max_candidates,
+                    settings=self.runtime_settings,
+                )
+                if orders and self.reservation_settings.auto_reserve:
+                    self._run_rapid_queue(
+                        target_order_ids=tuple(order.order_id for order in orders)
+                    )
+            elif report.status != "paused":
+                self._increase_errors(report.message)
+        self._wait_retry(wait, phase="retry_wait")
 
     def _run_observer_order_block(self, orders: list[ServiceOrderCandidate]) -> None:
         order = next(
@@ -522,6 +553,11 @@ class ContinuousWorker:
             evidence_settings=self.evidence_settings,
             telegram_settings=self.telegram_settings,
         )
+        defense_wait = max((observer_defense_wait(str(item.get("message") or ""),
+                                                  self.runtime_settings)
+                            for item in (report.details or {}).get("results", [])), default=0)
+        if defense_wait:
+            defer_observer_checks(defense_wait, self.runtime_settings)
         confirmed = int((report.details or {}).get("confirmed_reservations", 0))
         review_results = (report.details or {}).get("post_reservation_reviews")
         if isinstance(review_results, list):
