@@ -14,6 +14,7 @@ from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.statuses import redact_captcha_answers
 from appointment_bot.reservation_engine.appointment_contracts import (
+    AppointmentSlotsExhausted,
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
     PortalContractChanged,
@@ -440,6 +441,20 @@ def complete_available_reservation(
         submission_error = str(exc)
     except Exception as exc:
         if not submission_started:
+            if isinstance(exc, AppointmentSlotsExhausted):
+                evidence = save_screenshot(
+                    page, "cupos-agotados", evidence_settings=evidence_settings
+                )
+                details = reservation_details()
+                details.update({
+                    "cupos": "0", "slots_exhausted": True,
+                    "submission_outcome": "slot_lost", "reservation_attempted": False,
+                })
+                return (
+                    AvailabilityResult(status="unavailable", message=str(exc), details=details),
+                    evidence or screenshot_path,
+                    collected_screenshots(evidence),
+                )
             raise
         confirmation_text_detected = False
         programmed_stage = None

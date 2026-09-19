@@ -556,6 +556,7 @@ def _is_explicit_slot_lost(result: AvailabilityResult) -> bool:
     return (
         result.status == "unavailable"
         and str((result.details or {}).get("submission_outcome") or "") == "slot_lost"
+        and not (result.details or {}).get("slots_exhausted")
     )
 
 

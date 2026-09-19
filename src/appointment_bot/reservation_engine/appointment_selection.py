@@ -17,6 +17,7 @@ from appointment_bot.reservation_engine.appointment_contracts import (
     DATE_SELECTOR,
     HOUR_SELECTOR,
     SITE_SELECTOR,
+    AppointmentSlotsExhausted,
     AppointmentWorkflowUnavailable,
 )
 from appointment_bot.reservation_engine.appointment_dom import (
@@ -28,6 +29,7 @@ from appointment_bot.reservation_engine.appointment_dom import (
     select_appointment_option,
     select_options,
     selected_option_text,
+    slots_exhausted,
 )
 from appointment_bot.reservation_engine.appointment_reader import (
     read_atomic_appointment_snapshot,
@@ -649,6 +651,13 @@ def _with_selection_observation(
     started: float,
 ) -> AvailabilityResult:
     details = dict(result.details or {})
+    if slots_exhausted(details.get("cupos")):
+        details.pop("blocked_selected_for_evidence", None)
+        details["slots_exhausted"] = True
+        result = replace(
+            result, status="unavailable",
+            message="El horario muestra cupos agotados; no se intentara reservar.",
+        )
     details["selection_observation"] = {
         **observation,
         "total_seconds": round(time.monotonic() - started, 3),
@@ -730,9 +739,8 @@ def validate_selected_appointment(
         raise AppointmentWorkflowUnavailable(
             "La sede, fecha y hora deben seguir seleccionadas antes de enviar la reserva."
         )
-    normalized_slots = normalize_option(actual_slots)
-    if normalized_slots in {"0", "sin cupos", "sin cupos disponibles"}:
-        raise AppointmentWorkflowUnavailable(
+    if slots_exhausted(actual_slots):
+        raise AppointmentSlotsExhausted(
             "El portal indica que el cupo seleccionado ya no esta disponible."
         )
     if expected_person_name:

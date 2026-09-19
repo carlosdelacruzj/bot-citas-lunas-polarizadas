@@ -43,6 +43,10 @@ class AppointmentWorkflowUnavailable(RuntimeError):
     pass
 
 
+class AppointmentSlotsExhausted(AppointmentWorkflowUnavailable):
+    pass
+
+
 class AppointmentWorkflowCancelled(RuntimeError):
     pass
 

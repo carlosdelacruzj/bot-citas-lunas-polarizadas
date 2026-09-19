@@ -20,6 +20,7 @@ from appointment_bot.reservation_engine.appointment_dom import (
     has_real_options,
     is_real_appointment_option,
     read_appointment_snapshot,
+    slots_exhausted,
 )
 from appointment_bot.reservation_engine.appointment_fetch_probe import (
     read_fetch_probe_appointment_snapshot,
@@ -138,6 +139,12 @@ def availability_result_from_snapshot(
     has_hour_options = _has_real_options(hour_options)
 
     if has_date_options and has_hour_options:
+        if slots_exhausted(snapshot.slots):
+            return AvailabilityResult(
+                status="unavailable",
+                message="El horario muestra cupos agotados; no se intentara reservar.",
+                details={**details, "slots_exhausted": True},
+            )
         return AvailabilityResult(
             status="available",
             message="Se detectaron opciones seleccionables de fecha y hora.",

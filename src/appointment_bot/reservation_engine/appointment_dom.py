@@ -64,6 +64,12 @@ def selected_option_text(page: Page, selector: str) -> str:
     )
 
 
+def slots_exhausted(value: object) -> bool:
+    return normalize_option(str(value if value is not None else "")) in {
+        "0", "sin cupos", "sin cupos disponibles",
+    }
+
+
 def read_slots_value(page: Page) -> str:
     return page.evaluate(
         """() => {

@@ -17,6 +17,9 @@ worker y dashboard.
 - No reutilizar login, cookies ni contexto entre clientes.
 - No enviar dos reservas para la misma orden.
 - No repetir automaticamente si la confirmacion queda incierta.
+- Cupos en `0` o agotados antes del envio bloquean la reserva y producen
+  `unavailable`, sin backoff tecnico. Se comprueba al detectar, seleccionar y
+  validar antes del clic; si ya hubo envio, se conserva la incertidumbre.
 - No considerar una reserva segura sin evidencia suficiente del portal.
 - Una variacion no reconocida del contrato de seguridad previo a sede pausa el
   worker antes de seleccionar fecha, CAPTCHA final o reservar.
