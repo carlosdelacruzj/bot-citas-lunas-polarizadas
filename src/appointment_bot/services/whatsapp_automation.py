@@ -16,6 +16,7 @@ from appointment_bot.browser.whatsapp.api import (
 )
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.configuration.whatsapp import WhatsappSettings
 from appointment_bot.core.whatsapp_delivery import (
     WhatsAppAttemptContext,
@@ -82,10 +83,12 @@ class WhatsAppAutomationDispatcher:
         *,
         runtime_settings: RuntimeSettings,
         evidence_settings: EvidenceSettings,
+        telegram_settings: TelegramSettings,
         whatsapp_settings: WhatsappSettings,
     ) -> None:
         self.runtime_settings = runtime_settings
         self.evidence_settings = evidence_settings
+        self.telegram_settings = telegram_settings
         self.whatsapp_settings = whatsapp_settings
         self.owner_token = f"whatsapp-automation-{uuid4().hex}"
         self._stop_event = threading.Event()
@@ -216,11 +219,15 @@ class WhatsAppAutomationDispatcher:
             if job_kind == "reservation_album":
                 if order_id is None:
                     raise ValueError("El trabajo de evidencia no contiene order_id.")
-                message_id, result = self._send_reservation_album(order_id, attempt)
+                message_id, result = self._send_reservation_album(
+                    order_id, attempt, job.get("message_id")
+                )
             elif job_kind == "post_payment_followup":
                 if order_id is None:
                     raise ValueError("El trabajo post-pago no contiene order_id.")
-                message_id, result = self._send_post_payment_followup(order_id, attempt)
+                message_id, result = self._send_post_payment_followup(
+                    order_id, attempt, job.get("message_id")
+                )
             elif job_kind == "daily_slot_summary":
                 message_id, result = self._send_daily_slot_summary(job, attempt)
             elif job_kind == "registration_notice":
@@ -288,11 +295,13 @@ class WhatsAppAutomationDispatcher:
         self,
         order_id: str,
         attempt: WhatsAppAttemptContext,
+        message_id: str | None = None,
     ) -> tuple[str, dict[str, object]]:
-        prepared = prepare_order_whatsapp_message(
-            order_id, automatic=True, settings=self.runtime_settings
-        )
-        message_id = str(prepared["message_id"])
+        if message_id is None:
+            prepared = prepare_order_whatsapp_message(
+                order_id, automatic=True, settings=self.runtime_settings
+            )
+            message_id = str(prepared["message_id"])
         attempt.message_id = message_id
         confirmation = get_whatsapp_web_draft(
             message_id, draft_kind="confirmation", settings=self.runtime_settings
@@ -313,11 +322,13 @@ class WhatsAppAutomationDispatcher:
         self,
         order_id: str,
         attempt: WhatsAppAttemptContext,
+        message_id: str | None = None,
     ) -> tuple[str, dict[str, object]]:
-        prepared = prepare_post_payment_whatsapp_message(
-            order_id, automatic=True, settings=self.runtime_settings
-        )
-        message_id = str(prepared["message_id"])
+        if message_id is None:
+            prepared = prepare_post_payment_whatsapp_message(
+                order_id, automatic=True, settings=self.runtime_settings
+            )
+            message_id = str(prepared["message_id"])
         attempt.message_id = message_id
         draft = get_followup_web_draft(message_id, settings=self.runtime_settings)
         attempt.advance("interaction_started", component="documents_and_text")

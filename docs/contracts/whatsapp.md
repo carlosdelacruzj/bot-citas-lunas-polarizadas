@@ -102,3 +102,21 @@ resultado tecnico original. Revisar no equivale a reintentar.
 
 La observacion natural se rige por
 [`../operations/whatsapp-natural-acceptance.md`](../operations/whatsapp-natural-acceptance.md).
+
+## Reintento manual de fallo total
+
+El dashboard permite reintentar avisos de registro, albumes y postpago mediante
+`POST /api/v1/whatsapp-automation-jobs/{job_key}/retry`. Un resultado incierto
+exige `confirmed_no_delivery=true`, tras comprobar en el chat que no salio ningun
+componente. Un envio parcial se completa manualmente, solo con lo faltante.
+
+El servidor bloquea trabajos activos, resueltos, enviados o superados por otro
+intento. La clave determinista de recuperacion y el bloqueo transaccional del
+original evitan duplicados por doble clic o repeticion HTTP. La respuesta `202`
+indica aceptacion, no entrega; el dispatcher unico procesa el nuevo trabajo.
+
+El original conserva estado tecnico y error; su conciliacion `dismissed` guarda
+actor, fecha y clave del nuevo intento en la misma transaccion que lo encola.
+El nuevo trabajo reutiliza el mensaje preparado y su revision. Si el fallo fue
+anterior a preparar el paquete, el dashboard lo indica y el nuevo intento usa
+los datos actuales. Los avisos conservan siempre su texto y destinatario.

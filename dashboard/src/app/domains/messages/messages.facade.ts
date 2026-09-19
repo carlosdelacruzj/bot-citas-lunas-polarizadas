@@ -237,9 +237,9 @@ export class MessagesFacade {
     }
   }
 
-  public async openWhatsAppReview(order: ServiceOrder): Promise<void> {
+  public async openWhatsAppReview(order: ServiceOrder, registration = false): Promise<void> {
     const isFollowUp =
-      this.isPostPaymentWhatsAppCandidate(order) &&
+      !registration && this.isPostPaymentWhatsAppCandidate(order) &&
       ['failed', 'uncertain'].includes(order.whatsapp_followup_action_state);
     this.whatsappPackage.set(null);
     this.whatsappFollowUpPackage.set(null);
@@ -256,7 +256,7 @@ export class MessagesFacade {
     try {
       const review = await this.messagesApi.getWhatsAppReview(
         order.order_id,
-        isFollowUp ? 'whatsapp-followup' : 'whatsapp',
+        registration ? 'whatsapp-registration' : isFollowUp ? 'whatsapp-followup' : 'whatsapp',
       );
       this.whatsappReview.set(review);
       this.whatsappFollowUpPackage.set(review.message);
@@ -264,6 +264,38 @@ export class MessagesFacade {
       this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       this.whatsappFollowUpLoading.set(false);
+    }
+  }
+
+  public async retryWhatsApp(): Promise<void> {
+    const review = this.whatsappReview();
+    if (!review || review.job.review_resolution || this.ui.actionBusy()) return;
+    this.ui.actionBusy.set(true);
+    try {
+      const uncertain = review.job.status === 'uncertain';
+      const confirmation = await (await this.ui.getSweetAlert()).fire({
+        icon: 'warning',
+        title: uncertain ? 'Confirma que no salió ninguna parte' : 'Reintentar envío',
+        text: uncertain
+          ? 'Revisa el chat. Continúa solo si no se envió ningún texto, imagen ni documento. Si salió una parte, completa únicamente lo faltante de forma manual.'
+          : 'Se creará un nuevo intento. El intento fallido quedará en el historial.',
+        showCancelButton: true,
+        confirmButtonText: uncertain ? 'Revisé el chat: no salió nada. Reintentar' : 'Reintentar envío',
+        cancelButtonText: 'Cancelar',
+        focusCancel: true,
+      });
+      if (!confirmation.isConfirmed) return;
+      const result = await this.messagesApi.retryWhatsApp(review.job.job_key, uncertain);
+      await this.navigation.refreshAll();
+      this.ui.actionBusy.set(false);
+      this.ui.closeModal();
+      this.ui.showToast(result.status === 'queued'
+        ? 'Reintento en cola. Todavía no confirma el envío.'
+        : 'Este reintento ya estaba registrado. Revisa su estado.');
+    } catch (error) {
+      this.ui.errorMessage.set(this.presentation.readError(error));
+    } finally {
+      this.ui.actionBusy.set(false);
     }
   }
 

@@ -135,6 +135,7 @@ def run_admin_api() -> int:
     whatsapp_dispatcher = WhatsAppAutomationDispatcher(
         runtime_settings=runtime_settings,
         evidence_settings=evidence_settings,
+        telegram_settings=telegram_settings,
         whatsapp_settings=whatsapp_settings,
     )
     appointment_reminder_scheduler = AppointmentReminderScheduler(

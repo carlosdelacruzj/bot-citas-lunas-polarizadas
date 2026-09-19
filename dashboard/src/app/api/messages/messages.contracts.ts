@@ -104,7 +104,7 @@ export type WhatsAppReviewResolution =
 export interface WhatsAppReviewJob {
   job_key: string;
   order_id: string;
-  job_kind: 'reservation_album' | 'post_payment_followup';
+  job_kind: 'reservation_album' | 'post_payment_followup' | 'registration_notice';
   status: 'failed' | 'uncertain';
   message_id: string | null;
   error_message: string | null;
@@ -124,6 +124,7 @@ export interface WhatsAppReviewJob {
 export interface WhatsAppReviewPayload {
   job: WhatsAppReviewJob;
   message: WhatsAppFollowUpPackage | null;
+  preview?: { recipient: string | null; text: string | null; attachments: string[] } | null;
 }
 
 export interface WhatsAppReviewResponse extends ApiActionResponse {

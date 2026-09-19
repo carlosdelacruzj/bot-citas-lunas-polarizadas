@@ -32,6 +32,7 @@ from appointment_bot.db.whatsapp_messages import (
     prepare_order_whatsapp_message,
     prepare_test_whatsapp_message,
 )
+from appointment_bot.db.whatsapp_recovery import retry_whatsapp_job
 from appointment_bot.services.api.http import error_payload
 
 
@@ -116,7 +117,7 @@ def mark_followup_sent_payload(message_id: str) -> tuple[HTTPStatus, dict[str, A
 def whatsapp_review_payload(
     order_id: str,
     *,
-    job_kind: Literal["reservation_album", "post_payment_followup"],
+    job_kind: Literal["reservation_album", "post_payment_followup", "registration_notice"],
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     try:
         job = get_order_whatsapp_review(order_id, job_kind)
@@ -127,7 +128,46 @@ def whatsapp_review_payload(
         )
     except ValueError as exc:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
-    return HTTPStatus.OK, {"job": job, "message": message}
+    preview = None
+    if job_kind == "registration_notice":
+        preview = {
+            "recipient": job.get("recipient_phone") or job.get("recipient_username"),
+            "text": job.get("message_text"),
+            "attachments": [],
+        }
+    elif job_kind == "reservation_album" and job.get("message_id"):
+        try:
+            confirmation = get_whatsapp_web_draft(str(job["message_id"]))
+            payment = get_whatsapp_web_draft(str(job["message_id"]), draft_kind="payment")
+            preview = {
+                "recipient": confirmation.get("recipient_phone")
+                or confirmation.get("recipient_username"),
+                "text": str(confirmation["caption"]) + "\n\n" + str(payment["caption"]),
+                "attachments": [
+                    f"/api/v1/whatsapp-messages/{job['message_id']}/attachment",
+                    f"/api/v1/whatsapp-messages/{job['message_id']}/payment-attachment",
+                ],
+            }
+        except ValueError:
+            preview = None
+    return HTTPStatus.OK, {"job": job, "message": message, "preview": preview}
+
+
+def retry_whatsapp_payload(
+    job_key: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    try:
+        result = retry_whatsapp_job(
+            job_key,
+            confirmed_no_delivery=payload.get("confirmed_no_delivery") is True,
+            reviewed_by=requested_by or "system",
+        )
+    except ValueError as exc:
+        return HTTPStatus.CONFLICT, error_payload("conflict", str(exc))
+    return HTTPStatus.ACCEPTED, result
 
 
 def resolve_whatsapp_review_payload(
@@ -221,9 +261,7 @@ def prepare_web_payload(
     except ValueError as exc:
         message = str(exc)
         status = (
-            HTTPStatus.NOT_FOUND
-            if "not found" in message.casefold()
-            else HTTPStatus.BAD_REQUEST
+            HTTPStatus.NOT_FOUND if "not found" in message.casefold() else HTTPStatus.BAD_REQUEST
         )
         return status, error_payload("not_found" if status == 404 else "bad_request", message)
     result = (
@@ -239,9 +277,7 @@ def prepare_web_payload(
             "sent_at": sent_payload.get("sent_at"),
         }
     status = (
-        HTTPStatus.SERVICE_UNAVAILABLE
-        if result["status"] == "web_unavailable"
-        else HTTPStatus.OK
+        HTTPStatus.SERVICE_UNAVAILABLE if result["status"] == "web_unavailable" else HTTPStatus.OK
     )
     return status, result
 
@@ -266,9 +302,7 @@ def prepare_followup_web_payload(
     except ValueError as exc:
         message = str(exc)
         status = (
-            HTTPStatus.NOT_FOUND
-            if "not found" in message.casefold()
-            else HTTPStatus.BAD_REQUEST
+            HTTPStatus.NOT_FOUND if "not found" in message.casefold() else HTTPStatus.BAD_REQUEST
         )
         return status, error_payload("not_found" if status == 404 else "bad_request", message)
     result = prepare_whatsapp_web_documents(draft)
@@ -280,9 +314,7 @@ def prepare_followup_web_payload(
             "sent_at": sent_payload.get("sent_at"),
         }
     status = (
-        HTTPStatus.SERVICE_UNAVAILABLE
-        if result["status"] == "web_unavailable"
-        else HTTPStatus.OK
+        HTTPStatus.SERVICE_UNAVAILABLE if result["status"] == "web_unavailable" else HTTPStatus.OK
     )
     return status, result
 
@@ -303,9 +335,7 @@ def validate_whatsapp_session_payload(
         )
     result = validate_whatsapp_web_session()
     status = (
-        HTTPStatus.SERVICE_UNAVAILABLE
-        if result["status"] == "web_unavailable"
-        else HTTPStatus.OK
+        HTTPStatus.SERVICE_UNAVAILABLE if result["status"] == "web_unavailable" else HTTPStatus.OK
     )
     return status, result
 
@@ -350,9 +380,9 @@ def whatsapp_followup_message_path(path: str, action: str) -> str | None:
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
 
 
-def whatsapp_review_job_path(path: str) -> str | None:
+def whatsapp_review_job_path(path: str, action: str = "resolve") -> str | None:
     prefix = "/api/v1/whatsapp-automation-jobs/"
-    suffix = "/resolve"
+    suffix = f"/{action}"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))

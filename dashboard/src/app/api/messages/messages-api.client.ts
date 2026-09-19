@@ -86,10 +86,17 @@ export class MessagesApiClient {
 
   async getWhatsAppReview(
     orderId: string,
-    kind: 'whatsapp' | 'whatsapp-followup',
+    kind: 'whatsapp' | 'whatsapp-followup' | 'whatsapp-registration',
   ): Promise<WhatsAppReviewPayload> {
     return this.transport.read<WhatsAppReviewPayload>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/${encodeURIComponent(kind)}/review`,
+    );
+  }
+
+  async retryWhatsApp(jobKey: string, confirmedNoDelivery: boolean): Promise<{ status: string }> {
+    return this.transport.post<{ status: string }>(
+      `/api/v1/whatsapp-automation-jobs/${encodeURIComponent(jobKey)}/retry`,
+      { confirmed_no_delivery: confirmedNoDelivery },
     );
   }
 

@@ -72,6 +72,12 @@
               Aviso de registro: {{ presentationDomain.statusLabel(order.registration_notice_type) }} ·
               {{ presentationDomain.statusLabel(order.registration_notice_status) }}
             </small>
+            @if (order.registration_notice_status === 'failed' || order.registration_notice_status === 'uncertain') {
+              <button type="button" class="secondary" [disabled]="uiDomain.actionBusy()"
+                (click)="messagesDomain.openWhatsAppReview(order, true)">
+                Revisar y reintentar aviso
+              </button>
+            }
             @if (order.registration_notice_error) {
               <small>{{ order.registration_notice_error }}</small>
             }

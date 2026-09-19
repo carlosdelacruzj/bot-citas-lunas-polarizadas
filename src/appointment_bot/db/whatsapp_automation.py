@@ -46,6 +46,7 @@ WHATSAPP_REVIEW_RESOLUTIONS = {
 
 class WhatsAppAutomationJob(TypedDict):
     job_key: str
+    message_id: str | None
     order_id: str | None
     reservation_id: str | None
     job_kind: WhatsAppAutomationKind
@@ -268,7 +269,7 @@ def next_waiting_whatsapp_automation_job(
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT job_key, order_id, reservation_id, job_kind, report_date,
+            SELECT job_key, message_id, order_id, reservation_id, job_kind, report_date,
                    appointment_day, recipient_phone,
                    recipient_username,
                    message_text, publication_text, attachment_paths,
@@ -363,7 +364,7 @@ def claim_whatsapp_automation_job(
                             )
                         )
                   )
-                RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+                RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
                           appointment_day, recipient_phone,
                           recipient_username,
                           message_text, publication_text, attachment_paths,
@@ -480,7 +481,7 @@ def recover_expired_whatsapp_automation_jobs(
                 finished_at = %s,
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
-            RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+            RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
                       appointment_day, recipient_phone,
                       recipient_username,
                       message_text, publication_text, attachment_paths,
@@ -562,7 +563,7 @@ def refresh_running_appointment_reminder_snapshot(
               AND job_kind = 'appointment_reminder'
               AND status = 'running'
               AND lease_owner = %s
-            RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+            RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
                       appointment_day, recipient_phone, recipient_username,
                       message_text, publication_text, attachment_paths,
                       registration_notice_type, preflight_cycle,
@@ -635,7 +636,7 @@ def get_order_whatsapp_review(
     *,
     settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
-    if job_kind not in {"reservation_album", "post_payment_followup"}:
+    if job_kind not in {"reservation_album", "post_payment_followup", "registration_notice"}:
         raise ValueError("Unsupported WhatsApp review kind.")
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -644,6 +645,7 @@ def get_order_whatsapp_review(
             """
             SELECT jobs.job_key, jobs.order_id, jobs.job_kind, jobs.status,
                    jobs.message_id, jobs.error_message, jobs.review_resolution,
+                   jobs.recipient_phone, jobs.recipient_username, jobs.message_text,
                    jobs.review_note, jobs.reviewed_at, jobs.reviewed_by,
                    jobs.started_at, jobs.finished_at, jobs.updated_at,
                    jobs.template_key AS job_template_key,
@@ -678,6 +680,9 @@ def get_order_whatsapp_review(
             "status",
             "message_id",
             "error_message",
+            "recipient_phone",
+            "recipient_username",
+            "message_text",
             "review_resolution",
             "review_note",
             "reviewed_at",
@@ -739,7 +744,9 @@ def resolve_whatsapp_automation_review(
         ).fetchone()
         if row is None:
             raise ValueError(f"WhatsApp automation job not found: {job_key}")
-        if row["job_kind"] not in {"reservation_album", "post_payment_followup"}:
+        if row["job_kind"] not in {
+            "reservation_album", "post_payment_followup", "registration_notice"
+        }:
             raise ValueError("This WhatsApp job cannot be reconciled from the dashboard.")
         if row["status"] not in {"failed", "uncertain"}:
             raise ValueError("Only failed or uncertain WhatsApp jobs require reconciliation.")
@@ -755,7 +762,10 @@ def resolve_whatsapp_automation_review(
                 "reviewed_at": str(row["reviewed_at"]),
                 "reviewed_by": str(row["reviewed_by"]),
             }
-        if normalized_resolution in {"confirmed_complete", "completed_missing"}:
+        if (
+            normalized_resolution in {"confirmed_complete", "completed_missing"}
+            and row["job_kind"] != "registration_notice"
+        ):
             if row["message_id"] is None:
                 raise ValueError("The WhatsApp job has no prepared message to confirm.")
             message_table = (
@@ -803,6 +813,7 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
     raw_paths = row["attachment_paths"]
     return {
         "job_key": str(row["job_key"]),
+        "message_id": row.get("message_id"),
         "order_id": str(row["order_id"]) if row["order_id"] is not None else None,
         "reservation_id": (
             str(row["reservation_id"]) if row["reservation_id"] is not None else None

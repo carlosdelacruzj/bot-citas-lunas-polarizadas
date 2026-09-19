@@ -87,6 +87,7 @@ POST_ROUTES = (
         lambda path: whatsapp_followup_message_path(path, "sent"), whatsapp.post_mark_followup_sent
     ),
     Route(lambda path: whatsapp_review_job_path(path), whatsapp.post_resolve_whatsapp_review),
+    Route(lambda path: whatsapp_review_job_path(path, "retry"), whatsapp.post_retry_whatsapp),
     Route("/api/v1/finance/entries", finance.post_create_finance_entry),
     Route(lambda path: finance_entry_action_path(path, "edit"), finance.post_update_finance_entry),
     Route(lambda path: finance_entry_action_path(path, "void"), finance.post_void_finance_entry),

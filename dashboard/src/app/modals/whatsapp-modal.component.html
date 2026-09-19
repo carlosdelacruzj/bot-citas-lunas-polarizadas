@@ -22,11 +22,11 @@
           </h2>
           <p>
             {{
-              messagesDomain.whatsappFollowUpMode()
-                ? messagesDomain.whatsappReviewMode()
-                  ? 'Revisa la evidencia sin provocar otro intento automático.'
-                  : 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
-                : 'Preparar el borrador no registra un envío hasta que lo confirmes manualmente.'
+              messagesDomain.whatsappReviewMode()
+                ? 'Revisa el chat y el contenido antes de decidir si hace falta otro intento.'
+                : messagesDomain.whatsappFollowUpMode()
+                  ? 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
+                  : 'Preparar el borrador no registra un envío hasta que lo confirmes manualmente.'
             }}
           </p>
         </div>
@@ -91,6 +91,27 @@
           <small>
             Trabajo {{ review.job.job_key }} · {{ presentationDomain.formatDateTime(review.job.finished_at) }}
           </small>
+          @if (review.preview; as preview) {
+            <p>Destino: {{ preview.recipient }}</p>
+            <textarea readonly aria-label="Mensaje que se reintentará" [value]="preview.text"></textarea>
+            <button type="button" class="secondary"
+              (click)="messagesDomain.copyWhatsAppText(preview.text ?? '', 'mensaje preparado')">
+              Copiar texto preparado
+            </button>
+            @for (attachment of preview.attachments; track attachment) {
+              <a class="button-link secondary" [href]="attachment" target="_blank" rel="noreferrer">Revisar imagen</a>
+            }
+          }
+          @if (!review.job.review_resolution && (review.job.status === 'failed' || review.job.status === 'uncertain')) {
+            <p>Reintenta el paquete completo solo si no salió ninguna parte. Si hubo un envío parcial, completa manualmente lo faltante.</p>
+            @if (!review.job.message_id && review.job.job_kind !== 'registration_notice') {
+              <p>El fallo ocurrió antes de guardar el paquete. El nuevo intento preparará el contenido con los datos actuales de la orden.</p>
+            }
+            <button type="button" class="primary" [disabled]="uiDomain.actionBusy()"
+              (click)="messagesDomain.retryWhatsApp()">
+              {{ uiDomain.actionBusy() ? 'Procesando...' : review.job.status === 'uncertain' ? 'Reintentar envío completo' : 'Reintentar envío' }}
+            </button>
+          }
           @if (review.job.template_trace.length) {
             <small>
               Plantillas:
@@ -273,7 +294,7 @@
             <button
               type="button"
               class="primary"
-              [disabled]="uiDomain.actionBusy() || !review.job.message_id"
+              [disabled]="uiDomain.actionBusy() || (!review.job.message_id && review.job.job_kind !== 'registration_notice') || !!review.job.review_resolution"
               (click)="messagesDomain.resolveWhatsAppReview('confirmed_complete')"
             >
               Ya estaba completo
@@ -281,7 +302,7 @@
             <button
               type="button"
               class="secondary"
-              [disabled]="uiDomain.actionBusy() || !review.job.message_id"
+              [disabled]="uiDomain.actionBusy() || (!review.job.message_id && review.job.job_kind !== 'registration_notice') || !!review.job.review_resolution"
               (click)="messagesDomain.resolveWhatsAppReview('completed_missing')"
             >
               Ya completé lo faltante
@@ -289,7 +310,7 @@
             <button
               type="button"
               class="danger"
-              [disabled]="uiDomain.actionBusy() || !messagesDomain.whatsappReviewNote().trim()"
+              [disabled]="uiDomain.actionBusy() || !messagesDomain.whatsappReviewNote().trim() || !!review.job.review_resolution"
               (click)="messagesDomain.resolveWhatsAppReview('dismissed')"
             >
               Cerrar sin envío

@@ -504,6 +504,7 @@ export const DASHBOARD_WHATSAPP_MODAL_MESSAGES = new InjectionToken<Pick<Message
   | "confirmWhatsAppFollowUpSent"
   | "whatsappReviewNote"
   | "resolveWhatsAppReview"
+  | "retryWhatsApp"
   | "confirmAndSendWhatsAppEvidence"
   | "whatsappManualFallbackOpen"
   | "copyWhatsAppAttachment"
@@ -768,6 +769,7 @@ export const DASHBOARD_ORDERS_VIEW_MESSAGES = new InjectionToken<Pick<MessagesFa
   | "canPreparePostPaymentWhatsApp"
   | "postPaymentWhatsAppHint"
   | "openPostPaymentWhatsApp"
+  | "openWhatsAppReview"
 >>('DASHBOARD_ORDERS_VIEW_MESSAGES');
 
 export const DASHBOARD_ORDERS_VIEW_ORDERS = new InjectionToken<Pick<OrdersFacade,

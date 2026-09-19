@@ -48,6 +48,13 @@ def get_list_service_orders(request: ApiRequest) -> None:
 def get_service_order_detail(request: ApiRequest) -> None:
     handler = request.transport
     path = request.path
+    registration_order_id = order_whatsapp_review_path(path, "whatsapp-registration")
+    if registration_order_id is not None:
+        status, payload = whatsapp_review_payload(
+            registration_order_id, job_kind="registration_notice"
+        )
+        handler._send_json(status, payload)
+        return
     followup_review_order_id = order_whatsapp_review_path(path, "whatsapp-followup")
     if followup_review_order_id is not None:
         status, payload = whatsapp_review_payload(

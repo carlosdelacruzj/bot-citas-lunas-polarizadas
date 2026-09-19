@@ -17,6 +17,7 @@ from appointment_bot.services.api.whatsapp_routes import (
     prepare_test_payload,
     prepare_web_payload,
     resolve_whatsapp_review_payload,
+    retry_whatsapp_payload,
     validate_whatsapp_session_payload,
 )
 
@@ -170,3 +171,11 @@ def post_resolve_whatsapp_review(request: ApiRequest) -> None:
     )
     handler._send_json(status, payload)
     return
+
+
+def post_retry_whatsapp(request: ApiRequest) -> None:
+    handler = request.transport
+    status, payload = retry_whatsapp_payload(
+        request.match, handler._read_json(), requested_by=handler._authenticated_actor(),
+    )
+    handler._send_json(status, payload)

@@ -52,6 +52,7 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
             dispatcher = WhatsAppAutomationDispatcher(
                 runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
                 evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
                 whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
@@ -74,6 +75,7 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
             dispatcher = WhatsAppAutomationDispatcher(
                 runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
                 evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
                 whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
@@ -121,6 +123,7 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
             dispatcher = WhatsAppAutomationDispatcher(
                 runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
                 evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
                 whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
