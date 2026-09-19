@@ -16,6 +16,11 @@ copiar el mismo artefacto pesado entre ambos.
 
 ## Retencion
 
+Los avisos de cupo se deduplican por sede, fecha y hora de cita dentro del dia
+de deteccion en `America/Lima`. Una aparicion en otro dia genera un nuevo aviso;
+las capturas canonicas conservan su copia en la carpeta de cada dia. El historial
+de dias anteriores no bloquea avisos ni evidencias del dia actual.
+
 - Conservar confirmaciones, `reservation_unconfirmed`, `slot_lost`, rechazos,
   defensas y fallos importantes.
 - Conservar disponibilidades completas y parciales solo cuando exista fecha y

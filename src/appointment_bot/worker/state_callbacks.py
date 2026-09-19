@@ -5,6 +5,7 @@ import json
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
@@ -129,6 +130,7 @@ def _availability_result_signature(result: AvailabilityResult) -> str:
     relevant = {
         key: details.get(key) for key in ("sede", "fecha", "hora") if details.get(key) is not None
     }
+    relevant["detected_day"] = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
     payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 

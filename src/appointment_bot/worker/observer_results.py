@@ -3,7 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
@@ -66,6 +68,7 @@ def availability_signature(report: RunReport) -> str:
         for key in ("sede", "fecha", "hora", "date_options", "hour_options")
         if details.get(key) is not None
     }
+    relevant["detected_day"] = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
     payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
