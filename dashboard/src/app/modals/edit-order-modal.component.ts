@@ -1,3 +1,4 @@
+import { FocusBoundaryDirective } from '../focus-boundary.directive';
 import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-edit-order-modal',
   standalone: true,
-  imports: [
+  imports: [FocusBoundaryDirective,
     FormsModule,
     ProgramResolutionPanelComponent,
     ReservationRulesEditorComponent,

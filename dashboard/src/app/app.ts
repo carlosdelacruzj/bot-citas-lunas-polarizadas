@@ -1,4 +1,5 @@
-import { Component, HostListener, Injector, ViewEncapsulation, inject } from '@angular/core';
+import { FocusBoundaryDirective } from './focus-boundary.directive';
+import { Component, HostListener, Injector, ViewEncapsulation, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import {
@@ -127,7 +128,7 @@ import { ViewStateComponent } from './view-state/view-state.component';
 
 @Component({
   selector: 'app-root',
-  imports: [LoadStatusComponent,
+  imports: [FocusBoundaryDirective, LoadStatusComponent,
     FormsModule,
     ViewStateComponent,
     RouterOutlet,
@@ -249,6 +250,10 @@ import { ViewStateComponent } from './view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class App {
+  readonly mobileViewport = signal(window.innerWidth <= 760);
+
+  @HostListener('window:resize')
+  onResize(): void { this.mobileViewport.set(window.innerWidth <= 760); }
   private readonly injector = inject(Injector);
 
   constructor() {

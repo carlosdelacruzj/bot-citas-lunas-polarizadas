@@ -1,6 +1,6 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import {
   CaptchaWorkspaceMode,
   LoadState,
@@ -118,9 +118,10 @@ export class DashboardNavigation {
   });
 
   constructor() {
-    this.routerSubscription = this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => void this.activateRoute(event.urlAfterRedirects));
+    this.routerSubscription = this.router.events.subscribe((event) => {
+      if (event instanceof NavigationStart) this.viewScrollPositions.set(this.activeView(), window.scrollY);
+      if (event instanceof NavigationEnd) void this.activateRoute(event.urlAfterRedirects);
+    });
   }
 
   ngOnDestroy(): void {
@@ -165,6 +166,8 @@ export class DashboardNavigation {
     this.ui.formDirty.set(false);
     await this.refreshAll();
   }
+
+  private readonly viewScrollPositions = new Map<ViewKey, number>();
 
   private async activateRoute(url: string): Promise<void> {
     const routeGeneration = ++this.routeGeneration;
@@ -223,6 +226,11 @@ export class DashboardNavigation {
     }
 
     if (routeGeneration !== this.routeGeneration || this.pageHidden()) return;
+    if (previousView !== view) {
+      window.setTimeout(() => {
+        if (routeGeneration === this.routeGeneration) window.scrollTo({ top: this.viewScrollPositions.get(view) ?? 0, behavior: 'instant' });
+      });
+    }
     if (view === 'orders') {
       const orderId = segments[1];
       if (orderId) {

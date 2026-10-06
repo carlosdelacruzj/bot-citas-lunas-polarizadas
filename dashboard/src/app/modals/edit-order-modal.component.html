@@ -2,6 +2,8 @@
   @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
+      [appFocusBoundary]="true"
+      tabindex="-1"
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-order-title"

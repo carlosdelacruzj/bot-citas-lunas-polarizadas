@@ -45,6 +45,7 @@ import { buildCreateOrderPayload } from '../../sensitive-form-payloads';
 @Injectable()
 export class OrdersFacade {
   public readonly loads = {
+    detail: new LoadSection('Detalle de orden'),
     list: new LoadSection('Ordenes'),
     sessions: new LoadSection('Sesiones manuales'),
     catalog: new LoadSection('Catalogo de servicios'),
@@ -144,7 +145,8 @@ export class OrdersFacade {
 
   public readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
-    return this.orderList.orders().find((order) => order.order_id === selected) ?? this.orderList.orders()[0] ?? null;
+    return this.orderList.orders().find((order) => order.order_id === selected)
+      ?? (this.selectedOrderDetail()?.order_id === selected ? this.selectedOrderDetail() : null);
   });
 
   public readonly modalOrder = computed(() => this.selectedOrder());
@@ -323,6 +325,7 @@ export class OrdersFacade {
     this.selectedOrderId.set(orderId);
     this.orderPanelOpen.set(true);
     this.selectedOrderDetail.set(null);
+    this.loads.detail.reset();
     this.ui.formDirty.set(false);
     this.hydrateSelectedOrderForms();
     if (updateRoute && this.navigation.activeView() === 'orders') {
@@ -332,7 +335,7 @@ export class OrdersFacade {
       void this.loadSelectedOrderDetail(orderId);
     }
     window.setTimeout(() => {
-      document.querySelector<HTMLElement>('[data-order-panel]')?.focus();
+      if (!this.ui.activeModal()) document.querySelector<HTMLElement>('[data-order-panel]')?.focus({ preventScroll: true });
     });
   }
 
@@ -1140,10 +1143,13 @@ export class OrdersFacade {
     const current = () => this.orderDetailScope === scope && !scope.isCancelled && this.selectedOrderId() === orderId;
     this.orderDetailLoading.set(true); this.ui.errorMessage.set(null);
     try {
-      const detail = await this.ordersApi.getServiceOrder(orderId, scope);
-      if (!current() || detail.order_id !== orderId) return false;
-      this.selectedOrderDetail.set(detail); this.hydrateSelectedOrderForms(detail);
-      return true;
+      return await this.loads.detail.load(scope, () => this.ordersApi.getServiceOrder(orderId, scope), detail => {
+        if (!current()) return;
+        if (detail.order_id !== orderId) throw new Error('El detalle recibido no corresponde a la orden seleccionada.');
+        if (!this.orderList.orders().some(order => order.order_id === orderId)) this.orderList.includeOrder(detail);
+        this.selectedOrderDetail.set(detail);
+        this.hydrateSelectedOrderForms(detail);
+      });
     } catch (error) {
       if (current() && !isRequestCancelled(error)) this.ui.errorMessage.set(this.presentation.readError(error));
       return false;

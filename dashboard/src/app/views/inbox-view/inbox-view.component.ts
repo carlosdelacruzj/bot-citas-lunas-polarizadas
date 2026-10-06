@@ -1,13 +1,15 @@
+import { OrderDetailPanelComponent } from '../../order-detail-panel/order-detail-panel.component';
 import {
   ChangeDetectionStrategy,
   Component,
-  ViewEncapsulation,
+  HostListener,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  DASHBOARD_ORDERS_VIEW_ORDERS,
   DASHBOARD_INBOX_VIEW_CAPTCHAS,
   DASHBOARD_INBOX_VIEW_OPERATIONS,
   DASHBOARD_INBOX_VIEW_UI,
@@ -18,19 +20,23 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   selector: 'app-inbox-view',
-  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
+  imports: [OrderDetailPanelComponent, LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './inbox-view.component.html',
   styleUrl: './inbox-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
 })
 export class InboxViewComponent {
   protected readonly operationsDomain = inject(DASHBOARD_INBOX_VIEW_OPERATIONS);
   protected readonly uiDomain = inject(DASHBOARD_INBOX_VIEW_UI);
   protected readonly captchasDomain = inject(DASHBOARD_INBOX_VIEW_CAPTCHAS);
 
-  protected readonly taskSearch = signal('');
-  protected readonly taskFilter = signal<'all' | 'access' | 'paused' | 'payment' | 'messages'>('all');
+  protected readonly ordersDomain = inject(DASHBOARD_ORDERS_VIEW_ORDERS);
+  protected readonly taskSearch = this.operationsDomain.inboxSearch;
+  protected readonly taskFilter = this.operationsDomain.inboxFilter;
+  protected readonly wideScreen = signal(window.innerWidth >= 1200);
+
+  @HostListener('window:resize')
+  protected onResize(): void { this.wideScreen.set(window.innerWidth >= 1200); }
 
   protected readonly filters = computed(() => [
     { key: 'all' as const, label: 'Todos', count: this.operationsDomain.inboxPendingTotal() },

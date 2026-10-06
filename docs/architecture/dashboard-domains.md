@@ -54,5 +54,8 @@ Las [cargas parciales](dashboard-loading.md) publican cada bloque independientem
 con barreras de generacion y scopes cancelables. No se modifica el contrato de
 reservas, pagos ni envios ambiguos. Cerrar o fallar un alta limpia datos sensibles.
 
-La encapsulacion visual y accesibilidad siguen pendientes en
+Pendientes y el detalle compartido de ordenes encapsulan sus estilos. La bandeja conserva
+busqueda y filtros en Operaciones; el shell conserva desplazamiento por vista.
+`FocusBoundaryDirective` gobierna Tab e inert de modales, detalle movil y menu movil.
+La encapsulacion de las otras vistas y la revision completa siguen en
 [6.4](../roadmap/development-hardening-plan.md).

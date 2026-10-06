@@ -46,6 +46,8 @@ import { RequestScope } from '../../request-cancellation';
 export class OperationsFacade {
   private runDetailScope: RequestScope | null = null;
   private inboxTaskScope: RequestScope | null = null;
+  public readonly inboxSearch = signal('');
+  public readonly inboxFilter = signal<'all' | 'access' | 'paused' | 'payment' | 'messages'>('all');
   public readonly loads = {
     health: new LoadSection('Salud API'),
     worker: new LoadSection('Worker'),
@@ -185,7 +187,7 @@ export class OperationsFacade {
   }
 
   public openInboxOrder(orderId: string): void {
-    void this.router.navigate(['/ordenes', orderId]);
+    this.orders.selectOrder(orderId, true, false);
   }
 
   public async runInboxOrderTask(task: InboxOrderTask): Promise<void> {

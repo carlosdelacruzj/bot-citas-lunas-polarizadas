@@ -1,5 +1,6 @@
 @import 'sweetalert2/dist/sweetalert2.min.css';
 @import './theme.css';
+@import './workspace.css';
 
 * {
   box-sizing: border-box;

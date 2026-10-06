@@ -736,6 +736,8 @@ export const DASHBOARD_INBOX_VIEW_OPERATIONS = new InjectionToken<Pick<Operation
   | "inboxPaymentCount"
   | "inboxMessageCount"
   | "inboxOrderTasks"
+  | "inboxSearch"
+  | "inboxFilter"
   | "openInboxOrder"
   | "runInboxOrderTask"
   | "openInboxCaptchaReview"
@@ -831,6 +833,7 @@ export const DASHBOARD_ORDERS_VIEW_PRESENTATION = new InjectionToken<Pick<Dashbo
 export const DASHBOARD_ORDERS_VIEW_UI = new InjectionToken<Pick<DashboardUi,
   "actionBusy"
   | "copiedLabel"
+  | "activeModal"
 >>('DASHBOARD_ORDERS_VIEW_UI');
 
 export const DASHBOARD_ORDERS_VIEW_FINANCE = new InjectionToken<Pick<FinanceFacade,

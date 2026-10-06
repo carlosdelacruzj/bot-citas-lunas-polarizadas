@@ -1,3 +1,4 @@
+import { FocusBoundaryDirective } from '../focus-boundary.directive';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -9,7 +10,7 @@ import {
 @Component({
   selector: 'app-worker-restart-modal',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FocusBoundaryDirective, FormsModule],
   templateUrl: './worker-restart-modal.component.html',
 })
 export class WorkerRestartModalComponent {

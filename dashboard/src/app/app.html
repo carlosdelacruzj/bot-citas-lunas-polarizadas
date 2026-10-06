@@ -1,7 +1,11 @@
+<a class="skip-link" href="#dashboard-content">Ir al contenido</a>
 <main class="app-frame" [class.sidebar-collapsed]="navigation.sidebarCollapsed()">
   <aside
     id="dashboard-navigation"
     class="app-sidebar"
+    [inert]="mobileViewport() && !navigation.mobileMenuOpen()"
+    [appFocusBoundary]="mobileViewport() && navigation.mobileMenuOpen()"
+    tabindex="-1"
     [class.mobile-open]="navigation.mobileMenuOpen()"
     aria-label="Navegación principal"
   >
@@ -293,7 +297,7 @@
       />
     }
 
-    <div [hidden]="navigation.activeViewState() === 'loading'">
+    <div id="dashboard-content" tabindex="-1" [hidden]="navigation.activeViewState() === 'loading'">
       <router-outlet />
     </div>
 

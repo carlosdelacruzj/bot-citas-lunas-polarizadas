@@ -26,7 +26,7 @@ antes de otro crecimiento funcional.
 
 ### Entrada al punto 6.4
 
-Iniciar solo cuando el operador lo indique; esta preparacion no inicia 6.4.
+6.4 iniciada por el operador: continuar la revision de las vistas restantes.
 Su alcance independiente queda limitado a encapsulacion visual y accesibilidad,
 sin features comerciales, cambios del portal ni retiro de compatibilidad.
 Antes de editar, comprobar el corte de [preparacion](../../reports/architecture/pre64-readiness-2026-09-19.md),
@@ -126,7 +126,7 @@ Consolidar el flujo visual
 `Solicitud -> Validacion -> Cupo -> Reserva -> Pago -> Post-cita`.
 
 - reducir tarjetas equivalentes y diagnostico en superficies principales;
-- usar foco contenido, contraste y reduced motion;
+- completar revision de contraste y teclado de las vistas restantes;
 - revisar Pendientes, Citas y recordatorios y Mensajes en `360`, `768`, `1024`
   y `1440 px`.
 
@@ -149,8 +149,8 @@ Cerrar 5.5.5: observar el siguiente caso natural de WhatsApp con la version
 extraida cargada en Admin API antes de retirar los reexports.
 No generar envios para forzar la aceptacion. Conservar tambien `2.6` pendiente
 hasta reunir su evidencia integral natural.
-Siguiente bloque del dashboard: `6.4`, encapsulacion visual, focus trap e inert,
-teclado, contraste, reduced motion y revision responsive; reducir bundle y CSS.
+Continuar `6.4`: encapsular las vistas restantes, verificar contraste y responsive
+de Citas y Mensajes; reducir bundle sin elevar presupuestos.
 Las fases 7 y 8 restantes cubren API, consultas y cierre integral.
 No combinar estas extracciones con cambios funcionales del portal.
 

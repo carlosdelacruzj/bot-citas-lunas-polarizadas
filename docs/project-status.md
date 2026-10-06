@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-19`; [corte de preparacion para 6.4](../reports/architecture/pre64-readiness-2026-09-19.md).
+Estado verificado documentalmente: `2026-10-06`; [corte previo de preparacion para 6.4](../reports/architecture/pre64-readiness-2026-09-19.md).
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -34,7 +34,6 @@ Estado general:
   manual como hechos distintos.
 
 ## Arquitectura vigente
-
 [Configuracion por dominio](architecture/domain-configuration.md) con grupos explicitos por consumidor y copias por cliente; la fachada plana esta retirada.
 
 ### Worker
@@ -126,8 +125,8 @@ cobro falla cerrado hasta disponer de una correccion contable auditada.
 | `/captchas` | Superficie dedicada; CAPTCHA no forma parte de Pendientes. |
 
 **Pendientes** consume `GET /api/v1/operator-inbox`. El total excluye CAPTCHA y
-reune acceso, pausas, contacto, cobro, postpago y comunicaciones. Incluye
-busqueda, filtros, severidad y siguiente accion. El dato temporal disponible
+reune acceso, pausas, contacto, cobro, postpago y comunicaciones. Incluye busqueda y filtros conservados al navegar, lista compacta, severidad y siguiente accion.
+El detalle lateral se comparte con Ordenes; en escritorio mantiene la lista visible y en movil confina el foco. El dato temporal disponible
 sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea. **Resumen** permite pausar y reanudar mediante comandos durables; la pausa espera una frontera segura, conserva historial y backoffs, y solo suspende nuevas revisiones y mediciones del portal. Con reserva automatica desactivada, un cupo seleccionable conserva su foto y pausa antes de cualquier clic de reserva.
 
 **Citas y recordatorios** separa proximas citas, casos que requieren revision e
@@ -144,7 +143,7 @@ Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups
 El [dashboard por dominio](architecture/dashboard-domains.md) conserva `App`
 como shell. Los seis dominios poseen estado, comandos y [clientes HTTP propios](architecture/dashboard-http.md).
 Vistas y modales consumen puertos estrechos; listas y detalles autorizados siguen separados.
-Las [cargas parciales](architecture/dashboard-loading.md) muestran error y frescura por bloque y cancelan lecturas obsoletas.
+Las [cargas parciales](architecture/dashboard-loading.md) muestran error, fecha y antiguedad por bloque; cancelan lecturas obsoletas. Navegar conserva el desplazamiento por vista.
 
 Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
 confirmaciones y la copia diagnostica no muestran esos datos personales.
@@ -231,14 +230,13 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - busqueda acotada y rotacion estan validadas en aislamiento; [corte de activacion](../reports/architecture/bounded-search-rotation-2026-09-19.md), worker pausado y aceptacion natural pendiente.
-- 6.4 no esta iniciada: quedan encapsulacion, foco, teclado, contraste, responsive y presupuestos de bundle/CSS;
+- 6.4 en curso: Pendientes y detalle encapsulados, modales con foco/inert, Escape y reduced motion; quedan revision de otras vistas, contraste completo y bundle;
 - no quedan ciclos; un import inverso conocido sigue baselinado y CI impide deuda nueva.
 - el entorno aislado del lock pasa pruebas, cobertura, `pip check` y auditoria Python; el Python compartido conserva el conflicto ajeno `torch/setuptools`. Auditoria frontend: 11 avisos moderados, sin altos ni criticos al corte.
 
 La prioridad y criterios de cierre estan en [`roadmap/README.md`](roadmap/README.md).
 
 ## Validacion base
-
 ```powershell
 python -m compileall -q src
 python -m ruff check src tests

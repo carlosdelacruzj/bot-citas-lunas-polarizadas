@@ -1,3 +1,4 @@
+import { FocusBoundaryDirective } from '../focus-boundary.directive';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -10,7 +11,7 @@ import {
 @Component({
   selector: 'app-finance-entry-modal',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FocusBoundaryDirective, FormsModule],
   templateUrl: './finance-entry-modal.component.html',
 })
 export class FinanceEntryModalComponent {

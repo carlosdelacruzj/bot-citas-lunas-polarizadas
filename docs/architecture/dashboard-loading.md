@@ -42,8 +42,11 @@ Ejecuciones, consultas de bandeja, seguimiento y CAPTCHA tienen limpieza propia.
 
 Las mutaciones mantienen sus contratos y no se reintentan automaticamente.
 La restauracion diferida de foco respeta un foco nuevo elegido por el usuario;
-el buscador enlaza su evento input directamente al signal para conservar escritura
-inmediata al recrear la ruta. Focus trap, inert y revision visual siguen en 6.4.
+los buscadores y filtros de Ordenes y Pendientes viven en propietarios del shell.
+La navegacion captura el desplazamiento antes de cambiar de ruta y lo restaura al volver.
+El detalle compartido publica carga, error y frescura propios, sin hacer pasar un fallo por ausencia de datos.
+Modales y detalle movil confinan Tab, aplican inert al fondo y restauran foco al cerrar;
+en escritorio el detalle permite seguir usando la lista. La revision de otras vistas sigue en 6.4.
 
 ## Verificacion
 
