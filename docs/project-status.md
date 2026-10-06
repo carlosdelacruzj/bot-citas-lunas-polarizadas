@@ -180,8 +180,7 @@ La aceptacion natural se rige por
 [`operations/whatsapp-natural-acceptance.md`](operations/whatsapp-natural-acceptance.md).
 
 ## Citas, recordatorios y post-cita
-Los recordatorios usan plantilla versionada, modos separados y barreras de
-deduplicacion. El scheduler post-cita usa una sesion de solo lectura, pausas de
+Los recordatorios usan plantilla versionada, modos separados y deduplicacion; parten de las `08:00` Lima por defecto, o al arrancar despues con worker y WhatsApp listos, sin esperar el resumen diario. El scheduler post-cita usa una sesion de solo lectura, pausas de
 `4-7` segundos y maximo `20` casos diarios. Un lote ambiguo se detiene.
 
 Estado de cita, recordatorio, revision post-cita y comunicacion permanece

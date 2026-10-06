@@ -1,6 +1,6 @@
 # Contrato de recordatorios y seguimiento post-cita
 
-Estado: vigente. Ultima verificacion: `2026-08-30`.
+Estado: vigente. Ultima verificacion: `2026-10-06`.
 
 Codigo propietario: `services/appointment_reminders.py`,
 `db/appointment_reminders.py`, `services/post_appointment.py` y
@@ -39,12 +39,28 @@ Antes de encolar se exige:
 3. destinatario WhatsApp valido;
 4. plantilla vigente compatible con la anticipacion;
 5. total dentro de `APPOINTMENT_REMINDERS_DAILY_LIMIT`;
-6. clave de deduplicacion no creada previamente.
+6. clave de deduplicacion no creada previamente;
+7. horario inicial alcanzado y lease vigente del worker.
 
 El limite de recordatorios es configurable y su valor predeterminado es `100`;
-no es el limite fijo de post-cita. Los jobs pueden quedar bloqueados hasta que
-termine el resumen diario de evidencias. Un resumen ausente o activo no autoriza
-el envio.
+no es el limite fijo de post-cita. `APPOINTMENT_REMINDERS_TIME` fija el inicio en
+hora Lima y su valor predeterminado es `08:00`. Antes de esa hora no se encolan
+ni se reclaman recordatorios. Si Admin API inicia despues, el scheduler revisa
+el lote del dia en su primer ciclo y continua reconciliando cada 60 segundos
+por defecto; espera un lease activo del worker. Una pausa del worker conserva
+su lease y no cancela recordatorios de reservas confirmadas.
+
+El dispatcher unico comprueba `session_ready` de WhatsApp antes de reclamar
+cada trabajo. PostgreSQL vuelve a validar el modo `live` y el lease del worker
+al reclamar; un fallo de acceso a DB detiene la admision. WhatsApp no listo
+conserva el job sin interaccion ni intento de envio hasta su proxima comprobacion.
+No se requiere el resumen diario de evidencias. `summary_status=not_required`
+conserva la forma historica del payload; la configuracion de gracia del resumen
+permanece por compatibilidad, sin condicionar el envio.
+
+Reiniciar no duplica trabajos: la clave sigue siendo reserva y fecha de cita.
+Una fecha de servicio pasada no se envia tardia; se conserva la revalidacion
+antes del envio y nunca se reencola un resultado `uncertain`.
 
 Cada job nuevo congela `service_date`, `appointment_day`, reserva, orden,
 destinatario, texto renderizado, clave de plantilla y revision. La identidad del

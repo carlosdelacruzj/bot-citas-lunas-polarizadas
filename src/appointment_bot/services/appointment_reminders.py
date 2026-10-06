@@ -24,10 +24,8 @@ from appointment_bot.db.appointment_reminders import (
     appointment_reminder_status,
     backfill_missing_appointment_days,
     count_invalid_current_appointment_dates,
-    daily_summary_barrier_status,
     ensure_appointment_reminder_batch_day,
     list_appointment_reminder_candidates,
-    mark_daily_summary_missing_alerted,
     record_appointment_reminder_day,
 )
 from appointment_bot.db.whatsapp_automation import enqueue_appointment_reminder_job
@@ -35,7 +33,7 @@ from appointment_bot.db.whatsapp_message_templates import (
     WhatsAppMessageTemplate,
     get_whatsapp_message_template,
 )
-from appointment_bot.services.notifier import send_telegram_message
+from appointment_bot.db.worker_state import is_worker_lease_active
 
 logger = logging.getLogger(__name__)
 LIMA_TIMEZONE = ZoneInfo("America/Lima")
@@ -146,7 +144,7 @@ def reconcile_appointment_reminders(
     template = get_current_appointment_reminder_template(runtime_settings=runtime_settings)
     candidates = list_appointment_reminder_candidates(appointment_day, settings=runtime_settings)
     invalid_date_count = count_invalid_current_appointment_dates(settings=runtime_settings)
-    summary_status = daily_summary_barrier_status(service_date, settings=runtime_settings)
+    summary_status = "not_required"
     valid_candidates: list[tuple[AppointmentReminderCandidate, str | None, str | None, str]] = []
     missing_contact_count = 0
     for candidate in candidates:
@@ -186,6 +184,12 @@ def reconcile_appointment_reminders(
                 "El total de recordatorios supera el limite diario configurado: "
                 f"{len(valid_candidates)}/{whatsapp_settings.appointment_reminders_daily_limit}."
             )
+        elif effective_now.time() < whatsapp_settings.appointment_reminders_time:
+            status = "blocked"
+            error = "Esperando el horario de inicio de los recordatorios."
+        elif not is_worker_lease_active(settings=runtime_settings):
+            status = "blocked"
+            error = "Esperando que el worker confirme su estado activo para enviar recordatorios."
         else:
             for candidate, phone, username, message_text in valid_candidates:
                 created = enqueue_appointment_reminder_job(
@@ -204,15 +208,6 @@ def reconcile_appointment_reminders(
                     created_count += 1
                 else:
                     existing_count += 1
-            if not valid_candidates:
-                status = "complete"
-            elif summary_status == "missing":
-                status = "waiting_summary"
-            elif summary_status == "active":
-                status = "processing"
-            else:
-                status = "ready"
-
             job_counts = appointment_reminder_job_counts(
                 service_date, appointment_day, settings=runtime_settings
             )
@@ -223,12 +218,13 @@ def reconcile_appointment_reminders(
                 job_counts.get(job_status, 0)
                 for job_status in ("sent", "failed", "uncertain", "skipped")
             )
-            if summary_status not in {"missing", "active"}:
-                covered_jobs = terminal_jobs + existing_count
-                if active_jobs == 0 and covered_jobs >= len(valid_candidates):
-                    status = "complete"
-                elif job_counts.get("running", 0):
-                    status = "processing"
+            covered_jobs = terminal_jobs + existing_count
+            if not valid_candidates or (active_jobs == 0 and covered_jobs >= len(valid_candidates)):
+                status = "complete"
+            elif job_counts.get("running", 0):
+                status = "processing"
+            else:
+                status = "ready"
 
     record_appointment_reminder_day(
         service_date=service_date,
@@ -243,21 +239,6 @@ def reconcile_appointment_reminders(
         last_error=error,
         settings=runtime_settings,
     )
-    if status == "waiting_summary" and _summary_grace_expired(
-        effective_now, whatsapp_settings=whatsapp_settings
-    ):
-        if mark_daily_summary_missing_alerted(service_date, settings=runtime_settings):
-            send_telegram_message(
-                "\n".join(
-                    [
-                        "⚠️ Recordatorios de cita bloqueados.",
-                        f"Fecha de citas: {appointment_day.isoformat()}.",
-                        "El resumen diario de evidencias no aparecio dentro de la ventana.",
-                        "No se enviara ningun recordatorio hasta que exista ese trabajo.",
-                    ]
-                ),
-                telegram_settings=telegram_settings,
-            )
     logger.info(
         "Appointment reminders reconciled: date=%s appointment_day=%s status=%s "
         "eligible=%s queued=%s existing=%s missing_contact=%s summary=%s",
@@ -366,15 +347,6 @@ def appointment_reminder_status_payload(
     payload["current_time"] = now.isoformat()
     payload["scheduler_window_open"] = now.time() >= whatsapp_settings.appointment_reminders_time
     return payload
-
-
-def _summary_grace_expired(now: datetime, *, whatsapp_settings: WhatsappSettings) -> bool:
-    cutoff = datetime.combine(
-        now.date(), whatsapp_settings.appointment_reminders_time, tzinfo=LIMA_TIMEZONE
-    )
-    return now >= cutoff + timedelta(
-        minutes=whatsapp_settings.appointment_reminders_summary_grace_minutes
-    )
 
 
 def _masked_reminder_recipient(phone: str | None, username: str | None) -> str:

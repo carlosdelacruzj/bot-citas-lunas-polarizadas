@@ -101,9 +101,10 @@ Aceptacion natural:
 
 ## Recordatorios y post-cita
 
-Los schedulers pertenecen a Admin API. Mantener una sola sesion de solo lectura,
-pausas de `4-7` segundos, cap diario `20` y breaker ante ambiguedad. Preparacion,
-envio, entrega y lectura permanecen separados.
+Los schedulers pertenecen a Admin API. Recordatorios: inicio desde las `08:00` Lima por defecto,
+o al arrancar despues, con lease vigente del worker y WhatsApp `session_ready`; sin esperar resumen diario.
+Post-cita conserva una sola sesion de lectura, pausas de `4-7` segundos, cap diario `20` y breaker.
+Preparacion, envio, entrega y lectura permanecen separados.
 
 Contrato: [`../contracts/appointment-followups.md`](../contracts/appointment-followups.md).
 

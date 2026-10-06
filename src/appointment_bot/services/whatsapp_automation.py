@@ -133,6 +133,13 @@ class WhatsAppAutomationDispatcher:
                 if waiting_job is None:
                     self._stop_event.wait(POLL_SECONDS)
                     continue
+                if (
+                    waiting_job["job_kind"] == "appointment_reminder"
+                    and datetime.now(LIMA_TIMEZONE).time()
+                    < self.whatsapp_settings.appointment_reminders_time
+                ):
+                    self._stop_event.wait(POLL_SECONDS)
+                    continue
                 session = validate_whatsapp_web_session()
                 if session.get("status") != "session_ready":
                     message = str(

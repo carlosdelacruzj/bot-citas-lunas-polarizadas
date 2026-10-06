@@ -81,7 +81,8 @@
             <div><strong>{{ reminders.control.lead_days }} {{ reminders.control.lead_days === 1 ? 'día' : 'días' }} antes</strong>
               <span>Hoy se revisan las citas del {{ editor.presentationDomain.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
           </div>
-          <small>Primero debe terminar el resumen diario · Evidencias: {{ reminders.day?.summary_status ?? 'pendientes' }}</small>
+          <small>Si la PC inicia después, se envían cuando el worker y WhatsApp estén listos.</small>
+          @if (reminders.day?.last_error) { <small>{{ reminders.day?.last_error }}</small> }
         </section>
 
         <section class="followups-metrics upcoming-metrics" aria-label="Resumen de recordatorios">

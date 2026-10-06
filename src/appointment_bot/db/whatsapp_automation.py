@@ -290,20 +290,10 @@ def next_waiting_whatsapp_automation_job(
               )
               AND (
                     job_kind <> 'appointment_reminder'
-                    OR (
-                        EXISTS (
-                            SELECT 1
-                            FROM whatsapp_automation_jobs summary_job
-                            WHERE summary_job.job_kind = 'daily_slot_summary'
-                              AND summary_job.report_date = whatsapp_automation_jobs.report_date
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM whatsapp_automation_jobs active_summary
-                            WHERE active_summary.job_kind = 'daily_slot_summary'
-                              AND active_summary.report_date = whatsapp_automation_jobs.report_date
-                              AND active_summary.status IN ('queued', 'blocked', 'running')
-                        )
+                    OR EXISTS (
+                        SELECT 1 FROM worker_state ws
+                        WHERE ws.id = 1 AND ws.owner_token IS NOT NULL
+                          AND ws.lease_expires_at > CURRENT_TIMESTAMP
                     )
               )
             ORDER BY priority, created_at
@@ -350,21 +340,10 @@ def claim_whatsapp_automation_job(
                   )
                   AND (
                         job_kind <> 'appointment_reminder'
-                        OR (
-                            EXISTS (
-                                SELECT 1
-                                FROM whatsapp_automation_jobs summary_job
-                                WHERE summary_job.job_kind = 'daily_slot_summary'
-                                  AND summary_job.report_date = whatsapp_automation_jobs.report_date
-                            )
-                            AND NOT EXISTS (
-                                SELECT 1
-                                FROM whatsapp_automation_jobs active_summary
-                                WHERE active_summary.job_kind = 'daily_slot_summary'
-                                  AND active_summary.report_date =
-                                      whatsapp_automation_jobs.report_date
-                                  AND active_summary.status IN ('queued', 'blocked', 'running')
-                            )
+                        OR EXISTS (
+                            SELECT 1 FROM worker_state ws
+                            WHERE ws.id = 1 AND ws.owner_token IS NOT NULL
+                              AND ws.lease_expires_at > CURRENT_TIMESTAMP
                         )
                   )
                 RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,

@@ -184,7 +184,7 @@ def load_settings(
         ),
         appointment_reminders_time=_parse_time(
             os.getenv("APPOINTMENT_REMINDERS_TIME"),
-            default=datetime_time(hour=18),
+            default=datetime_time(hour=8),
         ),
         appointment_reminders_summary_grace_minutes=_parse_int(
             os.getenv("APPOINTMENT_REMINDERS_SUMMARY_GRACE_MINUTES"),

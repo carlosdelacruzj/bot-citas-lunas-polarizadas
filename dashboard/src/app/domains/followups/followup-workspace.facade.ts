@@ -338,7 +338,7 @@ export class FollowupWorkspaceFacade {
   public reminderCandidateNextAction(status: string): string {
     const labels: Record<string, string> = {
       eligible: 'Se preparará en la próxima revisión', missing_contact: 'Agregar un contacto válido',
-      blocked: 'Esperar que termine el resumen diario', queued: 'Esperar turno de envío',
+      blocked: 'Esperar que el sistema y WhatsApp estén listos', queued: 'Esperar turno de envío',
       running: 'Envío en curso', sent: 'Sin acción pendiente', failed: 'Revisar el detalle del fallo',
       uncertain: 'Verificar manualmente; no reenviar', skipped: 'Revisar la cita o el contacto',
       scheduled: 'Aún fuera de la fecha de recordatorio',

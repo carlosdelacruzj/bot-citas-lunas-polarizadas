@@ -72,6 +72,8 @@ Observar o conciliar sin crear envios de prueba:
 - siguiente alta natural con exclusiones: comprobar objetivo, motivo por
   expediente y aviso unico; conciliar identidades antiguas cuando exista
   evidencia exacta, conservando en revision las cuentas no resueltas;
+- aceptar el primer lote natural de recordatorios matutinos: inicio desde las 08:00 o arranque tardio,
+  lease activo y WhatsApp listo, sin esperar resumen diario ni duplicar al reiniciar;
 - primer cierre diario completo: investigar la confirmacion de la publicacion
   final y conciliar componentes; refrescar el inventario, no reutilizar seis casos historicos;
 - revisar albumes, postpagos y avisos ambiguos antes de cualquier recuperacion;
