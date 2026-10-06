@@ -4,14 +4,12 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
-from appointment_bot.core.models import AvailabilityResult, RunReport
+from appointment_bot.core.models import RunReport
 from appointment_bot.db.worker_state import get_worker_state
-from appointment_bot.services.notifier import notify_result
 from appointment_bot.utils.screenshots import remove_screenshot_paths, report_screenshot_paths
 
 
@@ -50,15 +48,9 @@ def notify_confirmed_observer_availability(
     if signature == state.availability_signature:
         remove_screenshot_paths(report_screenshot_paths(report))
         return None
-    result = AvailabilityResult(
-        status=report.status, message=report.message, details=report.details
-    )
-    screenshot_path = Path(report.screenshot_path) if report.screenshot_path else None
-    delivered = notify_result(result, screenshot_path, telegram_settings=telegram_settings)
+    # The verified-slot callback owns the deduplicated async availability alert.
     remove_screenshot_paths(report_screenshot_paths(report))
-    if delivered or not telegram_settings.telegram_enabled:
-        return signature
-    return None
+    return signature
 
 
 def availability_signature(report: RunReport) -> str:

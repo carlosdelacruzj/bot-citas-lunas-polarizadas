@@ -81,9 +81,9 @@ Devuelve:
 - `items`: una sola siguiente accion por orden;
 - `captcha`: contador separado, actualmente excluido de la cola comercial.
 
-La precedencia evita duplicar una orden con varias tarjetas. Las acciones
-incluyen corregir credenciales, resolver varios tramites pendientes, reanudar,
-completar contacto, cobrar, preparar postpago y revisar comunicaciones.
+La precedencia evita duplicar una orden con varias tarjetas. El resumen toma el ultimo trabajo
+de album y postpago por orden: los reintentos no multiplican filas ni eliminan historial.
+Las acciones incluyen acceso, tramites pendientes, reanudacion, contacto, cobro, postpago y comunicaciones.
 Contactos y datos sensibles se entregan enmascarados salvo en flujos autorizados
 de detalle.
 

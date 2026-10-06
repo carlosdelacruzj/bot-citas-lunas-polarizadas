@@ -47,6 +47,11 @@ function fakeView(activeModal: string): Record<string, unknown> {
     servicePackageOptionLabel: vi.fn(() => 'Servicio regular — S/50.00'),
     formatMoney: vi.fn((amount: number) => `S/${amount.toFixed(2)}`),
     closeModal: vi.fn(),
+    returningContact: {
+      loading: signal(false), message: signal(''), matches: signal([]),
+      selectedContact: signal(null), selectedAccount: signal(null),
+      accounts: signal([]), accountLoading: signal(false),
+    },
     requestCreateOrder: vi.fn(),
     editField: vi.fn(),
     addNewExcludedDateRange: vi.fn(),
@@ -81,7 +86,7 @@ describe('sensitive dashboard modals', () => {
     const fixture = await render(CreateOrderModalComponent, view);
     const buttons = [...fixture.nativeElement.querySelectorAll('button')] as HTMLButtonElement[];
 
-    buttons.find((button) => button.textContent?.includes('Crear orden'))?.click();
+    buttons.find((button) => button.textContent?.includes('Crear y validar'))?.click();
     buttons.find((button) => button.textContent?.includes('Cancelar'))?.click();
 
     expect(view['requestCreateOrder']).toHaveBeenCalledOnce();

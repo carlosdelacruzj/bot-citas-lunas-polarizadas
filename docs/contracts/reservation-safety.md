@@ -34,8 +34,8 @@ worker y dashboard.
   guardar la captura canonica y avisar antes del CAPTCHA o del submit. Si el cupo
   no se reproduce, queda como no accionable y nunca inicia CAPTCHA ni submit.
 
-El [presupuesto de busqueda](bounded-search.md) limita cada revision a dos fechas,
-dos horarios en total y un envio; no permite reiniciar el limite por fallback.
+El [presupuesto de busqueda](bounded-search.md) limita cada actualizacion a dos fechas
+y permite recorrer los horarios compatibles del cliente dentro de la ventana; toda la sesion admite un envio. Solo una actualizacion nueva de sede renueva la seleccion; un fallback no reinicia ningun limite.
 
 ## Elegibilidad por expediente
 
@@ -97,6 +97,7 @@ inicial, seleccion bloqueada por regla y reobservacion recuperada tras
 `slot_lost`. Si no puede guardarse o archivarse, el flujo debe detenerse antes
 de crear la intencion de reserva. La captura CAPTCHA es evidencia secundaria y
 no puede sustituir a la captura canonica del cupo.
+Antes de capturar exige seleccion exacta visible, cupos positivos y boton habilitado sin carga ASP.NET/UpdateProgress: espera maxima 5 s, estabilidad 150 ms. Si falla, guarda diagnostico y detiene el flujo sin archivar ni enviar.
 
 Cuando el candidato procede de una consulta directa, la evidencia conserva la
 telemetria no sensible de cada POST: estado HTTP, duracion, tamano de respuesta

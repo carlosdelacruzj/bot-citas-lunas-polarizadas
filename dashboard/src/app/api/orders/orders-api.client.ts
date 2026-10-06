@@ -26,6 +26,19 @@ import type {
 export class OrdersApiClient {
   private readonly transport = inject(ApiTransport);
 
+  async searchContacts(query: string): Promise<ServiceOrderDetail[]> {
+    const response = await this.transport.post<{ service_orders: ServiceOrderDetail[] }>(
+      '/api/v1/service-orders/search', { query },
+    );
+    return response.service_orders;
+  }
+
+  async getSavedCredentials(orderId: string, scope?: RequestScope): Promise<{
+    document_type: CreateServiceOrderPayload['document_type']; username: string; password: string;
+  }> {
+    return this.transport.read(`/api/v1/service-orders/${encodeURIComponent(orderId)}/credentials`, scope);
+  }
+
   async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {
     const response = await this.transport.read<ServiceOrdersResponse>(
       '/api/v1/service-orders?projection=dashboard',

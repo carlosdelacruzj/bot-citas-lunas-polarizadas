@@ -130,6 +130,11 @@ class SlotEvidenceTests(unittest.TestCase):
             with (
                 patch(
                     "appointment_bot.reservation_engine.slot_evidence."
+                    "_wait_for_visible_selected_slot",
+                    return_value="30",
+                ),
+                patch(
+                    "appointment_bot.reservation_engine.slot_evidence."
                     "save_available_appointment_snapshot",
                     side_effect=lambda _page, *, evidence_settings: (
                         calls.append("capture") or source
@@ -344,7 +349,7 @@ class SlotEvidenceTests(unittest.TestCase):
             self.assertEqual(captured.details["submission_outcome"], "blocked_by_order_rule")
             self.assertFalse(report.reservation_attempted)
 
-    def test_blocked_notification_sends_slot_before_secondary_captcha(self) -> None:
+    def test_blocked_notification_keeps_slot_and_captcha_local(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             slot = Path(directory) / "cupo-selected.png"
@@ -373,10 +378,10 @@ class SlotEvidenceTests(unittest.TestCase):
                     telegram_settings=settings.telegram,
                 )
 
-            self.assertTrue(delivered)
-            self.assertEqual(send_photo.call_count, 2)
-            self.assertEqual(send_photo.call_args_list[0].args[0], slot)
-            self.assertEqual(send_photo.call_args_list[1].args[0], captcha)
+            self.assertFalse(delivered)
+            send_photo.assert_not_called()
+            self.assertEqual(slot.read_bytes(), b"slot")
+            self.assertEqual(captcha.read_bytes(), b"captcha")
 
     def test_reobservation_archives_recovered_slot_before_second_attempt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

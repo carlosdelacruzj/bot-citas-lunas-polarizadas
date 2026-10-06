@@ -266,13 +266,14 @@ def select_available_site_for_observer(
     required_site: str | None = None,
     timeout: int = 15_000,
     telemetry_attempt: int | None = None,
+    reset_first: bool = False,
 ) -> Page:
     return _select_available_site(
         page,
         timeout=timeout,
         allow_hidden=True,
         required_site=required_site,
-        reset_first=False,
+        reset_first=reset_first,
         telemetry_attempt=telemetry_attempt,
         telemetry_phase="observer_required_site",
     )
@@ -643,33 +644,61 @@ def _wait_for_options_after_selection(
     page: Page,
     selector: str,
     *,
-    previous_signature: tuple[tuple[str, str], ...],
-    require_change: bool,
+    expected_date: str,
+    refresh_token: str,
+    async_refresh_token: str | None,
     timeout: int,
 ) -> list[dict[str, str]]:
     deadline = time.monotonic() + timeout / 1_000
     last_signature = None
     stable_reads = 0
-    changed = False
     current_options: list[dict[str, Any]] = []
 
     while time.monotonic() < deadline:
+        refreshed = page.evaluate(
+            """expected => {
+                const date = document.querySelector(expected.dateSelector);
+                const hours = document.querySelector(expected.selector);
+                const manager = window.Sys?.WebForms?.PageRequestManager?.getInstance();
+                const completed = expected.asyncToken
+                    ? window.__appointmentBotAsyncRefreshes?.[expected.asyncToken] === true
+                    : hours && hours.dataset.appointmentBotRefresh !== expected.marker;
+                const loading = manager?.get_isInAsyncPostBack()
+                    || Array.from(document.querySelectorAll('[id*="UpdateProgress"]'))
+                        .some(element => element.checkVisibility({
+                            checkOpacity: true, checkVisibilityCSS: true
+                        }));
+                return Boolean(completed && !loading && hours && date
+                    && date.selectedOptions[0]?.textContent.trim() === expected.date);
+            }""",
+            {"dateSelector": DATE_SELECTOR, "selector": selector, "date": expected_date,
+             "marker": refresh_token, "asyncToken": async_refresh_token},
+        )
+        if not refreshed:
+            last_signature = None
+            stable_reads = 0
+            page.wait_for_timeout(250)
+            continue
         current_options = _select_options(page, selector)
         current_signature = _options_signature(current_options)
-        changed = changed or current_signature != previous_signature
         if current_signature == last_signature:
             stable_reads += 1
         else:
             stable_reads = 1
             last_signature = current_signature
 
-        has_real_options = _has_real_options([option["text"] for option in current_options])
-        if stable_reads >= 2 and has_real_options and (changed or not require_change):
+        if stable_reads >= 2:
+            logger.info("Date hour refresh confirmed: date=%s real_hours=%s elapsed_ms=%.0f",
+                        expected_date, sum(_has_real_options([option["text"]])
+                                           for option in current_options),
+                        (timeout / 1_000 - max(0, deadline - time.monotonic())) * 1_000)
             return current_options
 
         page.wait_for_timeout(250)
 
-    return current_options if changed or not require_change else []
+    raise AppointmentOptionsNotRefreshed(
+        "La pagina no confirmo una respuesta estable de horarios para la fecha seleccionada."
+    )
 
 
 def _mark_select_for_refresh(page: Page, selector: str) -> str:
@@ -681,9 +710,9 @@ def _mark_select_for_refresh(page: Page, selector: str) -> str:
     return token
 
 
-def _mark_aspnet_async_refresh(page: Page) -> str | None:
+def _mark_aspnet_async_refresh(page: Page, *, require_success: bool = False) -> str | None:
     return page.evaluate(
-        """() => {
+        """requireSuccess => {
             if (!window.Sys || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
                 return null;
             }
@@ -692,15 +721,17 @@ def _mark_aspnet_async_refresh(page: Page) -> str | None:
             const token = `${Date.now()}-${Math.random()}`;
             window.__appointmentBotAsyncRefreshes = window.__appointmentBotAsyncRefreshes || {};
             window.__appointmentBotAsyncRefreshes[token] = false;
-            const handler = function () {
-                window.__appointmentBotAsyncRefreshes[token] = true;
+            const handler = function (_sender, args) {
+                window.__appointmentBotAsyncRefreshes[token] =
+                    !requireSuccess || !args?.get_error?.();
                 try {
                     prm.remove_endRequest(handler);
                 } catch (error) {}
             };
             prm.add_endRequest(handler);
             return token;
-        }"""
+        }""",
+        require_success,
     )
 
 

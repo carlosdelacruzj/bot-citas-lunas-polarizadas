@@ -30,7 +30,7 @@ class NotifierTests(unittest.TestCase):
             send.assert_not_called()
             self.assertFalse(delivered)
 
-    def test_partial_with_blocked_rule_evidence_is_sent_to_telegram(self) -> None:
+    def test_partial_with_blocked_rule_does_not_repeat_immediate_alert(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = AvailabilityResult(
@@ -50,14 +50,8 @@ class NotifierTests(unittest.TestCase):
             ) as send:
                 delivered = notify_result(result, telegram_settings=settings.telegram)
 
-            send.assert_called_once()
-            message = send.call_args.args[0]
-            self.assertIn("CUPO DETECTADO", message)
-            self.assertIn("Fechas: 04/07/2026", message)
-            self.assertIn("Horas: 10:00", message)
-            self.assertNotIn("Blocked_selected_for_evidence", message)
-            self.assertNotIn("Submission_outcome", message)
-            self.assertTrue(delivered)
+            send.assert_not_called()
+            self.assertFalse(delivered)
 
     def test_blocked_rule_partial_sends_immediate_text_alert(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

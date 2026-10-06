@@ -159,12 +159,20 @@ def list_service_order_summaries(
                 ORDER BY prepared_at DESC
                 LIMIT 1
             ) wfm ON true
-            LEFT JOIN whatsapp_automation_jobs waj
-                ON waj.order_id = so.order_id
-               AND waj.job_kind = 'reservation_album'
-            LEFT JOIN whatsapp_automation_jobs wfaj
-                ON wfaj.order_id = so.order_id
-               AND wfaj.job_kind = 'post_payment_followup'
+            LEFT JOIN LATERAL (
+                SELECT status, review_resolution
+                FROM whatsapp_automation_jobs
+                WHERE order_id = so.order_id AND job_kind = 'reservation_album'
+                ORDER BY created_at DESC, job_key DESC
+                LIMIT 1
+            ) waj ON true
+            LEFT JOIN LATERAL (
+                SELECT status, review_resolution
+                FROM whatsapp_automation_jobs
+                WHERE order_id = so.order_id AND job_kind = 'post_payment_followup'
+                ORDER BY created_at DESC, job_key DESC
+                LIMIT 1
+            ) wfaj ON true
             LEFT JOIN LATERAL (
                 SELECT registration_notice_type, status, updated_at, error_message
                 FROM whatsapp_automation_jobs

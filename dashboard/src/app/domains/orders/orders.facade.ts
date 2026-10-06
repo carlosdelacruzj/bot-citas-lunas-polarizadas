@@ -1,5 +1,6 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { ReturningContactFacade } from './returning-contact.facade';
 import { OrdersApiClient } from '../../api/orders/orders-api.client';
 import type {
   CloseServiceOrderPayload,
@@ -102,6 +103,8 @@ export class OrdersFacade {
   public readonly editOrderSection = signal<
     'all' | 'contact' | 'credentials' | 'restrictions' | 'program-resolution'
   >('all');
+
+  public readonly returningContact = inject(ReturningContactFacade);
 
   public readonly newDocumentNumber = signal('');
 
@@ -843,6 +846,43 @@ export class OrdersFacade {
     return this.servicePackageDefinition('standard')?.total_amount ?? null;
   }
 
+  public searchNewContact(): void {
+    if (this.returningContact.selectedAccount()) {
+      this.newDocumentNumber.set('');
+      this.newPassword.set('');
+    }
+    const contact = this.returningContact.selectedContact();
+    if (contact && this.newContactName() === contact.contact_name) this.newContactName.set('');
+    this.returningContact.search(this.newContactWhatsapp(), this.newContactWhatsappUsername());
+  }
+
+  public useReturningContact(order: ServiceOrderDetail): void {
+    this.returningContact.selectedContact.set(order);
+    this.ui.editField(this.newContactName, order.contact_name ?? '');
+    this.ui.editField(this.newContactWhatsapp, order.contact_whatsapp ?? '');
+    this.ui.editField(this.newContactWhatsappUsername, order.contact_whatsapp_username ?? '');
+    if (!this.newContactSource()) this.ui.editField(this.newContactSource, order.contact_source ?? '');
+  }
+
+  public async useReturningAccount(order: ServiceOrderDetail): Promise<void> {
+    const credentials = await this.returningContact.credentials(order);
+    if (!credentials || this.ui.activeModal() !== 'create-order') return;
+    this.ui.editField(this.newDocumentType, credentials.document_type);
+    this.ui.editField(this.newDocumentNumber, credentials.username);
+    this.ui.editField(this.newPassword, credentials.password);
+  }
+
+  public enterNewAccount(): void {
+    this.returningContact.cancelAccount();
+    this.ui.editField(this.newDocumentNumber, '');
+    this.ui.editField(this.newPassword, '');
+  }
+
+  public viewReturningOrder(order: ServiceOrderDetail): void {
+    this.ui.closeModal();
+    this.selectOrder(order.order_id);
+  }
+
   public requestCreateOrder(): void {
     const excludedDateRanges = this.prepareExcludedDateRanges(
       this.newExcludedDateRanges(),
@@ -1153,6 +1193,7 @@ export class OrdersFacade {
   }
 
   public clearCreateOrderForm(): void {
+    this.returningContact.clear();
     this.newDocumentNumber.set('');
     this.newDocumentType.set('dni');
     this.newPassword.set('');
@@ -1171,6 +1212,7 @@ export class OrdersFacade {
   }
 
   private clearCreateOrderSensitiveFields(): void {
+    this.returningContact.clear();
     this.newDocumentNumber.set('');
     this.newPassword.set('');
     this.newContactName.set('');

@@ -56,8 +56,13 @@ rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
 
 Observar o conciliar sin crear envios de prueba:
 
-- aceptar naturalmente el presupuesto 2 fechas / 2 horarios / 1 envio y la rotacion
+- aceptar naturalmente el recorrido de 2 fechas / horarios compatibles del cliente / 1 envio y la rotacion
   de cuentas: revisar contadores, restricciones, descansos y exclusiones sin forzar cupos;
+  aceptar la continuidad de hasta 15 actualizaciones/120 segundos tras fechas sin horarios, con contadores acumulados y un envio por sesion;
+  aceptar con clientes la espera confirmada de horarios vacios/identicos, conservando timeout incierto;
+- aceptar el recorrido adicional de fotos sin clientes activos: maximo dos comprobaciones adicionales
+  tras la deteccion principal, avance entre cuentas, unico aviso asincrono sin foto solo tras cupo positivo y
+  captura canonica, y detencion cuando aparece una orden `ready`;
 
 - primer aviso conjunto natural tras resolver expedientes: texto revisado,
   precios, restricciones y confirmacion tecnica de un unico trabajo;

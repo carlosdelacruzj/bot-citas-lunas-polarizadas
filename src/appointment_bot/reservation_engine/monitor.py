@@ -110,6 +110,8 @@ def monitor_appointment_availability(
     budget = current_appointment_budget()
     deadline = time.monotonic() + reservation_settings.monitor_window_seconds
     session_started = time.monotonic()
+    if budget is not None and reservation_settings.monitor_window_seconds > 0:
+        budget.deadline = deadline
     attempt = 1
     screenshot_path = None
     screenshot_paths = (
@@ -127,6 +129,8 @@ def monitor_appointment_availability(
                 screenshot_path,
                 screenshot_paths,
             )
+        if attempt > 1 and budget is not None:
+            budget.begin_availability_check()
         check_started = time.monotonic()
         logger.info("Appointment availability check attempt %s", attempt)
         site_toggle_probe = reservation_settings.monitor_site_toggle_enabled and attempt > 1
@@ -164,7 +168,10 @@ def monitor_appointment_availability(
             not reservation_settings.monitor_site_toggle_enabled
             or attempt == reservation_settings.monitor_reload_probe_after_attempt
         )
-        if result.status == "unavailable" and should_reload_probe and budget is None:
+        if (
+            result.status == "unavailable" and should_reload_probe
+            and (budget is None or not (budget.dates or budget.hours or budget.submissions))
+        ):
             reload_started = time.monotonic()
             reload_result = reload_and_recheck_appointment_availability(
                 page,
@@ -264,7 +271,7 @@ def monitor_appointment_availability(
             return result, screenshot_path, screenshot_paths
 
         if (
-            budget is not None
+            (budget is not None and bool(budget.submissions))
             or reservation_settings.monitor_window_seconds <= 0
             or attempt >= reservation_settings.monitor_max_attempts
         ):

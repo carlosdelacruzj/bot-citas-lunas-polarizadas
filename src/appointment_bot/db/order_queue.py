@@ -63,11 +63,17 @@ def list_active_orders(
     *,
     include_constrained: bool = True,
     order_ids: Iterable[str] | None = None,
+    rotation_order: bool = False,
 ) -> list[ServiceOrderCandidate]:
     settings = _settings(settings)
     init_database(settings)
     filters = ["so.status = 'ready'"]
     params: list[object] = []
+    ordering = (
+        "account_activity.last_run_at ASC NULLS FIRST, os.last_run_at ASC NULLS FIRST, "
+        "so.priority DESC, so.created_at ASC, so.order_id"
+        if rotation_order else "so.priority DESC, so.created_at ASC"
+    )
     if not include_constrained:
         filters.append(
             """
@@ -94,11 +100,17 @@ def list_active_orders(
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
+            LEFT JOIN order_state os ON os.order_id = so.order_id
+            LEFT JOIN LATERAL (
+                SELECT MAX(state.last_run_at) AS last_run_at
+                FROM service_orders sibling JOIN order_state state USING(order_id)
+                WHERE sibling.portal_account_id = so.portal_account_id
+            ) account_activity ON true
             LEFT JOIN applicant_contacts ac
                 ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
             WHERE {" AND ".join(filters)}
-            ORDER BY so.priority DESC, so.created_at ASC
+            ORDER BY {ordering}
             """,
             params,
         ).fetchall()

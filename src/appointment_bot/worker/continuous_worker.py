@@ -12,13 +12,12 @@ from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.core.reservation_outcomes import TEMPORARY_RESERVATION_COOLDOWNS
-from appointment_bot.db.observer_rotation import defer_observer_checks
+from appointment_bot.db.observer_rotation import defer_observer_checks, observer_wait_seconds
 from appointment_bot.db.opportunity_bursts import reconcile_stale_opportunity_bursts
 from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
     list_active_orders,
-    list_compatible_orders_for_opportunities,
     order_backoff_seconds,
     release_service_order_claim,
 )
@@ -97,6 +96,7 @@ class ContinuousWorker:
         self._compatible_handoff_order_ids: tuple[str, ...] = ()
         self._opportunity_burst_started = False
         self._opportunity_burst_recovery_report: RunReport | None = None
+        self._single_client_observer_due = False
         self._deferred_order_reports = DeferredOrderReports(
             runtime_settings=runtime_settings, telegram_settings=telegram_settings
         )
@@ -242,13 +242,37 @@ class ContinuousWorker:
         return False
 
     def _run_available_work(self) -> None:
+        wait = observer_wait_seconds(self.runtime_settings)
+        if wait:
+            self._wait_retry(wait, phase="retry_wait")
+            return
+        orders = list_active_orders(self.runtime_settings, rotation_order=True)
+        client_count = len({(order.document_type, order.username) for order in orders})
+        if client_count != 1:
+            self._single_client_observer_due = False
+        if orders and (client_count >= 2 or not self._single_client_observer_due):
+            eligible = [
+                order for order in orders
+                if order_backoff_seconds(order.order_id, settings=self.runtime_settings) == 0
+            ]
+            if not eligible:
+                self._wait_for_order_backoff_gap()
+                return
+            checked = self._run_observer_order_block(eligible)
+            self._single_client_observer_due = client_count == 1 and checked
+            defer_observer_checks(max(30, self.runtime_settings.observer_interval_min_seconds),
+                                  self.runtime_settings)
+            return
         report, wait = rotate_observer(
             runtime_settings=self.runtime_settings, reservation_settings=self.reservation_settings,
             captcha_settings=self.captcha_settings, evidence_settings=self.evidence_settings,
             ports=self._reservation_engine_ports, cancel_event=self._cancel_event,
             on_start=lambda account: self._set_session_state("monitoring_observer", None, account),
             on_check=self._state_callbacks.on_observer_check,
+            collect_evidence=client_count == 0,
         )
+        if client_count == 1:
+            self._single_client_observer_due = False
         if report is not None:
             self._record_check(report)
             if self._maybe_pause_for_portal_change(report):
@@ -263,31 +287,22 @@ class ContinuousWorker:
                 if self._maybe_pause_after_detection(report):
                     return
             details = report.details or {}
-            # Listed dates trigger each customer's own verification, not a claim of free slots.
             if report.status in {"available", "partial", "unavailable"}:
                 self._reset_errors()
-                dates = details.get("date_options") or [details.get("fecha")]
-                orders = list_compatible_orders_for_opportunities(
-                    [(str(value), "00:00") for value in dates if value],
-                    limit=self.runtime_settings.opportunity_handoff_max_candidates,
-                    settings=self.runtime_settings,
-                )
-                if orders and self.reservation_settings.auto_reserve:
-                    self._run_rapid_queue(
-                        target_order_ids=tuple(order.order_id for order in orders)
-                    )
+            elif details.get("access_lost"):
+                self._reset_errors()
             elif report.status != "paused":
                 self._increase_errors(report.message)
         self._wait_retry(wait, phase="retry_wait")
 
-    def _run_observer_order_block(self, orders: list[ServiceOrderCandidate]) -> None:
+    def _run_observer_order_block(self, orders: list[ServiceOrderCandidate]) -> bool:
         order = next(
             (candidate for candidate in orders if self._claim_order(candidate.order_id)), None
         )
         if order is None:
             logger.info("All active service orders are currently leased")
             self._interruptible_wait(5)
-            return
+            return False
         queue_requested = False
         try:
             self._rapid_queue_initial_confirmed = 0
@@ -309,7 +324,7 @@ class ContinuousWorker:
         if self._opportunity_burst_recovery_report is not None:
             if self._maybe_recovery_backoff(self._opportunity_burst_recovery_report):
                 self._flush_deferred_order_reports()
-                return
+                return True
         if self._opportunity_burst_started:
             logger.info("Sequential opportunity handoff skipped after guarded burst")
             if self._rapid_queue_follow_up_order_ids and self.reservation_settings.auto_reserve:
@@ -332,6 +347,7 @@ class ContinuousWorker:
                 follow_up_order_ids=self._rapid_queue_follow_up_order_ids,
             )
         self._flush_deferred_order_reports()
+        return True
 
     def _wait_for_order_backoff_gap(self) -> None:
         self._update_state(
@@ -394,7 +410,7 @@ class ContinuousWorker:
             )
             return False
         self._set_session_state(
-            "monitoring_observer_normal", order.order_id, order_settings.safe_username
+            "monitoring_order", order.order_id, order_settings.safe_username
         )
         burst = OpportunityBurstCoordinator(
             order,

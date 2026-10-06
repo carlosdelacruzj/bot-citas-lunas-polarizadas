@@ -4,10 +4,16 @@ import logging
 from dataclasses import replace
 from pathlib import Path
 
+from playwright.sync_api import Error as PlaywrightError
+
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    SITE_SELECTOR,
+    SLOTS_LABEL_ID,
 )
 from appointment_bot.utils.screenshots import (
     archive_unique_slot_capture,
@@ -30,6 +36,15 @@ def capture_canonical_selected_slot(
     hour_text = str(details.get("hora") or "").strip()
     if not date_text or not hour_text:
         raise CanonicalSlotCaptureError("No se puede capturar un cupo sin fecha y hora exactas.")
+
+    try:
+        details["cupos"] = _wait_for_visible_selected_slot(page, details)
+    except PlaywrightError as exc:
+        save_screenshot(page, "cupo-modal-incompleto", evidence_settings=evidence_settings)
+        raise CanonicalSlotCaptureError(
+            "El modal no mostro la seleccion exacta, cupos positivos y boton habilitado "
+            "de forma estable; no se guardo como evidencia de disponibilidad."
+        ) from exc
 
     source_path = save_available_appointment_snapshot(page, evidence_settings=evidence_settings)
     if source_path is None:
@@ -67,6 +82,56 @@ def capture_canonical_selected_slot(
     details["canonical_slot_capture"] = capture
     details["_unique_slot_evidence"] = evidence
     return replace(result, details=details), source_path, archived_path
+
+
+def _wait_for_visible_selected_slot(page, details: dict) -> str:
+    page.evaluate("delete window.__canonicalSlotReady")
+    handle = page.wait_for_function(
+        r"""expected => {
+            const visible = element => element && element.checkVisibility({
+                checkOpacity: true, checkVisibilityCSS: true
+            });
+            const selected = selector => {
+                const element = document.querySelector(selector);
+                return visible(element)
+                    ? (element.selectedOptions[0]?.textContent || '').trim() : '';
+            };
+            const slots = document.getElementById(expected.slotsId);
+            const count = (slots?.textContent || '').trim();
+            const button = document.querySelector('#MainContent_idUcitas_btgSiguiente');
+            const manager = window.Sys?.WebForms?.PageRequestManager?.getInstance();
+            const loading = manager?.get_isInAsyncPostBack()
+                || Array.from(document.querySelectorAll('[id*="UpdateProgress"]'))
+                    .some(visible);
+            const ready = !loading && visible(slots) && /^\d+$/.test(count)
+                && Number(count) > 0 && visible(button) && !button.disabled
+                && selected(expected.dateSelector) === expected.date
+                && selected(expected.hourSelector) === expected.hour
+                && (!expected.site || selected(expected.siteSelector) === expected.site);
+            const signature = ready ? [expected.date, expected.hour, count].join('|') : '';
+            const previous = window.__canonicalSlotReady;
+            if (!signature || previous?.signature !== signature) {
+                window.__canonicalSlotReady = {signature, since: performance.now()};
+                return false;
+            }
+            return performance.now() - previous.since >= 150 ? count : false;
+        }""",
+        arg={
+            "dateSelector": DATE_SELECTOR,
+            "hourSelector": HOUR_SELECTOR,
+            "siteSelector": SITE_SELECTOR,
+            "slotsId": SLOTS_LABEL_ID,
+            "date": str(details["fecha"]).strip(),
+            "hour": str(details["hora"]).strip(),
+            "site": str(details.get("sede") or "").strip(),
+        },
+        polling=50,
+        timeout=5000,
+    )
+    try:
+        return str(handle.json_value())
+    finally:
+        handle.dispose()
 
 
 def save_available_appointment_snapshot(

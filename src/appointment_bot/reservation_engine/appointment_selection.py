@@ -22,7 +22,6 @@ from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowUnavailable,
 )
 from appointment_bot.reservation_engine.appointment_dom import (
-    options_signature,
     read_person_name,
     read_slots_value,
     real_options,
@@ -37,7 +36,11 @@ from appointment_bot.reservation_engine.appointment_reader import (
     read_stable_appointment_snapshot,
     snapshot_details,
 )
-from appointment_bot.reservation_engine.appointments import _wait_for_options_after_selection
+from appointment_bot.reservation_engine.appointments import (
+    _mark_aspnet_async_refresh,
+    _mark_select_for_refresh,
+    _wait_for_options_after_selection,
+)
 from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
@@ -357,25 +360,27 @@ def select_available_appointment(
     ) else None
     blocked_evidence_candidate: dict[str, str] | None = None
     for date_option in date_options:
-        if budget.exhausted or budget.hours >= budget.hour_limit or not budget.admit_date(
+        if budget.exhausted or not budget.can_check_hour() or not budget.admit_date(
             str(date_option["text"]), "dom"
         ):
             budget.exhausted = True
             break
         previous_date = selected_option_text(page, DATE_SELECTOR)
-        previous_hour_signature = options_signature(select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
         logger.info("Selecting appointment date: %s", date_option["text"])
         postback_started = time.monotonic()
         if same_option(previous_date, date_option["text"]):
             hour_options = select_options(page, HOUR_SELECTOR)
         else:
+            refresh_token = _mark_select_for_refresh(page, HOUR_SELECTOR)
+            async_refresh_token = _mark_aspnet_async_refresh(page, require_success=True)
             select_appointment_option(
                 date_select, date_option["value"], allow_hidden=allow_hidden,
             )
             hour_options = _wait_for_options_after_selection(
-                page, HOUR_SELECTOR, previous_signature=previous_hour_signature,
-                require_change=True, timeout=timeout,
+                page, HOUR_SELECTOR, expected_date=str(date_option["text"]),
+                refresh_token=refresh_token, async_refresh_token=async_refresh_token,
+                timeout=timeout,
             )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
         date_snapshot = read_stable_appointment_snapshot(page)
@@ -540,14 +545,14 @@ def _select_blocked_appointment_for_evidence(
                 reason="La fecha bloqueada dejo de estar disponible al preparar la evidencia.",
                 include_person=include_person,
             )
-        previous_date = selected_option_text(page, DATE_SELECTOR)
-        previous_hour_signature = options_signature(select_options(page, HOUR_SELECTOR))
         logger.info(
             "Reselecting blocked appointment for evidence: %s %s",
             date_text,
             hour_text,
         )
         postback_started = time.monotonic()
+        refresh_token = _mark_select_for_refresh(page, HOUR_SELECTOR)
+        async_refresh_token = _mark_aspnet_async_refresh(page, require_success=True)
         select_appointment_option(
             page.locator(DATE_SELECTOR),
             str(matching_date["value"]),
@@ -556,8 +561,9 @@ def _select_blocked_appointment_for_evidence(
         hour_options = _wait_for_options_after_selection(
             page,
             HOUR_SELECTOR,
-            previous_signature=previous_hour_signature,
-            require_change=not same_option(previous_date, date_text),
+            expected_date=date_text,
+            refresh_token=refresh_token,
+            async_refresh_token=async_refresh_token,
             timeout=timeout,
         )
         observation["date_postback_seconds"].append(

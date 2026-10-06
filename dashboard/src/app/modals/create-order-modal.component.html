@@ -14,14 +14,107 @@
         <button
           type="button"
           class="icon-button"
-          data-modal-initial-focus
           (click)="uiDomain.closeModal()"
         >
           Cerrar
         </button>
       </div>
 
-      <div class="form-grid wide">
+      <fieldset class="restriction-fields returning-contact-section">
+        <legend>1. Contacto</legend>
+        <p>Ingresa el WhatsApp para encontrar datos utilizados anteriormente.</p>
+        <div class="form-grid wide">
+        <label>
+          Número de WhatsApp (opcional)
+          <input
+            name="newContactWhatsapp"
+            data-modal-initial-focus
+            type="tel"
+            placeholder="999 123 456"
+            autocomplete="off"
+            [ngModel]="ordersDomain.newContactWhatsapp()"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsapp, $event); ordersDomain.searchNewContact()"
+          />
+        </label>
+        <label>
+          Usuario de WhatsApp (opcional)
+          <input
+            name="newContactWhatsappUsername"
+            type="text"
+            placeholder="@usuario"
+            [ngModel]="ordersDomain.newContactWhatsappUsername()"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsappUsername, $event); ordersDomain.searchNewContact()"
+          />
+          <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
+        </label>
+        </div>
+        <div class="returning-status" aria-live="polite">
+          @if (ordersDomain.returningContact.loading()) { <p>Buscando contacto...</p> }
+          @if (ordersDomain.returningContact.message()) { <p>{{ ordersDomain.returningContact.message() }}</p> }
+        </div>
+        @if (ordersDomain.returningContact.matches().length && !ordersDomain.returningContact.selectedContact()) {
+          <div class="returning-match">
+            <div><strong>{{ ordersDomain.returningContact.matches()[0].contact_name || 'Contacto encontrado' }}</strong><small>Coincidencia exacta de WhatsApp - historial registrado</small></div>
+            <button type="button" class="secondary" (click)="ordersDomain.useReturningContact(ordersDomain.returningContact.matches()[0])">Usar este contacto</button>
+          </div>
+        }
+        @if (ordersDomain.returningContact.selectedContact()) {
+          <p class="returning-selected">Contacto seleccionado. Puedes editar sus datos debajo.</p>
+        }
+        <div class="form-grid wide">
+        <label>
+          Persona de contacto <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newContactName"
+            type="text"
+            required
+            [attr.aria-invalid]="!ordersDomain.newContactName().trim() && uiDomain.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="ordersDomain.newContactName()"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactName, $event)"
+          />
+        </label>
+        <label>
+          Fuente <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="newContactSource"
+            required
+            [attr.aria-invalid]="!ordersDomain.newContactSource() && uiDomain.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="ordersDomain.newContactSource()"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactSource, $event)"
+          >
+            <option value="">Selecciona una fuente</option>
+            <option value="tiktok">TikTok</option>
+            <option value="facebook">Facebook</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
+        </label>
+        </div>
+      </fieldset>
+      <fieldset class="restriction-fields">
+        <legend>2. Cuenta del portal</legend>
+        @if (ordersDomain.returningContact.selectedContact()) {
+          <div class="returning-accounts">
+            @for (account of ordersDomain.returningContact.accounts(); track account.order_id) {
+              <div class="returning-match">
+                <div><strong>{{ account.applicant_name || 'Cuenta anterior' }}</strong><small>{{ account.document_type === 'dni' ? 'DNI' : 'Carné de extranjería' }} - {{ account.document_number_masked }}</small>
+                  @if (account.status === 'ready' || account.status === 'paused' || account.status === 'reserved_payment_pending') {
+                    <small>Esta cuenta tiene una orden abierta.</small>
+                    <button type="button" class="returning-text-action" (click)="ordersDomain.viewReturningOrder(account)">Ver orden existente</button>
+                  }
+                </div>
+                <button type="button" class="secondary" [disabled]="ordersDomain.returningContact.accountLoading() || ordersDomain.returningContact.selectedAccount()?.order_id === account.order_id" (click)="ordersDomain.useReturningAccount(account)">{{ ordersDomain.returningContact.selectedAccount()?.order_id === account.order_id ? 'Cuenta seleccionada' : 'Usar esta cuenta' }}</button>
+              </div>
+            }
+          </div>
+          @if (!ordersDomain.returningContact.selectedAccount()) {
+            <button type="button" class="returning-text-action" (click)="ordersDomain.enterNewAccount()">Ingresar otra cuenta</button>
+          }
+          @if (ordersDomain.returningContact.accountLoading()) { <p aria-live="polite">Recuperando cuenta...</p> }
+        }
+        @if (!ordersDomain.returningContact.selectedAccount()) {
+          <div class="form-grid wide">
         <label>
           Tipo de documento <span class="required-marker" aria-hidden="true">*</span>
           <select
@@ -60,55 +153,12 @@
             (ngModelChange)="uiDomain.editField(ordersDomain.newPassword, $event)"
           />
         </label>
-        <label>
-          Persona de contacto <span class="required-marker" aria-hidden="true">*</span>
-          <input
-            name="newContactName"
-            type="text"
-            required
-            [attr.aria-invalid]="!ordersDomain.newContactName().trim() && uiDomain.formDirty()"
-            aria-describedby="create-required-help dashboard-error"
-            [ngModel]="ordersDomain.newContactName()"
-            (ngModelChange)="uiDomain.editField(ordersDomain.newContactName, $event)"
-          />
-        </label>
-        <label>
-          Número de WhatsApp (opcional)
-          <input
-            name="newContactWhatsapp"
-            type="text"
-            [ngModel]="ordersDomain.newContactWhatsapp()"
-            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsapp, $event)"
-          />
-        </label>
-        <label>
-          Usuario de WhatsApp (opcional)
-          <input
-            name="newContactWhatsappUsername"
-            type="text"
-            placeholder="@usuario"
-            [ngModel]="ordersDomain.newContactWhatsappUsername()"
-            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsappUsername, $event)"
-          />
-          <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
-        </label>
-        <label>
-          Fuente <span class="required-marker" aria-hidden="true">*</span>
-          <select
-            name="newContactSource"
-            required
-            [attr.aria-invalid]="!ordersDomain.newContactSource() && uiDomain.formDirty()"
-            aria-describedby="create-required-help dashboard-error"
-            [ngModel]="ordersDomain.newContactSource()"
-            (ngModelChange)="uiDomain.editField(ordersDomain.newContactSource, $event)"
-          >
-            <option value="">Selecciona una fuente</option>
-            <option value="tiktok">TikTok</option>
-            <option value="facebook">Facebook</option>
-            <option value="whatsapp">WhatsApp</option>
-          </select>
-        </label>
-      </div>
+          </div>
+        } @else {
+          <p class="returning-selected">Se reutilizarán las credenciales guardadas. El acceso y los expedientes se validarán de nuevo.</p>
+          <button type="button" class="returning-text-action" (click)="ordersDomain.enterNewAccount()">Editar usuario o contraseña</button>
+        }
+      </fieldset>
       <p id="create-required-help" class="required-help">
         Los campos marcados con * son obligatorios.
       </p>
@@ -118,7 +168,7 @@
       </p>
 
       <fieldset class="restriction-fields">
-        <legend>Servicio y precio</legend>
+        <legend>3. Servicio y precio</legend>
         <div class="form-grid wide">
           <label>
             Tipo de servicio <span class="required-marker" aria-hidden="true">*</span>
@@ -204,8 +254,8 @@
 
       <div class="modal-actions">
         <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
-        <button type="button" class="primary" (click)="ordersDomain.requestCreateOrder()">
-          Crear orden
+        <button type="button" class="primary" [disabled]="ordersDomain.returningContact.accountLoading()" (click)="ordersDomain.requestCreateOrder()">
+          Crear y validar
         </button>
       </div>
     </div>

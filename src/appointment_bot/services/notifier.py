@@ -258,6 +258,9 @@ def send_telegram_photo(
 def _send_result_notification(
     result: AvailabilityResult, screenshot_paths: list[Path], *, telegram_settings: TelegramSettings
 ) -> bool:
+    if should_send_immediate_availability(result):
+        logger.info("Skipping secondary cupo notification; availability uses the async outbox.")
+        return not telegram_settings.telegram_enabled
     message = _format_telegram_result_message(result)
     if screenshot_paths:
         return _send_telegram_photos(screenshot_paths, message, telegram_settings=telegram_settings)
@@ -269,12 +272,6 @@ def _send_deferred_result_notification(
     result: AvailabilityResult, screenshot_paths: list[Path], *, telegram_settings: TelegramSettings
 ) -> bool:
     if should_send_immediate_availability(result):
-        if screenshot_paths:
-            return _send_telegram_photos(
-                screenshot_paths,
-                _format_deferred_evidence_caption(result),
-                telegram_settings=telegram_settings,
-            )
         return not telegram_settings.telegram_enabled
     delivered = _send_result_notification(
         result, screenshot_paths, telegram_settings=telegram_settings
@@ -300,20 +297,6 @@ def _format_telegram_result_message(result: AvailabilityResult) -> str:
     if should_send_immediate_availability(result):
         return format_immediate_availability_message(result)
     return _format_result_message(result)
-
-
-def _format_deferred_evidence_caption(result: AvailabilityResult) -> str:
-    details = result.details or {}
-    date, hour = _appointment_datetime_details(details)
-    lines = ["Evidencia guardada del cupo detectado."]
-    site = _format_availability_field(details.get("sede"))
-    if site != "no registrado":
-        lines.append(f"Sede: {site}")
-    if date:
-        lines.append(f"Fecha: {date}")
-    if hour:
-        lines.append(f"Hora: {hour}")
-    return "\n".join(lines)
 
 
 def _has_reservation_evidence(result: AvailabilityResult) -> bool:
@@ -343,6 +326,8 @@ def _should_send_deferred_report(report) -> bool:
         message=report.message,
         details=report.details,
     )
+    if should_send_immediate_availability(result):
+        return False
     if _is_blocked_diagnostic_evidence(result):
         logger.info("Skipping deferred Telegram evidence for an appointment blocked by rules.")
         return False

@@ -15,6 +15,7 @@ import {
   standalone: true,
   imports: [FormsModule, ReservationRulesEditorComponent],
   templateUrl: './create-order-modal.component.html',
+  styleUrl: './create-order-modal.component.css',
 })
 export class CreateOrderModalComponent {
   protected readonly uiDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_UI);

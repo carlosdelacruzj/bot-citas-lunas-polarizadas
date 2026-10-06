@@ -50,6 +50,11 @@ Admin API no encola ni aplica `restart` mientras exista una sesion manual en
 `opening`, `active`, `closing` o `close_timeout`. La barrera responde `409`; un
 timeout de cierre sigue contando como navegador vivo hasta su baja real.
 
+El reinicio con `release_safe_backoffs=true` tambien libera una espera antigua
+del observador solo si coincide exactamente con su bloqueo persistido y el
+ultimo run rotativo acredita `InvalidPortalCredentials`, sin submit. Conserva
+la exclusion de esa cuenta y audita la liberacion; no libera defensas del portal.
+
 No ampliar la allowlist sin implementar semantica idempotente, autorizacion,
 auditoria y tratamiento seguro de trabajo activo.
 
@@ -107,6 +112,11 @@ Runbook: [`../operations/opportunity-bursts.md`](../operations/opportunity-burst
 
 ## Seguridad
 
+La disponibilidad verificada genera un unico aviso de texto mediante la outbox
+asincrona, con deduplicacion diaria por sede, fecha y hora. La captura obligatoria
+queda local; ni el observador ni las evidencias diferidas repiten el aviso con foto.
+Confirmaciones, resultados inciertos y errores de reserva mantienen sus avisos.
+
 La seleccion normal de un expediente unico o del objetivo guardado es silenciosa
 en Telegram. No reemplaza el listado validado del preflight con filas sin revisar.
 Los bloqueos de identidad, multiplicidad o estado conservan su aviso deduplicado;
@@ -124,15 +134,25 @@ un cambio del formato interno no convierte una seleccion normal en una alerta.
 
 ## Observador rotativo
 
-Existe un unico observador logico. Elige la cuenta validada menos recientemente
-usada entre todas las cuentas registradas elegibles, incluso sin orden `ready`.
+Con dos o mas clientes `ready`, se revisan directamente sus cuentas por uso
+menos reciente, sin cuentas auxiliares ni exigir deteccion previa. Varias ordenes
+de una cuenta cuentan como un cliente y comparten su antiguedad de rotacion.
+Con uno, alterna una revision del cliente y una cuenta auxiliar diferente; sin
+clientes, solo rota auxiliares. Un cliente en backoff sigue contando como activo:
+si todos estan bloqueados se espera sin sustituirlos por cuentas historicas.
+Cada turno conserva la sesion configurada: hasta 15 consultas en 120 segundos,
+cambios de sede cada 1-2 segundos y recarga prevista en el intento 8 mientras
+no se hayan consultado fechas/horarios. Conserva las rafagas y traspasos. Al reiniciar, el turno unico empieza
+por el cliente. Si no hay auxiliar elegible, espera y vuelve al cliente.
+El observador auxiliar elige la cuenta validada menos recientemente usada
+entre cuentas sin ninguna orden `ready`.
 Exige validacion posterior al cambio de credenciales y ausencia de fallos de acceso,
 leases, intentos activos/inciertos, preflight, revision activa y descansos pendientes.
 La admision se vuelve a comprobar bajo el bloqueo de cuenta. Cada turno abre una
 sesion aislada, verifica la sede exigida y cierra el navegador antes de liberar el
 lease; perderlo cancela la observacion.
 
-Cada observacion consulta como maximo una fecha y un horario, sin submit ni
+Cada actualizacion auxiliar consulta como maximo dos fechas y dos horarios, sin submit ni
 muestreo repetido de CAPTCHA. Las fechas listadas permiten seleccionar clientes
 compatibles sin presentar esos listados como cupos verificados. Cada cliente usa
 sus credenciales y el presupuesto de reserva; se conserva el limite de candidatos
@@ -144,6 +164,36 @@ antes de abrir y despues de cerrar la sesion. No se reinician al cambiar cuenta
 ni al reiniciar el proceso. Si no hay cuenta elegible se espera, sin usar una fija.
 Una defensa detiene globalmente la rotacion: 900 segundos por demasiadas solicitudes,
 180 por indisponibilidad temporal; otras defensas/fallos esperan al menos 180 o el
-maximo de recuperacion configurado. La cuenta que falla queda excluida hasta nueva
+maximo de recuperacion configurado. El rechazo explicito de credenciales registra perdida de acceso por cuenta y,
+si tiene reserva, reutiliza `access_lost` del seguimiento. Pausa solo sus ordenes
+`ready`, conserva pagos y cierres, y continua la rotacion con la cadencia normal
+sin descanso ni contador de errores global. La cuenta queda excluida hasta
+corregir y revalidar el acceso. Otros fallos excluyen la cuenta hasta nueva
 validacion, salvo fallos de red. Cambios de contrato siguen pausando el worker.
 No se rota para continuar solicitudes durante el bloqueo del portal.
+
+### Recorrido adicional de evidencia
+
+Solo con cero ordenes `ready` (ninguna pendiente o todas pausadas), despues de
+la deteccion normal del observador, se completa un recorrido separado de fotos.
+La deteccion conserva su presupuesto de dos fechas/dos horarios por actualizacion y su callback;
+el recorrido admite hasta dos consultas adicionales tras la deteccion principal, sin CAPTCHA final ni submit. Cada cupo adicional
+solo alerta despues de validar la seleccion visible exacta, cupos positivos,
+boton habilitado y captura canonica archivada; reutiliza la deduplicacion diaria
+por sede, fecha y hora de la deteccion normal.
+Reutiliza la captura canonica y descarta pares ya fotografiados. El avance por
+sede y dia de Lima se conserva en `runs.details_json.observer_evidence_collection`;
+las siguientes cuentas revisan primero fechas pendientes menos visitadas.
+Una fecha se completa cuando todos sus horarios listados tienen foto verificada;
+una fecha sin horario verificado sigue pendiente, nunca cuenta como fotografiada.
+El resultado principal conserva la revision inicial; `initial_status` y
+`session_captures` distinguen los hallazgos adicionales verificados, con cupos,
+fecha de verificacion y ruta de evidencia, sin convertirlos en intentos de reserva.
+La deteccion normal sigue revisando la fecha mas cercana en cada sesion.
+
+Antes de cada consulta adicional se relee la cola: un cliente `ready`, incluso
+en backoff, detiene el recorrido. La pausa global, cancelacion, perdida del lease
+y defensas mantienen prioridad; no se habilita observacion durante una pausa
+global ni se evita la pausa por `AUTO_RESERVE=false`. Los descansos y exclusiones
+de cuentas siguen siendo los de la rotacion existente. Un fallo conserva las
+fotos ya archivadas y el avance parcial del run, sin acreditar la consulta fallida.

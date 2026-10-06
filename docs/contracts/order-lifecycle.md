@@ -24,7 +24,7 @@ estados alternativos de esta columna.
 
 `CreateServiceOrder` prepara contacto, credenciales cifradas, servicio, precio
 y reglas; el repositorio no conoce la clave. Con preflight nace pausada y solo
-vuelve a `ready` tras validacion. Un HTTP `201` prueba persistencia, no activacion. Una nueva alta tras servicios terminados crea otra orden; conserva historial y reutiliza solo una solicitud abierta sin objetivo ni reserva, evitando duplicarla.
+vuelve a `ready` tras validacion. Un HTTP `201` prueba persistencia, no activacion. Una nueva alta tras servicios terminados crea otra orden; conserva historial y reutiliza solo una solicitud abierta sin objetivo ni reserva, evitando duplicarla. El dashboard busca coincidencias exactas por WhatsApp normalizado o usuario (hasta diez solicitudes del historial); solo una seleccion explicita reutiliza contacto o credenciales mediante endpoints autenticados. No copia pagos, precio, restricciones ni expediente. Cambiar contacto descarta la cuenta reutilizada; cierre y fallo descartan respuestas tardias y datos sensibles. Preflight y exclusiones siguen siendo obligatorios.
 
 ## Servicio y precio
 

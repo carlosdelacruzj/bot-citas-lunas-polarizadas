@@ -67,16 +67,16 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 
 ## Flujo de una orden
 
-1. Se crea con contacto, credenciales, servicio, precio y restricciones; una cuenta con servicios terminados abre otra orden sin reutilizar su expediente ni pago.
+1. Nueva orden busca coincidencia exacta por WhatsApp normalizado o usuario y permite elegir contacto y cuentas del historial (hasta diez resultados). Solo una seleccion explicita reutiliza credenciales; cierre y fallo limpian el formulario. Se crea con contacto, credenciales, servicio, precio y restricciones; una cuenta con servicios terminados abre otra orden sin reutilizar su expediente ni pago.
 2. El preflight valida identidad y acceso antes de habilitar la busqueda.
 3. El preflight descuenta reservas anteriores y consulta citas incluso con un
    expediente. Uno elegible se guarda automaticamente; varios requieren decidir
    uno o todos. Citas existentes e historial incierto bloquean nuevas reservas.
    Dashboard muestra motivos; avisos incluyen solo el alcance seleccionado.
-4. El observador rota cuentas validadas con sesion aislada, descanso por cuenta de 180 segundos y cadencia global de al menos 30 segundos; sus listados activan verificaciones propias de clientes compatibles.
-5. Cada revision filtra localmente las fechas y consulta hasta dos compatibles y dos horarios en total; admite un unico envio. Cupos en `0` conocidos se descartan sin repetir solicitudes ni backoff tecnico.
-6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica disparan el aviso antes del CAPTCHA o del boton de reserva. Avisos y evidencia se deduplican por dia de deteccion en Lima, sin bloquear reapariciones en dias posteriores.
-7. Una seleccion valida archiva su screenshot canonico; antes de resolver o
+4. Con dos o mas clientes activos, sus cuentas rotan en busqueda directa; con uno, alterna cliente y observador auxiliar; sin clientes, rota cuentas auxiliares validadas. Cada turno usa sesion aislada y cadencia global de al menos 30 segundos; las auxiliares descansan 180 segundos.
+5. Cada revision filtra localmente las fechas y consulta hasta dos compatibles; para clientes recorre los horarios permitidos de la mas cercana antes de pasar a la siguiente, dentro de la ventana de tiempo. El observador comprueba hasta dos horarios por actualizacion; admite un unico envio. Al cambiar fecha, una respuesta vacia o identica termina temprano solo con actualizacion confirmada y estable; sin confirmacion, el timeout detiene la revision. Salida vacia observada sin clientes; aceptacion con clientes pendiente. Cupos en `0` se descartan sin repetir solicitudes ni backoff tecnico.
+6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica encolan un unico aviso de texto asincrono antes del CAPTCHA o del boton de reserva. La foto queda local, sin segundo aviso de disponibilidad; se conservan avisos del resultado de reserva. Avisos y evidencia se deduplican por dia de deteccion en Lima.
+7. La captura exige seleccion visible exacta, cupos positivos y boton habilitado estables, sin carga ASP.NET; una espera fallida conserva diagnostico y detiene el flujo. Una seleccion valida archiva su screenshot canonico; antes de resolver o
    enviar exige formulario, tokens, honeypot y firma estructural conocidos. Si
    falla la evidencia o el contrato, pausa sin iniciar el intento.
 8. La reserva solo se confirma con evidencia suficiente del portal.
@@ -84,10 +84,10 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
 Una incompatibilidad es `partial / blocked_by_order_rule`, sin backoff general.
-Sin fetch alternativo, reload, reobservacion tras submit ni segundo envio por CAPTCHA rechazado. Cada revision
-nueva vuelve a las fechas mas proximas; no recorre todo el calendario por partes.
+Sin fetch alternativo, reobservacion tras submit ni segundo envio por CAPTCHA rechazado. Ante respuestas confirmadas sin cupos conserva hasta 15 actualizaciones/120 segundos, incluso tras consultar fechas sin horarios; cada actualizacion renueva solo la seleccion, nunca el envio. Recarga en el intento 8. Cada revision
+nueva vuelve a las fechas mas proximas. Sin ordenes `ready`, un recorrido adicional completa fotos (hasta dos comprobaciones adicionales tras la deteccion principal), con avance diario por sede en runs; avisa tambien por cada cupo adicional verificado y fotografiado, con deduplicacion diaria. Conserva pausas y descansos; aceptacion natural de estos avisos pendiente.
 Un submit ambiguo nunca se reintenta. Demasiadas solicitudes aplican 15 minutos a la orden; indisponibilidad temporal aplica al menos 3 minutos a toda la cuenta.
-El observador persiste descansos y detiene globalmente la rotacion ante defensas.
+El observador detiene globalmente la rotacion ante defensas; un rechazo explicito de credenciales registra perdida de acceso por cuenta, conserva pagos/cierres y sigue rotando sin descanso global hasta revalidar esa cuenta.
 
 ## Servicios y precios
 

@@ -31,6 +31,7 @@ export const DASHBOARD_ORDERS_UI = new InjectionToken<Pick<DashboardUi,
   | "editField"
   | "markCopied"
   | "showToast"
+  | "closeModal"
 >>('DASHBOARD_ORDERS_UI');
 
 export const DASHBOARD_ORDERS_PRESENTATION = new InjectionToken<Pick<DashboardPresentation,
@@ -334,6 +335,12 @@ export const DASHBOARD_CREATE_ORDER_MODAL_ORDERS = new InjectionToken<Pick<Order
   | "removeNewExcludedDateRange"
   | "clearNewExcludedDateRanges"
   | "requestCreateOrder"
+  | "returningContact"
+  | "searchNewContact"
+  | "useReturningContact"
+  | "useReturningAccount"
+  | "enterNewAccount"
+  | "viewReturningOrder"
 >>('DASHBOARD_CREATE_ORDER_MODAL_ORDERS');
 
 export const DASHBOARD_CREATE_ORDER_MODAL_PRESENTATION = new InjectionToken<Pick<DashboardPresentation,

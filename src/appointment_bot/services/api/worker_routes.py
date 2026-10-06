@@ -8,6 +8,7 @@ from typing import Any
 
 from appointment_bot.configuration.loading import load_captcha_settings, load_runtime_settings
 from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.db.observer_rotation import release_observer_credential_backoff
 from appointment_bot.db.order_state import (
     list_pending_order_backoffs,
     release_order_backoffs,
@@ -127,6 +128,7 @@ def enqueue_restart_with_safe_backoff_release_payload(
             eligible_order_ids,
             settings=settings,
         )
+        observer_released = release_observer_credential_backoff(settings)
     except Exception as exc:
         logger.exception("Could not release safe technical order backoffs")
         record_remote_control_audit(
@@ -154,7 +156,8 @@ def enqueue_restart_with_safe_backoff_release_payload(
         target_type="worker",
         target_id="continuous_worker",
         operation_id=command_id or None,
-        detail=f"released={len(released_order_ids)} protected={protected_count}",
+        detail=(f"released={len(released_order_ids)} protected={protected_count} "
+                f"observer_credential_backoff_released={observer_released}"),
         settings=settings,
     )
     payload.update(
@@ -162,6 +165,7 @@ def enqueue_restart_with_safe_backoff_release_payload(
             "message": "Reinicio solicitado con liberacion de backoffs tecnicos seguros.",
             "released_backoff_count": len(released_order_ids),
             "protected_backoff_count": protected_count,
+            "observer_credential_backoff_released": observer_released,
         }
     )
     return status, payload

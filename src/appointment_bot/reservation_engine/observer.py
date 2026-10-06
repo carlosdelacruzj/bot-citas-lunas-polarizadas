@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import random
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -13,7 +15,10 @@ from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
-from appointment_bot.core.appointment_budget import bounded_appointment_review
+from appointment_bot.core.appointment_budget import (
+    bounded_appointment_review,
+    current_appointment_budget,
+)
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
@@ -32,6 +37,7 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site_for_observer,
 )
 from appointment_bot.reservation_engine.login import login
+from appointment_bot.reservation_engine.observer_evidence import collect_observer_evidence
 from appointment_bot.reservation_engine.ports import (
     AlertSink,
     CaptchaAuthority,
@@ -66,6 +72,8 @@ def run_observer_with_report(
     cancel_event: threading.Event | None = None,
     capture_captcha_samples: bool = True,
     rotation_mode: bool = False,
+    evidence_progress: dict | None = None,
+    should_collect_evidence: Callable[[], bool] | None = None,
     should_continue_captcha_sampling: Callable[[], bool] | None = None,
     on_check: Callable[[AvailabilityResult, Path | None, int, int | None], None] | None = None,
     ports: ReservationEnginePorts,
@@ -115,6 +123,25 @@ def run_observer_with_report(
                 if result_screenshot is not None:
                     screenshot_paths.insert(0, result_screenshot)
 
+                def on_evidence_slot(verified: AvailabilityResult, archived: Path) -> None:
+                    if on_check is not None:
+                        on_check(verified, archived, evidence_progress["session_queries"], None)
+
+                if (result.status in {"available", "partial", "unavailable"}
+                        and evidence_progress is not None
+                        and should_collect_evidence is not None
+                        and has_available_date_options(page)):
+                    collect_observer_evidence(
+                        page, result, progress=evidence_progress,
+                        should_continue=lambda: (
+                            (cancel_event is None or not cancel_event.is_set())
+                            and should_collect_evidence()
+                        ),
+                        evidence_settings=evidence_settings,
+                        timeout=reservation_settings.postback_timeout_seconds * 1_000,
+                        on_verified_slot=on_evidence_slot,
+                    )
+
                 details = dict(result.details or {})
                 details["mode"] = "observer"
                 result = AvailabilityResult(result.status, result.message, details)
@@ -149,6 +176,9 @@ def run_observer_with_report(
             },
             screenshot_path=str(error_screenshot_path) if error_screenshot_path else None,
         )
+    if evidence_progress is not None:
+        report = replace(report, details={**(report.details or {}),
+                         "observer_evidence_collection": evidence_progress})
     if rotation_mode:
         report = replace(report, details={**(report.details or {}),
                          "observer_rotation": True,
@@ -187,6 +217,10 @@ def _monitor_observer(
 ) -> tuple[AvailabilityResult, Path | None]:
     attempt = 1
     screenshot_path = None
+    deadline = time.monotonic() + reservation_settings.monitor_window_seconds
+    budget = current_appointment_budget()
+    if budget is not None and reservation_settings.monitor_window_seconds > 0:
+        budget.deadline = deadline
 
     while True:
         if cancel_event is not None and cancel_event.is_set():
@@ -197,11 +231,15 @@ def _monitor_observer(
                 ),
                 screenshot_path,
             )
+        if attempt > 1 and budget is not None:
+            budget.begin_availability_check()
         try:
             page = select_available_site_for_observer(
                 page,
                 required_site=runtime_settings.observer_required_site,
                 timeout=reservation_settings.postback_timeout_seconds * 1_000,
+                reset_first=reservation_settings.monitor_site_toggle_enabled and attempt > 1,
+                telemetry_attempt=attempt,
             )
         except AppointmentOptionsNotRefreshed as exc:
             return AvailabilityResult(status="unknown", message=str(exc)), screenshot_path
@@ -212,6 +250,16 @@ def _monitor_observer(
         )
         if result.status == "unknown":
             return result, screenshot_path
+
+        if (result.status == "unavailable"
+                and attempt == reservation_settings.monitor_reload_probe_after_attempt
+                and (budget is None or not (budget.dates or budget.hours))):
+            reloaded = _reload_and_recheck_observer_availability(
+                page, runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings, cancel_event=cancel_event,
+            )
+            if reloaded is not None:
+                result = reloaded
 
         if result.status == "available" or (
             result.status in {"partial", "unavailable"} and has_available_date_options(page)
@@ -242,7 +290,21 @@ def _monitor_observer(
             return result, screenshot_path
         if on_check is not None:
             on_check(result, screenshot_path, attempt, None)
-        return result, screenshot_path
+        remaining = deadline - time.monotonic()
+        if (remaining <= 0 or attempt >= reservation_settings.monitor_max_attempts
+                or (budget is not None and bool(budget.submissions))):
+            return result, screenshot_path
+        wait = min(remaining, random.randint(
+            reservation_settings.monitor_interval_min_seconds,
+            reservation_settings.monitor_interval_max_seconds,
+        ))
+        if cancel_event is not None:
+            cancel_event.wait(wait)
+        else:
+            page.wait_for_timeout(wait * 1_000)
+        if time.monotonic() >= deadline:
+            return result, screenshot_path
+        attempt += 1
 
 
 def _reload_and_recheck_observer_availability(
