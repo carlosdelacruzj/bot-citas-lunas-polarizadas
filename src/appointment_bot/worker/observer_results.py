@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.core.models import RunReport
+from appointment_bot.db.worker_state import get_worker_state
+from appointment_bot.utils.screenshots import remove_screenshot_paths, report_screenshot_paths
+
+
+@dataclass(frozen=True)
+class ObserverReportDecision:
+    confirmation_required: bool = False
+    clear_availability_signature: bool = False
+    reset_errors: bool = False
+    error_report: RunReport | None = None
+    notify_confirmed_report: RunReport | None = None
+
+
+def decide_observer_report(report: RunReport) -> ObserverReportDecision:
+    if report.status == "paused":
+        return ObserverReportDecision()
+    if report.status == "available":
+        return ObserverReportDecision(confirmation_required=True)
+    if report.status in {"unavailable", "partial"}:
+        return ObserverReportDecision(clear_availability_signature=True, reset_errors=True)
+    return ObserverReportDecision(error_report=report)
+
+
+def decide_observer_confirmation(report: RunReport) -> ObserverReportDecision:
+    if report.status == "available":
+        return ObserverReportDecision(notify_confirmed_report=report, reset_errors=True)
+    if report.status in {"unavailable", "partial"}:
+        return ObserverReportDecision(clear_availability_signature=True, reset_errors=True)
+    return ObserverReportDecision(clear_availability_signature=True, error_report=report)
+
+
+def notify_confirmed_observer_availability(
+    report: RunReport, *, runtime_settings: RuntimeSettings, telegram_settings: TelegramSettings
+) -> str | None:
+    signature = availability_signature(report)
+    state = get_worker_state(runtime_settings)
+    if signature == state.availability_signature:
+        remove_screenshot_paths(report_screenshot_paths(report))
+        return None
+    # The verified-slot callback owns the deduplicated async availability alert.
+    remove_screenshot_paths(report_screenshot_paths(report))
+    return signature
+
+
+def availability_signature(report: RunReport) -> str:
+    details = report.details or {}
+    relevant = {
+        key: details.get(key)
+        for key in ("sede", "fecha", "hora", "date_options", "hour_options")
+        if details.get(key) is not None
+    }
+    relevant["detected_day"] = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
+    payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _normalize_signature_value(value):
+    if isinstance(value, dict):
+        return {key: _normalize_signature_value(item) for key, item in sorted(value.items())}
+    if isinstance(value, list):
+        normalized = [_normalize_signature_value(item) for item in value]
+        return sorted(normalized, key=lambda item: json.dumps(item, sort_keys=True))
+    return value

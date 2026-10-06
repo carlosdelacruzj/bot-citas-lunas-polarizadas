@@ -1,0 +1,200 @@
+# Contrato de seguridad de reserva
+
+Estado: vigente.
+
+Ultima verificacion: `2026-09-04`.
+
+Responsable: dominios `reservation_engine/`, `worker/`, caso transaccional
+`services/application/confirm_reservation.py`, puertos inyectados desde
+`worker/reservation_engine_ports.py` y persistencia en `db/`.
+
+Este documento define las garantias que no deben romperse al separar admin API,
+worker y dashboard.
+
+## Principios
+
+- Una orden debe ejecutarse con una sesion Playwright nueva.
+- No reutilizar login, cookies ni contexto entre clientes.
+- No enviar dos reservas para la misma orden.
+- No repetir automaticamente si la confirmacion queda incierta.
+- Cupos en `0` o agotados antes del envio bloquean la reserva y producen
+  `unavailable`, sin backoff tecnico. Se comprueba al detectar, seleccionar y
+  validar antes del clic; si ya hubo envio, se conserva la incertidumbre.
+- No considerar una reserva segura sin evidencia suficiente del portal.
+- Una variacion no reconocida del contrato de seguridad previo a sede pausa el
+  worker antes de seleccionar fecha, CAPTCHA final o reservar.
+- Con `AUTO_RESERVE=false`, una disponibilidad seleccionable conserva su
+  evidencia del cupo seleccionado y pausa globalmente el worker antes de
+  resolverlo o reservar.
+- La deteccion visible sigue la cascada sede, fechas y horas. Una sede sin fechas
+  o fechas que no cargan horas equivale a `unavailable`; solo fecha y hora
+  seleccionables producen la alerta de cupo.
+- Una consulta directa al formulario solo produce un candidato. Para declararlo
+  disponible debe volver a seleccionar esa fecha y hora exactas en el DOM vivo,
+  guardar la captura canonica y avisar antes del CAPTCHA o del submit. Si el cupo
+  no se reproduce, queda como no accionable y nunca inicia CAPTCHA ni submit.
+
+El [presupuesto de busqueda](bounded-search.md) limita cada actualizacion a dos fechas
+y permite recorrer los horarios compatibles del cliente dentro de la ventana; toda la sesion admite un envio. Solo una actualizacion nueva de sede renueva la seleccion; un fallback no reinicia ningun limite.
+
+## Elegibilidad por expediente
+
+Preflight, worker, reapertura, sesion manual de cita y decision administrativa
+excluyen reservas confirmadas por cuenta y expediente, incluidas citas pasadas.
+La comprobacion previa al submit exige objetivo guardado e historial completo.
+Una cita externa detiene la busqueda sin confirmacion comercial ni cobro.
+Una consulta incierta conserva la pausa; nunca equivale a ausencia de cita.
+La identidad historica se completa con el expediente congelado en la propia
+reserva o una coincidencia unica de cuenta, fecha y hora entre reserva y cita
+observada en el portal. Conserva evidencia y fecha de conciliacion. Placa,
+orden actual o unico pendiente no son pruebas suficientes. La ambiguedad exige
+revision; no se reintenta ni se atribuye una reserva externa a nuestro servicio.
+Cancelacion, reprogramacion y botones ocultos quedan fuera de este flujo.
+
+## Claim de orden
+
+Antes de ejecutar una orden, el worker debe reclamarla con
+`service_orders.lease_owner` y `lease_expires_at`. La ejecucion solo debe
+continuar si el lease sigue vigente.
+
+Durante la ejecucion, un heartbeat renueva el lease. Si el lease se pierde, el
+resultado debe tratarse como incierto o error controlado, no como exito normal.
+
+El lease global del host tiene un heartbeat propio y no sustituye este claim.
+La perdida de cualquiera de los dos activa la cancelacion conservadora. La
+ultima barrera se evalua despues de guardar `intent` y justo antes del clic: si
+la propiedad cambio en ese intervalo, no se envia el submit y el intento no se
+convierte en reintentable automaticamente.
+
+## Intentos de reserva
+
+`reservation_attempts` protege el envio:
+
+- `intent`: se va a intentar reservar.
+- `pending`: el envio empezo.
+- `confirmed`: reserva resuelta como confirmada.
+- `rejected`: el portal rechazo o el cupo se perdio.
+- `unknown`: no se pudo clasificar con seguridad.
+
+Debe existir como maximo un intento activo por orden en estados `intent`,
+`pending` o `unknown`.
+
+Cada cupo unico debe archivar su screenshot inmediatamente antes de CAPTCHA o
+submit. La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsar
+`Reservar`, no constituye un intento de reserva. Los resultados
+`blocked_by_order_rule` y `priority_deferred` deben conservar
+`reservation_attempted=false` y no deben crear una fila en
+`reservation_attempts`.
+
+La preparacion final falla cerrada si el formulario deja de coincidir con su
+contrato semantico: formulario y destino, controles criticos, tokens ASP.NET,
+honeypot unico y vacio, campos protegidos y firma estructural estable. Esta
+barrera se ejecuta antes de resolver el CAPTCHA y se repite antes del clic.
+
+Esta captura canonica debe contener fecha y hora exactas del modal ya
+estabilizado y conservarse antes de continuar en los tres caminos: seleccion
+inicial, seleccion bloqueada por regla y reobservacion recuperada tras
+`slot_lost`. Si no puede guardarse o archivarse, el flujo debe detenerse antes
+de crear la intencion de reserva. La captura CAPTCHA es evidencia secundaria y
+no puede sustituir a la captura canonica del cupo.
+Antes de capturar exige seleccion exacta visible, cupos positivos y boton habilitado sin carga ASP.NET/UpdateProgress: espera maxima 5 s, estabilidad 150 ms. Si falla, guarda diagnostico y detiene el flujo sin archivar ni enviar.
+
+Cuando el candidato procede de una consulta directa, la evidencia conserva la
+telemetria no sensible de cada POST: estado HTTP, duracion, tamano de respuesta
+y cantidad de opciones. Con `AUTO_RESERVE=false`, el flujo termina despues de
+la captura, sin resolver el CAPTCHA ni crear un intento.
+
+La variante con CAPTCHA previo verificado y sin CAPTCHA final usa el mismo
+intento durable y las mismas barreras de identidad, reglas y lease. El boton
+Reservar Cita puede confirmar directamente; no se presume que solo abre un modal.
+Un resultado ambiguo conserva pending/unknown sin repetir el clic.
+
+El rechazo explicito "Ha realizado demasiadas solicitudes. Espere un momento e
+intente nuevamente." se clasifica como `rate_limited`: conserva evidencia,
+resuelve el intento como `rejected` y habilita la orden tras 900 segundos en una
+sesion nueva. Otros resultados ambiguos mantienen el bloqueo `unknown`. La
+reanudacion efectiva respeta la pausa global, el horario y la rotacion de cola.
+
+Por decision operativa, el mensaje exacto "Operacion no disponible temporalmente.
+Intente mas tarde." se clasifica como `temporarily_unavailable`: resuelve el
+intento como `rejected` y aplica al menos 180 segundos de descanso a toda la
+cuenta. El vencimiento se persiste atomicamente con el intento; worker y
+preflight no admiten esa cuenta antes de vencer, incluso con otra orden nueva.
+Despues vuelve a consultar en una sesion nueva y exige expediente sin cita
+antes de reservar. No reclasifica intentos historicos ni reabre ordenes cerradas.
+
+## Confirmacion
+
+La confirmacion primaria es el texto explicito de exito devuelto por el portal
+despues del submit. La etapa `Programado` es una confirmacion posterior y sirve
+como conciliacion o fallback cuando el texto no pudo conservarse. Ambas deben
+mantener una frontera clara entre:
+
+- cupo detectado;
+- envio de reserva;
+- texto de exito;
+- etapa `Programado`;
+- conciliacion posterior.
+
+La conciliacion posterior debe iniciar sesion con el `document_type` persistido
+en la orden, igual que la ejecucion principal. No puede volver implicitamente a
+`dni`, porque eso produciria un falso rechazo de credenciales para cuentas con
+Carne de Extranjeria.
+
+## Evidencia
+
+Guardar evidencia cuando hay:
+
+- disponibilidad completa;
+- intento de CAPTCHA;
+- envio de reserva;
+- respuesta del portal;
+- error importante;
+- reserva incierta.
+
+La evidencia no debe incluir credenciales ni datos sensibles sin sanitizar.
+
+## Sesion manual
+
+Una sesion manual debe:
+
+- abrir Playwright visible en una sesion nueva;
+- no reutilizar cookies del worker;
+- no devolver password al frontend;
+- no cambiar estado de reserva por si sola;
+- registrar auditoria minima en logs;
+- estar deshabilitada por defecto;
+- aceptar solo clientes loopback.
+
+La admision se serializa por cuenta del portal mediante un bloqueo de fila y un
+propietario persistido en el lease de la orden. Debe rechazar antes de abrir
+Chromium si la cuenta tiene lease de worker, intento activo o incierto,
+preflight pendiente/en curso, revision post-cita activa u otra sesion manual.
+Un intento `unknown` sin trabajo activo admite exclusivamente el modo `review`:
+abre el expediente exacto para consulta protegida, sin cambiar el intento ni
+atribuir una cita externa al servicio. La apertura manual se convierte a este
+modo si encuentra incertidumbre; `intent` y `pending` siguen bloqueando.
+La consulta permite solo autenticacion y lectura del expediente durante su
+preparacion; despues bloquea solicitudes de red y acciones de reserva,
+cancelacion y reprogramacion. Para actualizar se cierra y vuelve a abrir.
+Si falla la preparacion, conserva captura y bloqueo de red.
+
+El propietario se renueva mientras el navegador vive y se libera solamente
+despues de cerrar el contexto.
+
+El inventario usa `opening`, `active`, `closing` y `close_timeout`. Agotar el
+tiempo de cierre no elimina la sesion: permanece bloqueando nuevas aperturas y
+reinicios hasta que el thread y Chromium terminen realmente.
+
+## Acciones administrativas concurrentes
+
+El backend debe proteger acciones peligrosas si una orden esta reclamada:
+
+- pausar;
+- archivar;
+- marcar pagado;
+- cambiar prioridad o reglas;
+- abrir sesion manual.
+
+El frontend solo puede sugerir/deshabilitar botones; la regla real debe vivir
+en backend.

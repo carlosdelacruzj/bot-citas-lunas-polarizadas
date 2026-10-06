@@ -1,0 +1,325 @@
+from __future__ import annotations
+
+import logging
+import re
+from collections.abc import Callable
+from typing import Any
+
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+from appointment_bot.reservation_engine.appointment_contracts import (
+    RESERVE_APPOINTMENT_SELECTOR,
+    AppointmentWorkflowUnavailable,
+)
+
+logger = logging.getLogger(__name__)
+
+PROGRAM_ACTION_SELECTOR = (
+    'input[type="image"][onclick*="__doPostBack"][onclick*="gvProgramacion"][onclick*="accion$0"], '
+    'a[id^="MainContent_gvProgramacion_btnAccion_"][href*="__doPostBack"], '
+    'a[href*="gvProgramacion"][href*="btnAccion"]'
+)
+
+
+def click_program_action(
+    page: Page,
+    *,
+    on_multiple_programs: Callable[[dict[str, Any]], None] | None = None,
+    on_program_selected: Callable[[dict[str, Any]], None] | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
+    observer_read_only: bool = False,
+) -> Page:
+    logger.info("Clicking program action button")
+    button = page.locator(PROGRAM_ACTION_SELECTOR)
+    button_count = button.count()
+    logger.info("Program action buttons found: %s", button_count)
+
+    if button_count == 0:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro una accion de programacion disponible. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
+        )
+
+    target = _program_target(program_expediente=program_expediente, program_plate=program_plate)
+
+    program_rows = _read_program_action_rows(page)
+    pending_rows = [row for row in program_rows if _program_is_pending(row)]
+    decision_details: dict[str, Any] = {
+        "program_count": button_count,
+        "pending_count": len(pending_rows),
+        "rows": program_rows,
+    }
+    if target is not None:
+        decision_details["target"] = target
+
+    if not _program_rows_are_complete(program_rows, button_count):
+        decision_details["decision"] = "program_rows_unavailable"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "No se pudo verificar de forma completa el estado de los tramites programables."
+        )
+
+    selected_row: dict[str, Any]
+    if observer_read_only:
+        selected_row = program_rows[0]
+        decision_details["decision"] = "observer_first_available_selected"
+        logger.info(
+            "Observer selected the first program row without status filtering: %s",
+            selected_row,
+        )
+    elif target is not None:
+        target_rows = _find_target_program_rows(program_rows, target)
+        pending_target_rows = [row for row in target_rows if _program_is_pending(row)]
+        if not target_rows:
+            decision_details["decision"] = "target_not_found"
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "No se encontro el tramite objetivo en la lista programable."
+            )
+        if len(pending_target_rows) > 1:
+            decision_details["decision"] = "target_ambiguous"
+            decision_details["matching_rows"] = target_rows
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "El tramite objetivo coincide con varias filas y no se puede "
+                "seleccionar con seguridad."
+            )
+        if not pending_target_rows:
+            decision_details["decision"] = "target_not_pending"
+            decision_details["selected_row"] = target_rows[0]
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "El tramite objetivo existe, pero no figura como PENDIENTE."
+            )
+        selected_row = pending_target_rows[0]
+        decision_details["decision"] = "target_selected"
+        logger.info("Selected target pending program row: %s", selected_row)
+    elif len(pending_rows) == 1:
+        selected_row = pending_rows[0]
+        decision_details["decision"] = "single_pending_selected"
+        logger.info("Selected the only pending program row: %s", selected_row)
+    elif len(pending_rows) > 1:
+        decision_details["decision"] = "multiple_pending_blocked"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "Hay varios tramites PENDIENTES y la orden no identifica cual debe seleccionarse."
+        )
+    else:
+        decision_details["decision"] = "no_pending_blocked"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "No hay un tramite PENDIENTE que pueda seleccionarse con seguridad."
+        )
+
+    decision_details["selected_row"] = selected_row
+    if button_count > 1 or target is not None or observer_read_only:
+        _notify_program_decision(on_multiple_programs, decision_details)
+    selected_button = button.nth(int(selected_row["action_index"]))
+
+    if selected_row is not None and on_program_selected is not None:
+        on_program_selected(dict(selected_row))
+
+    selected_button.scroll_into_view_if_needed(timeout=15_000)
+
+    selected_button.click(timeout=15_000)
+    _wait_for_program_detail(page)
+    logger.info("Current page after program action: %s", page.url)
+    return page
+
+
+def open_program_detail_for_review(
+    page: Page,
+    *,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
+) -> Page:
+    logger.info("Opening program detail for read-only review")
+    buttons = page.locator(PROGRAM_ACTION_SELECTOR)
+    button_count = buttons.count()
+    if button_count == 0:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontró una acción de trámite disponible para revisar."
+        )
+
+    rows = _read_program_action_rows(page)
+    target = _program_target(
+        program_expediente=program_expediente,
+        program_plate=program_plate,
+    )
+    if target is not None:
+        selected_row = _find_target_program_row(rows, target)
+        if selected_row is None:
+            raise AppointmentWorkflowUnavailable(
+                "No se encontró el trámite reservado por expediente o placa."
+            )
+        selected_button = buttons.nth(int(selected_row["action_index"]))
+    elif button_count == 1:
+        selected_button = buttons.first
+    else:
+        raise AppointmentWorkflowUnavailable(
+            "La cuenta tiene varios trámites y la reserva no identifica cuál debe revisarse."
+        )
+
+    selected_button.scroll_into_view_if_needed(timeout=15_000)
+    selected_button.click(timeout=15_000)
+    _wait_for_program_detail(page)
+    logger.info("Read-only program detail opened: %s", page.url)
+    return page
+
+
+def _program_target(
+    *,
+    program_expediente: str | None,
+    program_plate: str | None,
+) -> dict[str, str] | None:
+    target = {
+        key: _normalize_program_identifier(key, value)
+        for key, value in {
+            "expediente": program_expediente,
+            "placa": program_plate,
+        }.items()
+        if _normalize_program_identifier(key, value)
+    }
+    return target or None
+
+
+def _find_target_program_rows(
+    rows: list[dict[str, Any]],
+    target: dict[str, str],
+) -> list[dict[str, Any]]:
+    matches = []
+    for row in rows:
+        expediente_matches = (
+            "expediente" not in target
+            or _normalize_program_identifier("expediente", row.get("expediente"))
+            == target["expediente"]
+        )
+        plate_matches = (
+            "placa" not in target
+            or _normalize_program_identifier("placa", row.get("placa")) == target["placa"]
+        )
+        if expediente_matches and plate_matches:
+            matches.append(row)
+    return matches
+
+
+def _find_target_program_row(
+    rows: list[dict[str, Any]],
+    target: dict[str, str],
+) -> dict[str, Any] | None:
+    matches = _find_target_program_rows(rows, target)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _program_is_pending(row: dict[str, Any]) -> bool:
+    return _normalize_program_value(row.get("status")) == "pendiente"
+
+
+def _program_rows_are_complete(rows: list[dict[str, Any]], button_count: int) -> bool:
+    if len(rows) != button_count:
+        return False
+    try:
+        action_indexes = [int(row["action_index"]) for row in rows]
+    except (KeyError, TypeError, ValueError):
+        return False
+    return sorted(action_indexes) == list(range(button_count))
+
+
+def _notify_program_decision(
+    callback: Callable[[dict[str, Any]], None] | None,
+    details: dict[str, Any],
+) -> None:
+    if callback is not None:
+        callback(details)
+
+
+def _normalize_program_value(value: object) -> str:
+    return "".join(str(value or "").split()).casefold()
+
+
+def _normalize_program_identifier(key: str, value: object) -> str:
+    normalized = _normalize_program_value(value)
+    if key == "placa":
+        return re.sub(r"[^a-z0-9]", "", normalized)
+    return normalized
+
+
+def _read_program_action_rows(page: Page) -> list[dict[str, Any]]:
+    try:
+        rows = page.evaluate(
+            """selector => {
+                const normalize = text => (text || "").replace(/\\s+/g, " ").trim();
+                const headers = Array.from(document.querySelectorAll("table tr"))
+                    .map(row => Array.from(row.querySelectorAll("th"))
+                        .map(cell => normalize(cell.innerText)))
+                    .find(items => items.length) || [];
+                const actionRows = [];
+                Array.from(document.querySelectorAll("table tr")).forEach(row => {
+                    if (!row.querySelector(selector)) return;
+                    const cells = Array.from(row.querySelectorAll("td"))
+                        .map(cell => normalize(cell.innerText));
+                    const byHeader = {};
+                    headers.forEach((header, index) => {
+                        if (header) byHeader[header.toLowerCase()] = cells[index] || "";
+                    });
+                    const status = cells.find(
+                        cell => /^(PENDIENTE|ATENDIDO|CANCELADO)$/i.test(cell)
+                    ) || "";
+                    actionRows.push({
+                        action_index: actionRows.length,
+                        expediente: byHeader["expediente"] || cells[0] || "",
+                        motivo: byHeader["motivo"] || "",
+                        tipo: byHeader["tipo"] || "",
+                        placa: byHeader["placa"] || "",
+                        marca: byHeader["marca"] || "",
+                        modelo: byHeader["modelo"] || "",
+                        motor: byHeader["motor"] || "",
+                        color: byHeader["color"] || "",
+                        status: status,
+                        cells: cells
+                    });
+                });
+                return actionRows;
+            }""",
+            PROGRAM_ACTION_SELECTOR,
+        )
+    except PlaywrightError as exc:
+        logger.warning("Could not read program action rows: %s", exc)
+        return []
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def read_program_action_rows(page: Page) -> list[dict[str, Any]]:
+    return _read_program_action_rows(page)
+
+
+def _wait_for_program_detail(page: Page) -> None:
+    try:
+        page.wait_for_load_state("load", timeout=10_000)
+    except PlaywrightTimeoutError:
+        logger.info("Program detail page did not reach load state; checking detail selector")
+
+    try:
+        page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=5_000)
+        return
+    except PlaywrightTimeoutError:
+        logger.info("Reserve button is not visible; checking process stages table")
+
+    try:
+        page.get_by_text("Separa Cita Peritaje").wait_for(state="visible", timeout=15_000)
+        return
+    except PlaywrightTimeoutError:
+        logger.info("Process stages table was not detected by Separa Cita Peritaje text")
+
+    try:
+        page.get_by_text("Ingresa Solicitud").wait_for(state="visible", timeout=5_000)
+    except PlaywrightTimeoutError as exc:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro el detalle del tramite despues de hacer click. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
+        ) from exc

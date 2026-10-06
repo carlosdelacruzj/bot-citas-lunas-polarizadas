@@ -1,0 +1,269 @@
+<div class="orders-split" [class.with-detail]="ordersDomain.orderPanelOpen() && wideScreen()">
+<app-load-status [section]="ordersDomain.loads.list" />
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Ordenes</h2>
+      <p>
+        Mostrando {{ orderList.orderPageStart() }}–{{ orderList.orderPageEnd() }} de
+        {{ orderList.filteredOrders().length }} resultados · {{ orderList.orders().length }} cargadas
+      </p>
+    </div>
+    <div class="panel-actions">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="messagesDomain.whatsappSessionBusy()"
+        (click)="messagesDomain.validateWhatsAppSession()"
+      >
+        {{
+          messagesDomain.whatsappSessionBusy()
+            ? 'Validando WhatsApp...'
+            : messagesDomain.whatsappSessionState() === 'ready'
+              ? 'WhatsApp listo'
+              : 'Validar WhatsApp'
+        }}
+      </button>
+      <button type="button" class="secondary" (click)="messagesDomain.openWhatsAppEvidenceTest()">
+        Probar evidencias
+      </button>
+      <button type="button" class="secondary" (click)="messagesDomain.openWhatsAppTest()">
+        Probar post-pago
+      </button>
+      <button type="button" class="primary" (click)="ordersDomain.openCreateOrder()">Nueva orden</button>
+    </div>
+  </div>
+
+  <div class="order-controls" aria-label="Filtros de ordenes">
+    <div class="quick-filters">
+      @for (filter of orderList.orderQuickFilters(); track filter.key) {
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="orderList.orderQuickFilter() === filter.key"
+          (click)="orderList.setOrderQuickFilter(filter.key)"
+        >
+          {{ filter.label }}
+          <span>{{ filter.count }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="order-tool-row">
+      <label class="filter">
+        Buscar
+        <input
+          name="orderFilter"
+          type="search"
+          [value]="orderList.orderFilter()"
+          (input)="orderList.setOrderFilter($any($event.target).value)"
+        />
+      </label>
+      <label class="filter">
+        Ordenar
+        <select
+          name="orderSort"
+          [ngModel]="orderList.orderSortKey()"
+          (ngModelChange)="orderList.chooseOrderSort($event)"
+        >
+          <option value="queue">Orden real</option>
+          <option value="priority">Prioridad</option>
+          <option value="updated_at">Actualizacion</option>
+          <option value="created_at">Creacion</option>
+          <option value="status">Estado</option>
+          <option value="reservation">Reserva</option>
+          <option value="payment">Pago</option>
+          <option value="closure">Cierre</option>
+          <option value="applicant">Solicitante</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="secondary sort-direction"
+        (click)="orderList.toggleOrderSortDirection()"
+      >
+        {{ orderList.orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap order-table-wrap">
+    <table class="responsive-table order-table">
+      <thead>
+        <tr>
+          <th [attr.aria-sort]="orderList.orderAriaSort('applicant')">
+            <button type="button" class="sort-header" (click)="orderList.setOrderSort('applicant')">
+              Cliente {{ orderList.sortIndicator('applicant') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="orderList.orderAriaSort('status')">
+            <button type="button" class="sort-header" (click)="orderList.setOrderSort('status')">
+              Estado {{ orderList.sortIndicator('status') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="orderList.orderAriaSort('reservation')">
+            <button type="button" class="sort-header" (click)="orderList.setOrderSort('reservation')">
+              Reserva {{ orderList.sortIndicator('reservation') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="orderList.orderAriaSort('payment')">
+            <button type="button" class="sort-header" (click)="orderList.setOrderSort('payment')">
+              Pago {{ orderList.sortIndicator('payment') }}
+            </button>
+          </th>
+          <th>Reglas de fecha</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of orderList.paginatedOrders(); track order.order_id) {
+          <tr
+            class="selectable-row"
+            tabindex="0"
+            [attr.data-order-row]="order.order_id"
+            [class.selected-row]="ordersDomain.selectedOrderId() === order.order_id"
+            (click)="ordersDomain.selectOrder(order.order_id)"
+            (keydown.enter)="ordersDomain.selectOrder(order.order_id)"
+            (keydown.space)="$event.preventDefault(); ordersDomain.selectOrder(order.order_id)"
+          >
+            <td data-label="Cliente">
+              <strong>{{
+                order.applicant_name ?? order.contact_name ?? 'sin nombre'
+              }}</strong>
+              <span>
+                {{ order.document_number_masked }} ·
+                {{ order.contact_source ?? 'sin fuente' }}
+              </span>
+            </td>
+            <td data-label="Estado">
+              <span class="badge {{ presentationDomain.statusTone(order.status) }}">{{
+                ordersDomain.orderStatusDisplay(order)
+              }}</span>
+              <span class="badge {{ presentationDomain.statusTone(order.preflight_status) }}">
+                {{ ordersDomain.preflightLabel(order) }}
+              </span>
+            </td>
+            <td data-label="Reserva">
+              {{ presentationDomain.statusLabel(order.reservation_status, 'Pendiente') }}
+              <span>
+                {{ presentationDomain.formatDate(order.reservation_date) }}
+                {{ presentationDomain.formatTime(order.reservation_hour) }}
+              </span>
+            </td>
+            <td data-label="Pago">
+              {{ financeDomain.paymentLabel(order) }}
+              <span>{{ financeDomain.paymentAmountLabel(order) }}</span>
+            </td>
+            <td data-label="Reglas de fecha" class="restriction-cell">
+              <div
+                class="restriction-summary"
+                [class.unrestricted]="!orderList.hasReservationRestrictions(order)"
+              >
+                <strong>
+                  {{
+                    orderList.hasReservationRestrictions(order)
+                      ? ordersDomain.restrictionDaysLabel(order)
+                      : 'Sin reglas'
+                  }}
+                </strong>
+                <span>{{ ordersDomain.restrictionTimingLabel(order) }}</span>
+              </div>
+            </td>
+            <td data-label="Acciones">
+              <div
+                class="row-actions"
+                [class.button-row]="order.status === 'ready'"
+              >
+                <button
+                  type="button"
+                  class="primary row-main-action"
+                  [disabled]="uiDomain.actionBusy()"
+                  (click)="$event.stopPropagation(); ordersDomain.runRowPrimaryAction(order)"
+                >
+                  {{ ordersDomain.rowPrimaryActionLabel(order) }}
+                </button>
+                @if (order.status === 'ready') {
+                  <button
+                    type="button"
+                    class="secondary"
+                    [disabled]="uiDomain.actionBusy()"
+                    title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+                    (click)="$event.stopPropagation(); ordersDomain.openManualSessionNow(order, 'diagnostic')"
+                  >
+                    Abrir con medición
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay órdenes para mostrar"
+                message="Prueba otro filtro o crea una nueva orden."
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="order-table-footer">
+    <span>
+      {{ orderList.orderPageStart() }}–{{ orderList.orderPageEnd() }} de {{ orderList.filteredOrders().length }} resultados ·
+      Página {{ orderList.currentOrderPage() }} de {{ orderList.orderTotalPages() }}
+    </span>
+    <label class="filter">
+      Filas por página
+      <select
+        name="orderPageSize"
+        [ngModel]="orderList.orderPageSize()"
+        (ngModelChange)="orderList.changeOrderPageSize($event)"
+      >
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </label>
+  </div>
+
+  @if (orderList.orderTotalPages() > 1) {
+    <nav class="order-pagination" aria-label="Páginas de órdenes">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="orderList.currentOrderPage() === 1"
+        (click)="orderList.goToOrderPage(orderList.currentOrderPage() - 1)"
+      >
+        Anterior
+      </button>
+      @for (page of orderList.orderPageNumbers(); track page) {
+        <button
+          type="button"
+          class="page-button"
+          [class.active]="page === orderList.currentOrderPage()"
+          [attr.aria-current]="page === orderList.currentOrderPage() ? 'page' : null"
+          [attr.aria-label]="'Página ' + page"
+          (click)="orderList.goToOrderPage(page)"
+        >
+          {{ page }}
+        </button>
+      }
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="orderList.currentOrderPage() === orderList.orderTotalPages()"
+        (click)="orderList.goToOrderPage(orderList.currentOrderPage() + 1)"
+      >
+        Siguiente
+      </button>
+    </nav>
+  }
+</section>
+
+<app-order-detail-panel [docked]="wideScreen()" />
+</div>
