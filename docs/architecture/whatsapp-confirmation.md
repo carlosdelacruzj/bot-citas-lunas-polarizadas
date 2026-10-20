@@ -27,4 +27,3 @@ Esto es observacion del mismo envio, nunca otro intento ni prueba de lectura.
 Logs registran duracion de espera, preparacion por componente, confirmacion y
 cierre, con identificadores tecnicos; no registran texto ni contacto completo.
 La validacion aislada no sustituye la aceptacion del siguiente caso natural lento.
-
