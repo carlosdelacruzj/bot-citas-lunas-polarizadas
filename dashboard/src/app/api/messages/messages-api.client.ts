@@ -93,10 +93,10 @@ export class MessagesApiClient {
     );
   }
 
-  async retryWhatsApp(jobKey: string, confirmedNoDelivery: boolean): Promise<{ status: string }> {
+  async retryWhatsApp(jobKey: string, confirmedNoDelivery: boolean, expectedRecipient?: string): Promise<{ status: string }> {
     return this.transport.post<{ status: string }>(
       `/api/v1/whatsapp-automation-jobs/${encodeURIComponent(jobKey)}/retry`,
-      { confirmed_no_delivery: confirmedNoDelivery },
+      { confirmed_no_delivery: confirmedNoDelivery, expected_recipient: expectedRecipient },
     );
   }
 

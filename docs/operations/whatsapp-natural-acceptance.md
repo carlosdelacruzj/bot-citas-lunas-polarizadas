@@ -31,9 +31,9 @@ Un reloj visible veta `sent`; marcadores ocultos no confirman.
 |---|---|
 | Aviso de registro | Variante correcta, destinatario y deduplicacion. |
 | Reserva/cobro | Dos imagenes, monto y componentes separados. |
-| Postpago | PDF originales en orden y texto posterior independiente. |
+| Postpago | Texto confirmado primero; luego PDF originales en orden. Texto ambiguo deja PDFs sin intentar. |
 | Recordatorio | Fecha/hora/sede, lead days y barrera durable. |
-| Resumen diario | Adjuntos marcados completos antes de publicar texto. |
+| Resumen diario | Texto, TikTok y luego imagenes marcadas en lotes de cuatro; un componente incierto detiene los siguientes. |
 
 ## Revision
 

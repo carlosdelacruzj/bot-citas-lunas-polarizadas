@@ -242,6 +242,8 @@ def solve_reservation_captcha_and_click_reserve(
             reservation_settings=reservation_settings,
             evidence_settings=evidence_settings,
         )
+        if effective_captcha_audit.get("entry_submission_outcome") not in {None, "unknown"}:
+            return page
         field = page.locator(RESERVATION_FIELD_SELECTOR)
         post = effective_captcha_audit.get("reservation_post_audit") or {}
         if wait_for_reservation_submission_outcome(page, timeout=500) != "unknown":

@@ -38,6 +38,7 @@ class WhatsAppAttemptContext:
     component: str = "preparation"
     message_id: str | None = None
     evidence_path: str | None = None
+    delivery_progress: object | None = None
 
     def advance(
         self,
@@ -65,7 +66,7 @@ class WhatsAppAttemptContext:
             and _PHASE_RANK[self.phase] <= _PHASE_RANK["interaction_started"]
         ):
             self.phase = "pre_interaction"
-        else:
+        elif self.delivery_progress is None:
             self.advance("interaction_started")
         evidence_path = str(result.get("evidence_path") or "").strip()
         if evidence_path:

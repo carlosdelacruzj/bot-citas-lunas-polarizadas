@@ -272,11 +272,30 @@ export class MessagesFacade {
     if (!review || review.job.review_resolution || this.ui.actionBusy()) return;
     this.ui.actionBusy.set(true);
     try {
-      const uncertain = review.job.status === 'uncertain';
+      const history = review.job.delivery_history ?? [];
+      const components = history.filter(attempt => attempt.components.length).at(-1)?.components ?? [];
+      const partial = components.some(component => component.state === 'confirmed');
+      const pending = components.filter(component => component.state !== 'confirmed');
+      const uncertain = components.length
+        ? pending.some(component => component.state === 'uncertain')
+        : review.job.status === 'uncertain';
+      const changedRecipient = review.job.job_kind === 'reservation_album' &&
+        review.current_recipient && review.current_recipient !== review.preview?.recipient;
+      if (changedRecipient) {
+        const contactConfirmation = await (await this.ui.getSweetAlert()).fire({
+          icon: 'warning', title: 'Confirmar contacto corregido',
+          text: `El intento anterior usaba ${review.preview?.recipient}. El nuevo paquete se enviará a ${review.current_recipient}.`,
+          showCancelButton: true, confirmButtonText: 'Usar contacto actual',
+          cancelButtonText: 'Cancelar', focusCancel: true,
+        });
+        if (!contactConfirmation.isConfirmed) return;
+      }
       const confirmation = await (await this.ui.getSweetAlert()).fire({
         icon: 'warning',
         title: uncertain ? 'Confirma que no salió ninguna parte' : 'Reintentar envío',
-        text: uncertain
+        text: partial
+          ? 'Se conservar?n los componentes confirmados. Revisa el chat y contin?a solo si ninguno de los componentes pendientes sali?: ' + pending.map(component => component.label).join(', ')
+          : uncertain
           ? 'Revisa el chat. Continúa solo si no se envió ningún texto, imagen ni documento. Si salió una parte, completa únicamente lo faltante de forma manual.'
           : 'Se creará un nuevo intento. El intento fallido quedará en el historial.',
         showCancelButton: true,
@@ -285,7 +304,7 @@ export class MessagesFacade {
         focusCancel: true,
       });
       if (!confirmation.isConfirmed) return;
-      const result = await this.messagesApi.retryWhatsApp(review.job.job_key, uncertain);
+      const result = await this.messagesApi.retryWhatsApp(review.job.job_key, uncertain, review.current_recipient ?? undefined);
       await this.navigation.refreshAll();
       this.ui.actionBusy.set(false);
       this.ui.closeModal();

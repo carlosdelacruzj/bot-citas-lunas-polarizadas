@@ -20,6 +20,7 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
+from appointment_bot.db.whatsapp_delivery import delivery_history
 from appointment_bot.utils.sanitization import sanitize_text
 
 WhatsAppAutomationKind = Literal[
@@ -46,6 +47,7 @@ WHATSAPP_REVIEW_RESOLUTIONS = {
 
 class WhatsAppAutomationJob(TypedDict):
     job_key: str
+    source_job_key: str | None
     message_id: str | None
     order_id: str | None
     reservation_id: str | None
@@ -272,7 +274,8 @@ def next_waiting_whatsapp_automation_job(
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT job_key, message_id, order_id, reservation_id, job_kind, report_date,
+            SELECT job_key, source_job_key, message_id, order_id, reservation_id,
+                       job_kind, report_date,
                    appointment_day, recipient_phone,
                    recipient_username,
                    message_text, publication_text, attachment_paths,
@@ -346,7 +349,8 @@ def claim_whatsapp_automation_job(
                               AND ws.lease_expires_at > CURRENT_TIMESTAMP
                         )
                   )
-                RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
+                RETURNING job_key, source_job_key, message_id, order_id, reservation_id,
+                       job_kind, report_date,
                           appointment_day, recipient_phone,
                           recipient_username,
                           message_text, publication_text, attachment_paths,
@@ -463,7 +467,8 @@ def recover_expired_whatsapp_automation_jobs(
                 finished_at = %s,
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
-            RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
+            RETURNING job_key, source_job_key, message_id, order_id, reservation_id,
+                       job_kind, report_date,
                       appointment_day, recipient_phone,
                       recipient_username,
                       message_text, publication_text, attachment_paths,
@@ -545,7 +550,8 @@ def refresh_running_appointment_reminder_snapshot(
               AND job_kind = 'appointment_reminder'
               AND status = 'running'
               AND lease_owner = %s
-            RETURNING job_key, message_id, order_id, reservation_id, job_kind, report_date,
+            RETURNING job_key, source_job_key, message_id, order_id, reservation_id,
+                       job_kind, report_date,
                       appointment_day, recipient_phone, recipient_username,
                       message_text, publication_text, attachment_paths,
                       registration_notice_type, preflight_cycle,
@@ -692,6 +698,8 @@ def get_order_whatsapp_review(
         if trace not in template_trace:
             template_trace.append(trace)
     payload["template_trace"] = template_trace
+    with _connection(_database_url(effective_settings)) as connection:
+        payload["delivery_history"] = delivery_history(connection, payload["job_key"])
     return payload
 
 
@@ -728,10 +736,16 @@ def resolve_whatsapp_automation_review(
             raise ValueError(f"WhatsApp automation job not found: {job_key}")
         if row["job_kind"] not in {
             "reservation_album", "post_payment_followup", "registration_notice"
-        }:
+        } and normalized_resolution != "dismissed":
             raise ValueError("This WhatsApp job cannot be reconciled from the dashboard.")
         if row["status"] not in {"failed", "uncertain"}:
             raise ValueError("Only failed or uncertain WhatsApp jobs require reconciliation.")
+        if connection.execute(
+            "SELECT 1 FROM whatsapp_delivery_attempts "
+            "WHERE job_key=%s AND finished_at IS NULL LIMIT 1",
+            (job_key,),
+        ).fetchone():
+            raise ValueError("El navegador todavia no cerro el intento de WhatsApp.")
         if row["review_resolution"] is not None:
             if str(row["review_resolution"]) != normalized_resolution:
                 raise ValueError("This WhatsApp job already has a different resolution.")
@@ -795,6 +809,7 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
     raw_paths = row["attachment_paths"]
     return {
         "job_key": str(row["job_key"]),
+        "source_job_key": row.get("source_job_key"),
         "message_id": row.get("message_id"),
         "order_id": str(row["order_id"]) if row["order_id"] is not None else None,
         "reservation_id": (

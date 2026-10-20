@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 
 from playwright.sync_api import Error as PlaywrightError
@@ -21,6 +22,7 @@ from appointment_bot.browser.whatsapp.dom import (
     _safe_text_content,
 )
 from appointment_bot.browser.whatsapp.evidence import _save_whatsapp_debug_screenshot
+from appointment_bot.browser.whatsapp.progress import confirm_components
 
 
 def _wait_until_outgoing_images_uploaded(
@@ -67,7 +69,9 @@ def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
             state = "confirmed"
         else:
             state = "unknown"
-        records.append((_message_container_signature(message), state))
+        signature = _message_container_signature(message)
+        if signature:
+            records.append((signature, state))
     return records
 
 
@@ -75,11 +79,14 @@ def _message_container_has_large_image(message) -> bool:
     images = message.locator("img")
     for index in range(images.count()):
         image = images.nth(index)
-        if not image.is_visible():
+        try:
+            if not image.is_visible():
+                continue
+            box = image.bounding_box(timeout=500)
+            if box and box["width"] >= 100 and box["height"] >= 100:
+                return True
+        except PlaywrightError:
             continue
-        box = image.bounding_box()
-        if box and box["width"] >= 100 and box["height"] >= 100:
-            return True
     return False
 
 
@@ -87,14 +94,17 @@ def _wait_until_plain_text_send_finishes(
     page: Page,
     expected: str,
     outgoing_signatures: set[str],
+    *,
+    timeout_seconds: int = PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS,
+    grace_seconds: int = PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS,
 ) -> bool:
-    deadline = time.monotonic() + PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS
+    deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
             page.wait_for_timeout(750)
             return True
         page.wait_for_timeout(500)
-    page.wait_for_timeout(PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS * 1_000)
+    page.wait_for_timeout(grace_seconds * 1_000)
     if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
         page.wait_for_timeout(750)
         return True
@@ -111,9 +121,8 @@ def _plain_text_send_is_confirmed(
         confirmed_only=True,
         expected_text=expected,
     )
-    return (
-        not _plain_text_ready(page, expected)
-        and bool(confirmed_signatures - outgoing_signatures)
+    return not _plain_text_ready(page, expected) and bool(
+        confirmed_signatures - outgoing_signatures
     )
 
 
@@ -144,10 +153,30 @@ def _outgoing_message_signatures(
                 continue
             if expected_compact is not None:
                 actual_text = _compact_alphanumeric_text(_safe_text_content(message))
+                if expected_compact and expected_compact not in actual_text:
+                    if _expand_matching_message_text(message, expected_compact, actual_text):
+                        actual_text = _compact_alphanumeric_text(_safe_text_content(message))
                 if not expected_compact or expected_compact not in actual_text:
                     continue
-            signatures.add(_message_container_signature(message))
+            signature = _message_container_signature(message)
+            if signature:
+                signatures.add(signature)
     return signatures
+
+
+def _expand_matching_message_text(message, expected: str, actual: str) -> bool:
+    if len(expected) < 80 or expected[:80] not in actual:
+        return False
+    controls = message.get_by_text(re.compile(r"^(Leer m\u00e1s|Leer mas|Read more)$", re.I))
+    for index in range(controls.count()):
+        control = controls.nth(index)
+        try:
+            if control.is_visible():
+                control.click(timeout=1_000)
+                return True
+        except PlaywrightError:
+            continue
+    return False
 
 
 def _message_container_has_confirmed_status(message) -> bool:
@@ -160,7 +189,10 @@ def _message_container_has_confirmed_status(message) -> bool:
         "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
         "[class*='wds-ic-sent']"
     )
-    if _locator_has_visible_match(status_markers):
+    svg_status = message.locator("svg:has(title)").filter(
+        has_text=re.compile(r"^(wds-ic-read|wds-ic-delivered|wds-ic-sent)$")
+    )
+    if _locator_has_visible_match(status_markers) or _locator_has_visible_match(svg_status):
         return True
     labels = message.locator("[aria-label]")
     confirmed_labels = {
@@ -182,10 +214,16 @@ def _message_container_has_confirmed_status(message) -> bool:
 
 
 def _message_container_has_pending_status(message) -> bool:
-    return _locator_has_visible_match(
+    pending_svg = message.locator("svg:has(title)").filter(
+        has_text=re.compile(r"^(wds-ic-time|wds-ic-error)$")
+    )
+    return _locator_has_visible_match(pending_svg) or _locator_has_visible_match(
         message.locator(
-            "[data-icon='msg-time'], [data-icon^='msg-time-'], "
-            "[class*='wds-ic-time']"
+            "[data-icon='msg-time'], [data-icon^='msg-time-'], [class*='wds-ic-time'], "
+            "[data-icon*='error'], [data-icon*='retry'], [data-icon*='upload'], "
+            "[role='progressbar'], [class*='wds-ic-error'], "
+            "[aria-label*='No se pudo enviar' i], [aria-label*='Reintentar' i], "
+            "[aria-label*='Failed' i], [aria-label*='Not sent' i], [aria-label*='Retry' i]"
         )
     )
 
@@ -199,10 +237,7 @@ def _message_container_signature(message) -> str:
         ancestor_data_id = _safe_get_attribute(ancestor.first, "data-id")
         if ancestor_data_id:
             return f"data-id:{ancestor_data_id}"
-    try:
-        return f"html:{message.evaluate('element => element.outerHTML')}"
-    except PlaywrightError:
-        return f"text:{_safe_text_content(message)}"
+    return ""
 
 
 def _message_container_is_outgoing(message) -> bool:
@@ -210,14 +245,15 @@ def _message_container_is_outgoing(message) -> bool:
         return True
     labels = message.locator("[aria-label]")
     for index in range(labels.count()):
-        label = (_safe_get_attribute(labels.nth(index), "aria-label") or "").strip()
-        if label.casefold() in {"tú:", "tu:", "you:"}:
+        label = _safe_get_attribute(labels.nth(index), "aria-label") or ""
+        if _compact_alphanumeric_text(label) in {"tu", "you"}:
             return True
-    metadata = _safe_text_content(message).casefold()
-    return any(
-        marker in metadata
-        for marker in ("wds-ic-read", "wds-ic-delivered", "wds-ic-sent")
-    )
+    try:
+        return message.evaluate("""element => !!element.closest(
+            '.message-out, [data-id^="true_"]'
+        )""")
+    except PlaywrightError:
+        return False
 
 
 def _wait_until_send_attempt_finishes(
@@ -226,21 +262,45 @@ def _wait_until_send_attempt_finishes(
     attachment_names: list[str],
     outgoing_signatures: set[str],
     expected_outgoing_count: int,
+    component_keys: list[str] | None = None,
 ) -> bool:
+    def check_documents() -> tuple[bool, int]:
+        confirmed_ids: set[str] = set()
+        documents_confirmed = bool(attachment_names)
+        for index, name in enumerate(attachment_names):
+            matches = (
+                _outgoing_message_signatures(page, confirmed_only=True, expected_text=name)
+                - outgoing_signatures
+            )
+            confirmed_ids.update(matches)
+            if not matches:
+                documents_confirmed = False
+                continue
+            if component_keys:
+                outgoing_id = next(
+                    (value for value in matches if value.startswith("data-id:")), None
+                )
+                confirm_components([component_keys[index]], outgoing_id)
+        confirmed_count = len(confirmed_ids)
+        return (
+            documents_confirmed
+            and confirmed_count >= expected_outgoing_count
+            and _normal_chat_composer_visible(page),
+            confirmed_count,
+        )
+
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
-        confirmed_signatures = _outgoing_message_signatures(
-            page,
-            confirmed_only=True,
-        )
-        new_confirmed_count = len(confirmed_signatures - outgoing_signatures)
-        if (
-            _normal_chat_composer_visible(page)
-            and new_confirmed_count >= expected_outgoing_count
-        ):
+        documents_confirmed, new_confirmed_count = check_documents()
+        if documents_confirmed:
             page.wait_for_timeout(1_000)
             return True
         page.wait_for_timeout(500)
+    # DOM queries can outlast the deadline while WhatsApp finishes the upload.
+    documents_confirmed, new_confirmed_count = check_documents()
+    if documents_confirmed:
+        page.wait_for_timeout(1_000)
+        return True
     evidence_path = _save_whatsapp_debug_screenshot(
         page,
         "whatsapp-followup-send-not-confirmed",
@@ -261,8 +321,7 @@ def _wait_until_send_attempt_finishes(
     if not document_preview_visible and _normal_chat_composer_visible(page):
         logger.warning(
             "WhatsApp document preview closed without full confirmation; "
-            "continuing with the distinct post-payment text and preserving "
-            "the documents as uncertain"
+            "stopping and preserving the documents as uncertain"
         )
         return False
     raise RuntimeError(

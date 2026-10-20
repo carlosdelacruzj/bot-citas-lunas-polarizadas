@@ -12,11 +12,25 @@ from appointment_bot.browser.whatsapp.evidence import (
     _save_whatsapp_debug_screenshot,
 )
 from appointment_bot.browser.whatsapp.navigation import _open_recipient_chat
+from appointment_bot.browser.whatsapp.progress import (
+    confirm_components,
+    plan_delivery,
+    selected_components,
+)
+from appointment_bot.browser.whatsapp.safety import require_clear_outgoing_queue
 from appointment_bot.browser.whatsapp.sending import _click_send_button, _send_plain_text_message
 from appointment_bot.browser.whatsapp.session import _fresh_whatsapp_page
 
 
 def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
+    all_attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
+    document_keys = [f"document:{index}" for index in range(len(all_attachments))]
+    plan_delivery(
+        draft,
+        list(zip(document_keys, [path.name for path in all_attachments], strict=True))
+        + [("payment_confirmation", "Texto postpago")],
+    )
+    chosen = selected_components(document_keys + ["payment_confirmation"])
     page = _fresh_whatsapp_page(context)
     message_id = str(draft["message_id"])
     recipient_error = _open_recipient_chat(
@@ -24,20 +38,53 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
     )
     if recipient_error is not None:
         return recipient_error
-    attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
+    require_clear_outgoing_queue(
+        page, evidence_prefix=f"whatsapp-followup-{_safe_whatsapp_artifact_name(message_id)}"
+    )
+    attachments = [
+        path for key, path in zip(document_keys, all_attachments, strict=True) if key in chosen
+    ]
+    document_keys = [key for key in document_keys if key in chosen]
     if not all(path.is_file() for path in attachments):
         raise FileNotFoundError("Uno de los PDFs preparados ya no esta disponible.")
-    _attach_document(page, attachments)
     if draft.get("auto_send"):
-        documents_confirmed = _click_send_button(page, attachments)
-        text_sent = _send_plain_text_message(
+        text_sent = "payment_confirmation" not in chosen or _send_plain_text_message(
             page,
             str(draft["caption"]),
-            evidence_prefix=(
-                "whatsapp-followup-"
-                f"{_safe_whatsapp_artifact_name(message_id)}"
-            ),
+            component_keys=["payment_confirmation"],
+            evidence_prefix=(f"whatsapp-followup-{_safe_whatsapp_artifact_name(message_id)}"),
         )
+        if not text_sent:
+            evidence_path = _save_whatsapp_debug_screenshot(
+                page,
+                f"whatsapp-followup-{_safe_whatsapp_artifact_name(message_id)}-text-unconfirmed",
+            )
+            return _result(
+                "send_uncertain",
+                "No se observo confirmacion del texto post-pago dentro del plazo; "
+                "puede haberse enviado. No se iniciaron los PDFs pendientes. "
+                "Revisa el chat antes de recuperar; no se reintentara automaticamente.",
+                message_id=message_id,
+                draft_mode="documents",
+                manual_send_required=True,
+                delivery_phase="text_unconfirmed_documents_not_attempted",
+                evidence_path=evidence_path,
+                delivery_components={
+                    "documents": "not_attempted" if attachments else "confirmed",
+                    "payment_confirmation": "uncertain",
+                },
+            )
+        if attachments:
+            require_clear_outgoing_queue(
+                page,
+                evidence_prefix=f"whatsapp-followup-{_safe_whatsapp_artifact_name(message_id)}",
+            )
+            _attach_document(page, attachments)
+        documents_confirmed = not attachments or _click_send_button(
+            page, attachments, component_keys=document_keys
+        )
+        if attachments and documents_confirmed:
+            confirm_components(document_keys)
         delivery_components = {
             "documents": "confirmed" if documents_confirmed else "uncertain",
             "payment_confirmation": "confirmed" if text_sent else "uncertain",
@@ -57,30 +104,12 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                 documents_confirmed,
                 text_sent,
             )
-            if documents_confirmed:
-                message = (
-                    "Los PDFs salieron, pero WhatsApp no confirmo el texto post-pago. "
-                    "No se marcara el paquete completo como enviado ni se reintentara "
-                    "automaticamente."
-                )
-            elif text_sent:
-                message = (
-                    "WhatsApp cerro la vista previa de los PDFs sin permitir confirmar "
-                    "automaticamente todas sus burbujas. El mensaje de pago confirmado "
-                    "si fue enviado y confirmado; no se repetiran los PDFs."
-                )
-            else:
-                message = (
-                    "WhatsApp cerro la vista previa de los PDFs sin permitir confirmar "
-                    "automaticamente todas sus burbujas y tampoco confirmo el mensaje "
-                    "de pago. No se reintentara automaticamente."
-                )
-            if documents_confirmed:
-                delivery_phase = "documents_confirmed_text_unconfirmed"
-            elif text_sent:
-                delivery_phase = "documents_unconfirmed_text_confirmed"
-            else:
-                delivery_phase = "documents_and_text_unconfirmed"
+            message = (
+                "El texto post-pago fue confirmado, pero no se pudo confirmar "
+                "la salida de todos los PDFs. Revisa el chat antes de recuperar; "
+                "no se repetiran automaticamente."
+            )
+            delivery_phase = "documents_unconfirmed_text_confirmed"
             return _result(
                 "send_uncertain",
                 message,
@@ -112,12 +141,13 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
             evidence_path=sent_evidence_path,
             delivery_components=delivery_components,
         )
+    if attachments:
+        _attach_document(page, attachments)
     draft_mode = _fill_caption(
         page,
         str(draft["caption"]),
         require_full_match=True,
         allow_footer_editor=True,
-        trust_inserted_text=True,
     )
     if draft_mode != "caption":
         _save_whatsapp_debug_screenshot(page, "whatsapp-followup-caption-not-ready")

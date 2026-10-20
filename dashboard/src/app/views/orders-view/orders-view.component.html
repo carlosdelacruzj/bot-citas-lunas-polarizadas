@@ -1,5 +1,5 @@
-<div class="orders-split" [class.with-detail]="ordersDomain.orderPanelOpen() && wideScreen()">
 <app-load-status [section]="ordersDomain.loads.list" />
+<div class="orders-split" [class.with-detail]="ordersDomain.orderPanelOpen() && wideScreen()">
 <section class="panel">
   <div class="panel-header">
     <div>
@@ -10,6 +10,9 @@
       </p>
     </div>
     <div class="panel-actions">
+      <details class="order-support-tools">
+      <summary>Herramientas de WhatsApp</summary>
+      <div class="order-support-actions">
       <button
         type="button"
         class="secondary"
@@ -30,7 +33,8 @@
       <button type="button" class="secondary" (click)="messagesDomain.openWhatsAppTest()">
         Probar post-pago
       </button>
-      <button type="button" class="primary" (click)="ordersDomain.openCreateOrder()">Nueva orden</button>
+      </div>
+      </details>
     </div>
   </div>
 
@@ -41,6 +45,7 @@
           type="button"
           class="filter-chip"
           [class.active]="orderList.orderQuickFilter() === filter.key"
+          [attr.aria-pressed]="orderList.orderQuickFilter() === filter.key"
           (click)="orderList.setOrderQuickFilter(filter.key)"
         >
           {{ filter.label }}
@@ -53,6 +58,7 @@
       <label class="filter">
         Buscar
         <input
+          placeholder="Nombre, orden, placa o contacto"
           name="orderFilter"
           type="search"
           [value]="orderList.orderFilter()"
@@ -84,6 +90,7 @@
       >
         {{ orderList.orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
       </button>
+      <button type="button" class="secondary" [disabled]="!orderList.orderFilter() && orderList.orderQuickFilter() === 'all'" (click)="orderList.setOrderFilter(''); orderList.setOrderQuickFilter('all')">Limpiar filtros</button>
     </div>
   </div>
 

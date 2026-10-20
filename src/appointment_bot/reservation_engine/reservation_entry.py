@@ -16,12 +16,15 @@ from appointment_bot.reservation_engine.appointment_contracts import (
 )
 from appointment_bot.reservation_engine.appointment_selection import validate_selected_appointment
 from appointment_bot.reservation_engine.reservation_controls import RESERVATION_BUTTON_SELECTOR
+from appointment_bot.reservation_engine.reservation_portal import (
+    wait_for_reservation_submission_outcome,
+)
 from appointment_bot.reservation_engine.reservation_post_audit import (
     ReservationPostCollector,
     inspect_reservation_form,
     validate_reservation_form_audit,
 )
-from appointment_bot.utils.diagnostics import save_sanitized_page_html
+from appointment_bot.utils.diagnostics import read_visible_page_text, save_sanitized_page_html
 from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
@@ -118,6 +121,9 @@ def click_preverified_reservation(
         if timing is not None:
             timing.mark("portal_response")
         logger.info("Preverified reservation click: HTTP=%s", post_audit.get("response_status"))
+        # The portal closes its success alert after two seconds; read it before evidence capture.
+        audit["entry_submission_outcome"] = wait_for_reservation_submission_outcome(page)
+        audit["entry_portal_text"] = read_visible_page_text(page)
     except PlaywrightError as exc:
         raise ReservationSubmissionUncertain(
             "El boton Reservar Cita pudo enviar la solicitud; no se repetira el clic."

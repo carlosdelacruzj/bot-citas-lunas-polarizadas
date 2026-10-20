@@ -65,6 +65,18 @@
   grid-column: 1 / -1;
 }
 
+.order-workspace button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.next-action-buttons {
+  grid-template-columns: 1fr;
+}
+
 .order-task-grid {
   display: grid;
   grid-template-columns: 1fr;

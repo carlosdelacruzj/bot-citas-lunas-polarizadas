@@ -21,6 +21,7 @@ from appointment_bot.browser.whatsapp.navigation import (
     _open_recipient_chat,
     _wait_for_chat,
 )
+from appointment_bot.browser.whatsapp.progress import plan_delivery
 from appointment_bot.browser.whatsapp.sending import _send_plain_text_message
 from appointment_bot.browser.whatsapp.session import _fresh_whatsapp_page
 
@@ -29,21 +30,23 @@ def _send_daily_slot_summary(
     context: BrowserContext,
     draft: dict[str, object],
 ) -> dict[str, object]:
-    attachments = [
-        Path(str(path)).resolve()
-        for path in list(draft.get("attachment_paths") or [])
-    ]
+    attachments = [Path(str(path)).resolve() for path in list(draft.get("attachment_paths") or [])]
     if attachments and not all(path.is_file() for path in attachments):
         raise FileNotFoundError(
             "Una de las imagenes marcadas del resumen diario ya no esta disponible."
         )
 
-    page = _fresh_whatsapp_page(context)
-    phone = "".join(
-        character
-        for character in str(draft["recipient_phone"])
-        if character.isdigit()
+    plan_delivery(
+        draft,
+        ([("summary", "Resumen diario")] if draft.get("message_text") else [])
+        + ([("publication", "Publicacion")] if draft.get("publication_text") else [])
+        + [
+            (f"image:{index}", f"Imagen {index + 1}")
+            for index in range(len(draft["attachment_paths"]))
+        ],
     )
+    page = _fresh_whatsapp_page(context)
+    phone = "".join(character for character in str(draft["recipient_phone"]) if character.isdigit())
     message_id = str(draft["message_id"])
     evidence_id = _safe_whatsapp_artifact_name(message_id)
     target = f"https://web.whatsapp.com/send?phone={phone}"
@@ -66,6 +69,7 @@ def _send_daily_slot_summary(
             page,
             message_text,
             evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-summary",
+            component_keys=["summary"],
         )
         if not text_sent:
             delivery_components["summary"] = "uncertain"
@@ -74,15 +78,37 @@ def _send_daily_slot_summary(
                 "WhatsApp no confirmo el mensaje del resumen diario.",
                 message_id=message_id,
                 delivery_phase="send_attempted",
-                evidence_path=(
-                    f".runtime/whatsapp-daily-summary-{evidence_id}-summary-"
-                    "text-send-uncertain.png"
+                evidence_path=_save_whatsapp_debug_screenshot(
+                    page, f"whatsapp-daily-summary-{evidence_id}-summary-uncertain"
                 ),
                 delivery_components=delivery_components,
             )
         delivery_components["summary"] = "confirmed"
     else:
         delivery_components["summary"] = "skipped"
+
+    if draft.get("publication_text"):
+        publication_sent = _send_plain_text_message(
+            page,
+            str(draft["publication_text"]),
+            evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-publication",
+            component_keys=["publication"],
+        )
+        if not publication_sent:
+            delivery_components["publication"] = "uncertain"
+            return _result(
+                "send_uncertain",
+                "WhatsApp no confirmo la publicacion diaria para TikTok.",
+                message_id=message_id,
+                delivery_phase="send_attempted",
+                evidence_path=_save_whatsapp_debug_screenshot(
+                    page, f"whatsapp-daily-summary-{evidence_id}-publication-uncertain"
+                ),
+                delivery_components=delivery_components,
+            )
+        delivery_components["publication"] = "confirmed"
+    else:
+        delivery_components["publication"] = "skipped"
 
     if attachments:
         batches = [
@@ -111,9 +137,14 @@ def _send_daily_slot_summary(
                 _send_album(
                     page,
                     expected_count=len(batch),
+                    component_keys=[
+                        f"image:{index}"
+                        for index in range(
+                            confirmed_image_count, confirmed_image_count + len(batch)
+                        )
+                    ],
                     uncertain_screenshot_name=(
-                        "whatsapp-daily-summary-upload-uncertain-"
-                        f"{batch_evidence_id}"
+                        f"whatsapp-daily-summary-upload-uncertain-{batch_evidence_id}"
                     ),
                 )
             except WhatsAppSendUncertain as exc:
@@ -138,25 +169,6 @@ def _send_daily_slot_summary(
             )
         delivery_components["images"] = "confirmed"
 
-    publication_sent = _send_plain_text_message(
-        page,
-        str(draft["publication_text"]),
-        evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-publication",
-    )
-    if not publication_sent:
-        delivery_components["publication"] = "uncertain"
-        return _result(
-            "send_uncertain",
-            "WhatsApp no confirmo la publicacion diaria para TikTok.",
-            message_id=message_id,
-            delivery_phase="send_attempted",
-            evidence_path=(
-                f".runtime/whatsapp-daily-summary-{evidence_id}-publication-"
-                "text-send-uncertain.png"
-            ),
-            delivery_components=delivery_components,
-        )
-    delivery_components["publication"] = "confirmed"
     sent_evidence_path = _save_whatsapp_debug_screenshot(
         page,
         "whatsapp-daily-summary-sent",
@@ -164,10 +176,7 @@ def _send_daily_slot_summary(
     context.close()
     return _result(
         "sent",
-        (
-            "Resumen diario, imagenes y publicacion de TikTok "
-            "enviados automaticamente."
-        ),
+        ("Resumen diario, publicacion de TikTok e imagenes enviados automaticamente."),
         message_id=message_id,
         sent=True,
         delivery_phase="confirmation_observed",
@@ -180,6 +189,7 @@ def _send_registration_notice(
     context: BrowserContext,
     draft: dict[str, object],
 ) -> dict[str, object]:
+    plan_delivery(draft, [("message", "Texto")])
     page = _fresh_whatsapp_page(context)
     message_id = str(draft["message_id"])
     evidence_id = _safe_whatsapp_artifact_name(message_id)
@@ -198,9 +208,8 @@ def _send_registration_notice(
             "WhatsApp no confirmo el aviso automatico de registro.",
             message_id=message_id,
             delivery_phase="send_attempted",
-            evidence_path=(
-                f".runtime/whatsapp-registration-notice-{evidence_id}-"
-                "text-send-uncertain.png"
+            evidence_path=_save_whatsapp_debug_screenshot(
+                page, f"whatsapp-registration-notice-{evidence_id}-uncertain"
             ),
         )
     sent_evidence_path = _save_whatsapp_debug_screenshot(
@@ -222,6 +231,7 @@ def _send_appointment_reminder(
     context: BrowserContext,
     draft: dict[str, object],
 ) -> dict[str, object]:
+    plan_delivery(draft, [("message", "Texto")])
     page = _fresh_whatsapp_page(context)
     message_id = str(draft["message_id"])
     evidence_id = _safe_whatsapp_artifact_name(message_id)
@@ -234,15 +244,16 @@ def _send_appointment_reminder(
         page,
         str(draft["message_text"]),
         evidence_prefix=f"whatsapp-appointment-reminder-{evidence_id}",
+        confirmation_timeout_seconds=60,
+        confirmation_grace_seconds=5,
     ):
         return _result(
             "send_uncertain",
             "WhatsApp no confirmo el recordatorio automatico de cita.",
             message_id=message_id,
             delivery_phase="send_attempted",
-            evidence_path=(
-                f".runtime/whatsapp-appointment-reminder-{evidence_id}-"
-                "text-send-uncertain.png"
+            evidence_path=_save_whatsapp_debug_screenshot(
+                page, f"whatsapp-appointment-reminder-{evidence_id}-uncertain"
             ),
         )
     sent_evidence_path = _save_whatsapp_debug_screenshot(

@@ -619,7 +619,25 @@ export class OperationsFacade {
     if (!phase) {
       return 'sin fase';
     }
-    return phase.replaceAll('_', ' ');
+    const labels: Record<string, string> = {
+      retry_wait: 'Esperando próxima revisión',
+      backoff: 'Esperando el descanso de la cuenta',
+      recovery_backoff: 'Esperando recuperaci?n tras un error',
+      outside_hot_window: 'Esperando el horario de búsqueda',
+      monitoring_observer: 'Buscando cupos',
+      monitoring_observer_direct: 'Buscando cupos para clientes',
+      monitoring_observer_auxiliary: 'Buscando cupos con cuenta auxiliar',
+      rapid_queue: 'Revisando clientes compatibles',
+      opportunity_burst: 'Comprobando un cupo detectado',
+      post_reservation_review: 'Verificando la reserva',
+      starting: 'Iniciando búsqueda',
+      pausing: 'Terminando la revisión antes de pausar',
+      paused: 'Búsqueda pausada',
+      stopped: 'Búsqueda detenida',
+      restarting: 'Reiniciando búsqueda',
+    };
+    return labels[phase] ?? (phase.startsWith('monitoring_observer')
+      ? 'Buscando cupos' : phase.replaceAll('_', ' '));
   }
 
   public generalObserverActive(): boolean {
@@ -635,6 +653,9 @@ export class OperationsFacade {
     }
     if (this.generalObserverActive()) {
       return 'Observador general activo';
+    }
+    if (['retry_wait', 'backoff', 'recovery_backoff', 'outside_hot_window'].includes(this.worker()?.phase ?? '')) {
+      return 'La búsqueda continuará al terminar la espera';
     }
     return 'Sin orden activa';
   }

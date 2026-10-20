@@ -20,13 +20,22 @@ from appointment_bot.browser.whatsapp.confirmation import (
 from appointment_bot.browser.whatsapp.dom import (
     _album_control_summary,
     _album_thumbnails,
+    _caption_editor,
     _normal_chat_composer_visible,
+    _safe_text_content,
+    _same_editor_text,
 )
 from appointment_bot.browser.whatsapp.evidence import (
     _safe_whatsapp_artifact_name,
     _save_whatsapp_debug_screenshot,
 )
 from appointment_bot.browser.whatsapp.navigation import _open_recipient_chat
+from appointment_bot.browser.whatsapp.progress import (
+    confirm_components,
+    plan_delivery,
+    selected_components,
+)
+from appointment_bot.browser.whatsapp.safety import require_clear_outgoing_queue
 from appointment_bot.browser.whatsapp.sending import _click_visible_send_button
 from appointment_bot.browser.whatsapp.session import _fresh_whatsapp_page
 
@@ -35,6 +44,13 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     items = list(draft["album_items"])
     if len(items) != 2:
         raise ValueError("El album de WhatsApp requiere exactamente dos imagenes.")
+    keys = [f"image:{index}" for index in range(len(items))]
+    plan_delivery(draft, list(zip(keys, ["Constancia y texto", "Cobro y texto"], strict=True)))
+    chosen = selected_components(keys)
+    items = [item for key, item in zip(keys, items, strict=True) if key in chosen]
+    keys = chosen
+    if not items:
+        raise ValueError("No hay imagenes pendientes en esta recuperacion.")
     attachments = [Path(str(item["attachment_path"])).resolve() for item in items]
     if not all(path.is_file() for path in attachments):
         raise FileNotFoundError("Una de las imagenes preparadas ya no esta disponible.")
@@ -48,28 +64,35 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
         logger.info("WhatsApp Web album controls: %s", _album_control_summary(page))
         raise RuntimeError("WhatsApp no mostro las dos miniaturas del album.")
     captions = [str(item["caption"]) for item in items]
-    combined_caption = "\n\n".join(caption for caption in captions if caption.strip())
     caption_ready = True
     try:
-        _fill_selected_album_caption(page, combined_caption)
+        for index, caption in enumerate(captions):
+            thumbnails[index].click(timeout=2_000)
+            _fill_selected_album_caption(page, caption)
+        for index, caption in enumerate(captions):
+            thumbnails[index].click(timeout=2_000)
+            page.wait_for_timeout(300)
+            editor = _caption_editor(page)
+            if editor is None or not _same_editor_text(_safe_text_content(editor), caption):
+                raise RuntimeError("WhatsApp no conservo el texto de cada imagen.")
     except RuntimeError:
         caption_ready = False
         _save_whatsapp_debug_screenshot(page, "whatsapp-album-caption-not-ready")
         logger.exception("Could not write WhatsApp album caption")
+    if not caption_ready:
+        raise RuntimeError(
+            "WhatsApp no confirmo todos los textos; el album no esta listo para enviar."
+        )
     if draft.get("auto_send"):
-        if not caption_ready:
-            raise RuntimeError(
-                "WhatsApp no confirmo el texto del album; no se realizo el envio automatico."
-            )
         _save_whatsapp_debug_screenshot(page, "whatsapp-album-before-send")
         message_id = str(draft["message_id"])
         evidence_id = _safe_whatsapp_artifact_name(message_id)
         try:
             _send_album(
                 page,
-                uncertain_screenshot_name=(
-                    f"whatsapp-album-upload-uncertain-{evidence_id}"
-                ),
+                expected_count=len(items),
+                component_keys=keys,
+                uncertain_screenshot_name=(f"whatsapp-album-upload-uncertain-{evidence_id}"),
             )
         except WhatsAppSendUncertain as exc:
             context.close()
@@ -107,6 +130,7 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
             delivery_phase="confirmation_observed",
             evidence_path=sent_evidence_path,
         )
+    logger.info("WhatsApp Web album controls: %s", _album_control_summary(page))
     ready_screenshot = Path(".runtime/whatsapp-album-ready.png").resolve()
     ready_screenshot.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(ready_screenshot))
@@ -141,6 +165,10 @@ def _attach_album_with_safe_page_retry(
         )
         if recipient_error is not None:
             return recipient_error
+        require_clear_outgoing_queue(
+            page,
+            evidence_prefix=f"whatsapp-album-{_safe_whatsapp_artifact_name(str(draft['message_id']))}",
+        )
         try:
             _attach_image(page, attachments)
             return page
@@ -148,8 +176,7 @@ def _attach_album_with_safe_page_retry(
             if page_attempt == 2:
                 raise
             logger.info(
-                "WhatsApp album safe page retry before file selection: "
-                "message_id=%s",
+                "WhatsApp album safe page retry before file selection: message_id=%s",
                 draft["message_id"],
             )
     raise RuntimeError("WhatsApp no pudo preparar el album despues del reintento seguro.")
@@ -160,21 +187,18 @@ def _send_album(
     *,
     expected_count: int = 2,
     uncertain_screenshot_name: str = "whatsapp-album-upload-uncertain",
+    component_keys: list[str] | None = None,
 ) -> None:
     if len(_album_thumbnails(page)) != expected_count:
-        raise RuntimeError(
-            "WhatsApp no mantuvo todas las miniaturas antes del envio."
-        )
+        raise RuntimeError("WhatsApp no mantuvo todas las miniaturas antes del envio.")
     initial_image_signatures = {
         signature for signature, _state in _outgoing_image_message_records(page)
     }
-    viewport = page.viewport_size or {"width": 0, "height": 0}
-    if not viewport["width"] or not viewport["height"]:
-        raise RuntimeError("WhatsApp no informo el tamaño de la ventana para enviar el album.")
-    if not _click_visible_send_button(page):
-        page.mouse.click(viewport["width"] - 48, viewport["height"] - 50)
+    keys = component_keys or [f"image:{index}" for index in range(expected_count)]
+    if not _click_visible_send_button(page, component_keys=keys):
+        _save_whatsapp_debug_screenshot(page, "whatsapp-album-send-button-missing")
+        raise RuntimeError("No se encontro un boton Enviar identificable para el album.")
     deadline = time.monotonic() + 30
-    next_send_retry_at = time.monotonic() + 2
     while time.monotonic() < deadline:
         if not _album_thumbnails(page) and _normal_chat_composer_visible(page):
             page.wait_for_timeout(1_000)
@@ -193,13 +217,15 @@ def _send_album(
                         "la carga de todas las imagenes.",
                         evidence_path=evidence_path,
                     )
+                identifiers = [
+                    signature
+                    for signature, state in _outgoing_image_message_records(page)
+                    if signature not in initial_image_signatures
+                    and state == "confirmed"
+                    and signature.startswith("data-id:")
+                ]
+                confirm_components(keys, ",".join(identifiers) or None)
                 return
-        elif time.monotonic() >= next_send_retry_at:
-            if not _click_visible_send_button(page):
-                page.keyboard.press("Enter")
-            elif _album_thumbnails(page):
-                page.keyboard.press("Enter")
-            next_send_retry_at = time.monotonic() + 2
         page.wait_for_timeout(500)
     evidence_path = _save_whatsapp_debug_screenshot(
         page,

@@ -41,6 +41,7 @@ from appointment_bot.db.whatsapp_automation import (
     refresh_running_appointment_reminder_snapshot,
     return_running_whatsapp_job_to_blocked,
 )
+from appointment_bot.db.whatsapp_delivery import recovery_delivery_plan
 from appointment_bot.db.whatsapp_followup_messages import (
     get_followup_web_draft,
     mark_followup_message_sent,
@@ -59,6 +60,7 @@ from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.unique_slot_watermark import (
     validate_daily_watermarked_attachment_paths,
 )
+from appointment_bot.services.whatsapp_delivery import WhatsAppDeliveryRecorder
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
@@ -170,6 +172,11 @@ class WhatsAppAutomationDispatcher:
                     "Unexpected WhatsApp automation dispatcher failure: job_key=%s",
                     job["job_key"],
                 )
+            finally:
+                if job["job_kind"] == "appointment_reminder":
+                    self._stop_event.wait(
+                        self.whatsapp_settings.appointment_reminders_send_interval_seconds
+                    )
 
     def _process_job(self, job: WhatsAppAutomationJob) -> None:
         order_id = job["order_id"]
@@ -182,6 +189,12 @@ class WhatsAppAutomationDispatcher:
                 job["recipient_username"],
             ),
         )
+        selection, inherited = recovery_delivery_plan(
+            job["job_key"], settings=self.runtime_settings
+        )
+        attempt.delivery_progress = WhatsAppDeliveryRecorder(
+            job, attempt, self.runtime_settings, selection, inherited
+        )
         logger.info(
             "Starting automatic WhatsApp attempt: target=%s kind=%s",
             order_id or job["report_date"],
@@ -191,6 +204,7 @@ class WhatsAppAutomationDispatcher:
             if job_kind == "appointment_reminder":
                 refreshed_job, skip_reason = self._revalidate_appointment_reminder(job)
                 if refreshed_job is None:
+                    attempt.delivery_progress.complete()
                     self._finish(
                         job,
                         status="skipped",
@@ -214,6 +228,7 @@ class WhatsAppAutomationDispatcher:
                     order_id, job_kind, settings=self.runtime_settings
                 )
             ):
+                attempt.delivery_progress.complete()
                 attempt.advance("confirmation_observed", component="existing_message")
                 if self._finish(job, status="sent"):
                     attempt.advance("confirmation_persisted")
@@ -244,6 +259,8 @@ class WhatsAppAutomationDispatcher:
             else:
                 raise ValueError(f"Tipo de trabajo WhatsApp no soportado: {job_kind}")
         except Exception as exc:
+            if not attempt.delivery_progress.dispatched:
+                attempt.delivery_progress.complete()
             final_status = attempt.failure_status
             detail = attempt.failure_detail(str(exc))
             logger.exception(
@@ -261,6 +278,8 @@ class WhatsAppAutomationDispatcher:
             self._notify_failure(job, final_status, detail)
             return
 
+        if not attempt.delivery_progress.dispatched:
+            attempt.delivery_progress.complete()
         if result.get("sent"):
             if self._finish(job, status="sent", message_id=message_id):
                 attempt.advance("confirmation_persisted")
@@ -316,8 +335,9 @@ class WhatsAppAutomationDispatcher:
         payment = get_whatsapp_web_draft(
             message_id, draft_kind="payment", settings=self.runtime_settings
         )
-        attempt.advance("interaction_started", component="album")
-        result = prepare_whatsapp_web_album(confirmation, payment, auto_send=True)
+        result = prepare_whatsapp_web_album(
+            confirmation, payment, auto_send=True, delivery_progress=attempt.delivery_progress
+        )
         attempt.absorb_result(result)
         if result.get("sent"):
             attempt.advance("confirmation_observed", component="album_persistence")
@@ -338,8 +358,7 @@ class WhatsAppAutomationDispatcher:
             message_id = str(prepared["message_id"])
         attempt.message_id = message_id
         draft = get_followup_web_draft(message_id, settings=self.runtime_settings)
-        attempt.advance("interaction_started", component="documents_and_text")
-        result = prepare_whatsapp_web_documents(draft)
+        result = prepare_whatsapp_web_documents(draft, delivery_progress=attempt.delivery_progress)
         attempt.absorb_result(result)
         if result.get("sent"):
             attempt.advance("confirmation_observed", component="followup_persistence")
@@ -355,7 +374,12 @@ class WhatsAppAutomationDispatcher:
         recipient_phone = job["recipient_phone"]
         message_text = job["message_text"]
         publication_text = job["publication_text"]
-        if not recipient_phone or message_text is None or not publication_text:
+        if (
+            not recipient_phone
+            or message_text is None
+            or publication_text is None
+            or (not publication_text and not job.get("source_job_key"))
+        ):
             raise ValueError("El trabajo del resumen diario no contiene destinatario o textos.")
         if job["report_date"] is None:
             raise ValueError("El trabajo del resumen diario no contiene fecha.")
@@ -365,15 +389,11 @@ class WhatsAppAutomationDispatcher:
             evidence_settings=self.evidence_settings,
         )
         message_id = job["job_key"]
-        attempt.advance(
-            "interaction_started",
-            component="daily_summary",
-            message_id=message_id,
-        )
         result = send_whatsapp_web_daily_slot_summary(
             message_id=message_id,
             recipient_phone=recipient_phone,
             message_text=message_text,
+            delivery_progress=attempt.delivery_progress,
             publication_text=publication_text,
             attachment_paths=attachment_paths,
         )
@@ -397,12 +417,12 @@ class WhatsAppAutomationDispatcher:
                 "El trabajo del aviso de registro no contiene orden, destinatario o texto."
             )
         message_id = job["job_key"]
-        attempt.advance("interaction_started", component="message", message_id=message_id)
         result = send_whatsapp_web_registration_notice(
             message_id=message_id,
             recipient_phone=recipient_phone,
             recipient_username=recipient_username,
             message_text=message_text,
+            delivery_progress=attempt.delivery_progress,
         )
         attempt.absorb_result(result)
         return message_id, result
@@ -423,15 +443,14 @@ class WhatsAppAutomationDispatcher:
         ):
             raise ValueError("El recordatorio no contiene reserva, destinatario o texto.")
         message_id = job["job_key"]
-        attempt.advance("interaction_started", component="message", message_id=message_id)
         result = send_whatsapp_web_appointment_reminder(
             message_id=message_id,
             recipient_phone=recipient_phone,
             recipient_username=recipient_username,
             message_text=message_text,
+            delivery_progress=attempt.delivery_progress,
         )
         attempt.absorb_result(result)
-        self._stop_event.wait(self.whatsapp_settings.appointment_reminders_send_interval_seconds)
         return message_id, result
 
     def _revalidate_appointment_reminder(

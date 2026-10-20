@@ -47,6 +47,25 @@ def _album_job() -> WhatsAppAutomationJob:
 
 
 class WhatsAppDeliverySafetyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        for name, value in (
+            ("start_delivery_attempt", "test-attempt"),
+            ("complete_delivery_attempt", None),
+            ("initialize_delivery_attempt", None),
+            ("record_delivery_event", None),
+        ):
+            patcher = patch(
+                f"appointment_bot.services.whatsapp_delivery.{name}", return_value=value
+            )
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = patch(
+            "appointment_bot.services.whatsapp_automation.recovery_delivery_plan",
+            return_value=(None, {}),
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_browser_exception_after_interaction_is_persisted_as_uncertain(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             dispatcher = WhatsAppAutomationDispatcher(
@@ -61,7 +80,7 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
             with patch(
                 "appointment_bot.services.whatsapp_automation."
                 "send_whatsapp_web_registration_notice",
-                side_effect=RuntimeError("browser closed after click"),
+                side_effect=self._fail_after_click,
             ):
                 dispatcher._process_job(_registration_job())
 
@@ -69,6 +88,15 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
             self.assertEqual(finish_call.kwargs["status"], "uncertain")
             self.assertIn("Fase: interaction_started", finish_call.kwargs["error_message"])
             self.assertIn("Destinatario: ***4321", finish_call.kwargs["error_message"])
+
+    @staticmethod
+    def _fail_after_click(**kwargs):
+        progress = kwargs["delivery_progress"]
+        progress.initialize(
+            {"message_id": "message-1", "recipient_phone": "51987654321"}, [("message", "Texto")]
+        )
+        progress.start(["message"])
+        raise RuntimeError("browser closed after click")
 
     def test_persistence_exception_after_send_is_persisted_as_uncertain(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -207,9 +207,6 @@ from appointment_bot.browser.whatsapp.notifications import (
 from appointment_bot.browser.whatsapp.notifications import (
     _send_registration_notice as _send_registration_notice,
 )
-from appointment_bot.browser.whatsapp.sending import (
-    _click_bottom_right_send_button as _click_bottom_right_send_button,
-)
 from appointment_bot.browser.whatsapp.sending import _click_send_button as _click_send_button
 from appointment_bot.browser.whatsapp.sending import (
     _click_visible_send_button as _click_visible_send_button,

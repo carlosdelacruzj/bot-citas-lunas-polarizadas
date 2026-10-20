@@ -101,7 +101,24 @@ export type WhatsAppReviewResolution =
   | 'completed_missing'
   | 'dismissed';
 
+export interface WhatsAppDeliveryComponent {
+  key: string;
+  label: string;
+  state: 'not_attempted' | 'uncertain' | 'confirmed';
+  evidence_path?: string | null;
+  outgoing_id?: string | null;
+}
+
+export interface WhatsAppDeliveryAttempt {
+  attempt_id: string;
+  job_key: string | null;
+  created_at: string;
+  recipient_masked: string;
+  components: WhatsAppDeliveryComponent[];
+}
+
 export interface WhatsAppReviewJob {
+  delivery_history?: WhatsAppDeliveryAttempt[];
   job_key: string;
   order_id: string;
   job_kind: 'reservation_album' | 'post_payment_followup' | 'registration_notice';
@@ -122,6 +139,7 @@ export interface WhatsAppReviewJob {
 }
 
 export interface WhatsAppReviewPayload {
+  current_recipient?: string | null;
   job: WhatsAppReviewJob;
   message: WhatsAppFollowUpPackage | null;
   preview?: { recipient: string | null; text: string | null; attachments: string[] } | null;

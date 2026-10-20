@@ -132,7 +132,7 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
       await expect(page.getByText('Ingresos cobrados', { exact: true })).toBeVisible();
       await expect(page.locator('app-load-status').filter({ hasText: 'Calidad financiera:' })).toContainText('Calidad temporalmente no disponible');
       await expect(page.locator('app-load-status').filter({ hasText: 'Calidad financiera:' })).toBeVisible();
-      await expect(page.locator('app-load-status').filter({ hasText: 'Resumen financiero:' })).toContainText('Actualizado el');
+      await expect(page.locator('app-load-status:visible')).not.toContainText(['Actualizado el']);
     }
   }
   await expect(page.locator('input[name="orderFilter"]')).toHaveValue('consulta local');
@@ -146,7 +146,7 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
   await expect(page).toHaveURL(/\/mensajes$/);
   await page.getByRole('link', { name: 'Actividad' }).click();
   await expect(page).toHaveURL(/\/actividad$/);
-  await expect(page.getByRole('heading', { name: 'Comandos worker' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Revisiones recientes' })).toBeVisible();
 
   const conflict = await page.evaluate(async () => {
     const response = await fetch('/api/v1/worker/restart', {

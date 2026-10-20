@@ -136,6 +136,7 @@ export interface OperatorInboxPayload {
 }
 
 export interface RunSummary {
+  availability?: { site?: string; date?: string; hour?: string; slots?: string } | null;
   run_id: string;
   order_id: string | null;
   status: string;

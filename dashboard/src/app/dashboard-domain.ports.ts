@@ -1031,6 +1031,7 @@ export const DASHBOARD_SHELL_UI = new InjectionToken<Pick<DashboardUi,
 >>('DASHBOARD_SHELL_UI');
 
 export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
+  "openCreateOrder" |
   "loads" |
   "manualSessions"
   | "manualSessionOrderLabel"

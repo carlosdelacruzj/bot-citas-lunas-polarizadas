@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
 from appointment_bot.browser.session import open_page
 from appointment_bot.configuration.captcha import CaptchaSettings
 from appointment_bot.configuration.evidence import EvidenceSettings
@@ -37,7 +39,10 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site_for_observer,
 )
 from appointment_bot.reservation_engine.login import login
-from appointment_bot.reservation_engine.observer_evidence import collect_observer_evidence
+from appointment_bot.reservation_engine.observer_evidence import (
+    collect_observer_evidence,
+    collect_observer_schedule,
+)
 from appointment_bot.reservation_engine.ports import (
     AlertSink,
     CaptchaAuthority,
@@ -141,6 +146,28 @@ def run_observer_with_report(
                         timeout=reservation_settings.postback_timeout_seconds * 1_000,
                         on_verified_slot=on_evidence_slot,
                     )
+
+                if (evidence_progress is not None and should_collect_evidence is not None
+                        and result.status in {"available", "partial", "unavailable"}):
+                    try:
+                        collect_observer_schedule(
+                            page, progress=evidence_progress,
+                            should_continue=lambda: (
+                                (cancel_event is None or not cancel_event.is_set())
+                                and should_collect_evidence()
+                            ),
+                            timeout=reservation_settings.postback_timeout_seconds * 1_000,
+                        )
+                    except PlaywrightTimeoutError:
+                        evidence_progress["schedule_status"] = "timeout"
+                        schedule_capture = _save_sanitized_observer_screenshot(
+                            page, "observer-schedule-timeout",
+                            evidence_settings=evidence_settings,
+                        )
+                        screenshot_paths.append(schedule_capture)
+                        logger.warning(
+                            "Observer schedule reading stopped after unconfirmed refresh"
+                        )
 
                 details = dict(result.details or {})
                 details["mode"] = "observer"

@@ -36,7 +36,7 @@
         </h3>
         <p>
           {{ presentationDomain.formatDate(reminders.appointment_day) }} · WhatsApp desde las
-          {{ reminders.configuration.time }}, después del resumen diario.
+          {{ reminders.configuration.time }}, con el worker y WhatsApp listos.
         </p>
       </div>
       <div class="appointment-reminder-actions">
@@ -61,7 +61,7 @@
         </button>
       </div>
       @if (reminders.day?.last_error; as error) {
-        <p class="notice warn compact-notice">{{ error }}</p>
+        <p class="notice warn appointment-reminder-notice">{{ error }}</p>
       }
     </section>
   }
@@ -424,6 +424,9 @@
       {{ operationsDomain.worker()?.worker_running || operationsDomain.health()?.worker_running ? 'activo' : 'detenido' }}
     </strong>
     <small>{{ operationsDomain.phaseLabel(operationsDomain.worker()?.phase ?? operationsDomain.health()?.reason) }}</small>
+    @if (waiting(); as wait) {
+      <small>{{ wait.message }}</small>
+    }
   </article>
   <article>
     <span>Clientes listos</span>
@@ -709,6 +712,15 @@
       </span>
     </div>
 
+    @if (waiting(); as wait) {
+      <div class="worker-wait-status">
+        <strong>{{ wait.message }}</strong>
+        @if (wait.elapsed) {
+          <span>Última revisión hace {{ wait.elapsed }}</span>
+        }
+      </div>
+    }
+
     @if (operationsDomain.currentOrder(); as order) {
       <dl class="summary-list">
         <div>
@@ -750,7 +762,7 @@
           <dd>El bot debe validar primero las restricciones de cada orden.</dd>
         </div>
       </dl>
-    } @else {
+    } @else if (!waiting()) {
       <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
     }
     <p class="opportunity-hint">

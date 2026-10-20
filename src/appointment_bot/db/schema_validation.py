@@ -32,6 +32,8 @@ def validate_current_schema(connection: Connection, schema_version: int) -> None
         "whatsapp_messages",
         "whatsapp_followup_messages",
         "whatsapp_automation_jobs",
+        "whatsapp_delivery_attempts",
+        "whatsapp_delivery_events",
         "appointment_reminder_days",
         "appointment_reminder_control",
         "whatsapp_message_templates",
@@ -58,6 +60,10 @@ def validate_current_schema(connection: Connection, schema_version: int) -> None
     }
     required_columns = {
         ("schema_version", "version"),
+        ("whatsapp_automation_jobs", "source_job_key"),
+        ("whatsapp_automation_jobs", "recovery_components"),
+        ("whatsapp_delivery_attempts", "manifest"),
+        ("whatsapp_delivery_events", "state"),
         ("observer_account_state", "next_allowed_at"),
         ("observer_account_state", "blocked_until"),
         ("observer_account_state", "blocked_at"),

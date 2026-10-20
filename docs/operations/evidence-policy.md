@@ -86,3 +86,11 @@ individual para ese mismo cliente. Se conserva solo en `screenshots/` y en la co
 local `screenshots/whatsapp-outgoing/`, ambas fuera de Git. No debe incluir CAPTCHA,
 documento, credenciales, HTML ni capturas tecnicas, y debe inspeccionarse antes de
 compartirla por un canal distinto al WhatsApp del contacto correspondiente.
+
+## Evidencia de WhatsApp
+
+Las capturas tecnicas de envio se guardan en `.runtime/whatsapp-evidence/`,
+con nombres seguros para Windows y un sufijo unico. PostgreSQL enlaza cada
+captura con el intento y componente correspondiente; nunca se sobrescribe una
+captura de otro intento. Son evidencia local sensible, fuera de Git y sin
+purga automatica mientras su intento requiera revision.

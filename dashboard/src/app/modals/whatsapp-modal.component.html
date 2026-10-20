@@ -94,7 +94,10 @@
             Trabajo {{ review.job.job_key }} · {{ presentationDomain.formatDateTime(review.job.finished_at) }}
           </small>
           @if (review.preview; as preview) {
-            <p>Destino: {{ preview.recipient }}</p>
+            <p>Destino del intento: {{ preview.recipient }}</p>
+            @if (review.current_recipient && review.current_recipient !== preview.recipient) {
+              <p>Contacto actual: {{ review.current_recipient }}. Al recuperar el álbum se pedirá confirmar este destino.</p>
+            }
             <textarea readonly aria-label="Mensaje que se reintentará" [value]="preview.text"></textarea>
             <button type="button" class="secondary"
               (click)="messagesDomain.copyWhatsAppText(preview.text ?? '', 'mensaje preparado')">
@@ -103,6 +106,27 @@
             @for (attachment of preview.attachments; track attachment) {
               <a class="button-link secondary" [href]="attachment" target="_blank" rel="noreferrer">Revisar imagen</a>
             }
+          }
+          @if (review.job.delivery_history?.length) {
+            <h4>Componentes e intentos</h4>
+            @for (attempt of review.job.delivery_history; track attempt.attempt_id) {
+              <details>
+                <summary>{{ presentationDomain.formatDateTime(attempt.created_at) }} ? {{ attempt.recipient_masked }}</summary>
+                @if (!attempt.components.length) {
+                  <p>El intento se detuvo antes de registrar el paquete.</p>
+                }
+                <ul>
+                  @for (component of attempt.components; track component.key) {
+                    <li>
+                      <strong>{{ component.label }}</strong>:
+                      {{ component.state === 'confirmed' ? 'Confirmado' : component.state === 'uncertain' ? 'Sin confirmaci?n: revisar el chat' : 'Sin intentar' }}
+                    </li>
+                  }
+                </ul>
+              </details>
+            }
+          } @else {
+            <p>Intento hist?rico sin detalle persistido por componente. Revisa el chat antes de recuperarlo.</p>
           }
           @if (!review.job.review_resolution && (review.job.status === 'failed' || review.job.status === 'uncertain')) {
             <p>Reintenta el paquete completo solo si no salió ninguna parte. Si hubo un envío parcial, completa manualmente lo faltante.</p>

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from time import monotonic
 from unicodedata import combining, normalize
 from zoneinfo import ZoneInfo
 
@@ -140,3 +141,32 @@ def collect_observer_evidence(
         elif result.status not in {"unavailable", "partial"}:
             raise RuntimeError(result.message)
         visits[target] = visits.get(target, 0) + 1
+
+
+def collect_observer_schedule(
+    page, *, progress: dict, should_continue: Callable[[], bool], timeout: int,
+) -> None:
+    """Read hour lists for at most four dates without selecting hours or notifying."""
+    schedule = []
+    progress.update(session_schedule=schedule, schedule_status="reading")
+    dates = sorted(
+        {str(option["text"]) for option in real_options(select_options(page, DATE_SELECTOR))
+         if parse_appointment_date(str(option["text"])) is not None},
+        key=parse_appointment_date,
+    )[:4]
+    deadline = monotonic() + 25
+    for date in dates:
+        if not should_continue():
+            progress["schedule_status"] = "interrupted"
+            return
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            progress["schedule_status"] = "time_limit"
+            return
+        _ensure_live_collection(page)
+        _select_collection_date(page, date, min(timeout, int(remaining * 1000), 8_000))
+        _ensure_live_collection(page)
+        hours = [str(option["text"])
+                 for option in real_options(select_options(page, HOUR_SELECTOR))]
+        schedule.append({"date": date, "hours": hours})
+    progress["schedule_status"] = "complete"

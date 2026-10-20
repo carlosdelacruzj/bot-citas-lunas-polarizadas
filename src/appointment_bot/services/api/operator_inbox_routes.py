@@ -52,7 +52,7 @@ def operator_inbox_payload() -> dict[str, Any]:
 def _order_task(order: ServiceOrderSummary) -> dict[str, Any] | None:
     if order.status == "archived":
         return None
-    if order.preflight_status == "failed":
+    if order.status in {"ready", "paused"} and order.preflight_status == "failed":
         preflight_details = order.preflight_details or {}
         error_type = str(preflight_details.get("error_type") or "")
         invalid_credentials = error_type == "invalid_credentials"

@@ -116,7 +116,6 @@ import { OrdersListFacade } from './domains/orders/orders-list.facade';
 import { OrdersFacade } from './domains/orders/orders.facade';
 import { DashboardPresentation } from './domains/presentation/presentation.facade';
 import { DashboardUi } from './domains/ui/ui.facade';
-import { LoadStatusComponent } from './load-status/load-status.component';
 import { CreateOrderModalComponent } from './modals/create-order-modal.component';
 import { EditOrderModalComponent } from './modals/edit-order-modal.component';
 import { FinanceEntryModalComponent } from './modals/finance-entry-modal.component';
@@ -128,7 +127,7 @@ import { ViewStateComponent } from './view-state/view-state.component';
 
 @Component({
   selector: 'app-root',
-  imports: [FocusBoundaryDirective, LoadStatusComponent,
+  imports: [FocusBoundaryDirective,
     FormsModule,
     ViewStateComponent,
     RouterOutlet,

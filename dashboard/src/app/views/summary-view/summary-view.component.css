@@ -548,7 +548,18 @@
 
 .appointment-reminder-copy {
   display: grid;
+  min-width: 0;
   gap: 3px;
+}
+
+.appointment-reminder-notice {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .appointment-reminder-copy h3,
@@ -647,3 +658,16 @@
     max-width: none;
   }
 }
+
+.worker-wait-status {
+  display: grid;
+  gap: 6px;
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.worker-wait-status span { color: var(--ink-muted); font-size: .85rem; }

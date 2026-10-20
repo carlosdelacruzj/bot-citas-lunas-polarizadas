@@ -2,7 +2,7 @@
 
 Cada facade conserva sus datos y un `LoadSection` por bloque. Este objeto posee
 solo carga, error, ultima lectura correcta y generacion; no duplica DTO ni estado
-de negocio. `app-load-status` presenta esa informacion junto al bloque.
+de negocio. `app-load-status` presenta solo errores junto al bloque; la frescura se conserva internamente.
 
 ## Datos esenciales y auxiliares
 
@@ -17,8 +17,8 @@ de negocio. `app-load-status` presenta esa informacion junto al bloque.
 | Actividad | Ejecuciones | Comandos |
 | CAPTCHA | Cola, historial o calidad segun modo | Resumen, casos y controles |
 
-Salud, worker, sesiones y catalogo se muestran en Estado de servicios. Una falla
-auxiliar abre su estado pero no convierte toda la vista en error. Un error
+El bloque global Estado de servicios esta retirado. Una falla
+auxiliar se muestra en su bloque pero no convierte toda la vista en error. Un error
 esencial conserva los bloques que si respondieron y muestra el error principal.
 Una respuesta vacia correcta tambien cuenta como datos cargados.
 

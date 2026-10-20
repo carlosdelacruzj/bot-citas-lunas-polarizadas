@@ -125,8 +125,8 @@ antes de reservar. No reclasifica intentos historicos ni reabre ordenes cerradas
 
 ## Confirmacion
 
-La confirmacion primaria es el texto explicito de exito devuelto por el portal
-despues del submit. La etapa `Programado` es una confirmacion posterior y sirve
+La confirmacion primaria es el texto de exito tras el submit, leido antes de
+capturas/HTML porque dura dos segundos. `Programado` es confirmacion posterior y sirve
 como conciliacion o fallback cuando el texto no pudo conservarse. Ambas deben
 mantener una frontera clara entre:
 

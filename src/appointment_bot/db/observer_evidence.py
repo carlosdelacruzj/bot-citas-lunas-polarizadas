@@ -15,5 +15,6 @@ def load_observer_evidence_progress(settings: RuntimeSettings, site: str) -> dic
             ORDER BY finished_at DESC LIMIT 1
         """, (site,)).fetchone()
     progress = dict(row["progress"]) if row else {"site": site, "captured": [], "visits": {}}
-    progress.update(session_queries=0, session_captures=[])
+    progress.update(session_queries=0, session_captures=[],
+                    session_schedule=[], schedule_status="not_started")
     return progress

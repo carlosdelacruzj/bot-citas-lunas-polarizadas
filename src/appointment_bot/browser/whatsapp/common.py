@@ -48,6 +48,10 @@ def _result(
     evidence_path: str | None = None,
     delivery_components: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    from appointment_bot.browser.whatsapp.progress import latest_evidence_path
+
+    if evidence_path:
+        evidence_path = latest_evidence_path() or evidence_path
     result = {
         "status": status,
         "message": message,

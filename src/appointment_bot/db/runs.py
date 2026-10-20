@@ -103,6 +103,12 @@ def list_runs(
             SELECT r.run_id, r.order_id, r.status, r.message, r.exit_code, r.started_at,
                    r.finished_at, r.duration_seconds, r.reservation_attempted,
                    r.reservation_confirmed, r.screenshot_path, r.created_at,
+                   jsonb_build_object(
+                       'site', r.details_json->>'sede',
+                       'date', r.details_json->>'fecha',
+                       'hour', r.details_json->>'hora',
+                       'slots', r.details_json->>'cupos'
+                   ) AS availability,
                    COUNT(rs.id) AS screenshot_count
             FROM runs r
             LEFT JOIN run_screenshots rs ON rs.run_id = r.run_id
@@ -130,6 +136,12 @@ def list_run_details_between(
             SELECT r.run_id, r.order_id, r.status, r.message, r.exit_code, r.started_at,
                    r.finished_at, r.duration_seconds, r.reservation_attempted,
                    r.reservation_confirmed, r.details_json, r.screenshot_path, r.created_at,
+                   jsonb_build_object(
+                       'site', r.details_json->>'sede',
+                       'date', r.details_json->>'fecha',
+                       'hour', r.details_json->>'hora',
+                       'slots', r.details_json->>'cupos'
+                   ) AS availability,
                    COUNT(rs.id) AS screenshot_count,
                    ARRAY_REMOVE(ARRAY_AGG(rs.path ORDER BY rs.id), NULL) AS screenshot_paths
             FROM runs r
@@ -285,6 +297,12 @@ def get_run(
             SELECT r.run_id, r.order_id, r.status, r.message, r.exit_code, r.started_at,
                    r.finished_at, r.duration_seconds, r.reservation_attempted,
                    r.reservation_confirmed, r.details_json, r.screenshot_path, r.created_at,
+                   jsonb_build_object(
+                       'site', r.details_json->>'sede',
+                       'date', r.details_json->>'fecha',
+                       'hour', r.details_json->>'hora',
+                       'slots', r.details_json->>'cupos'
+                   ) AS availability,
                    COUNT(rs.id) AS screenshot_count
             FROM runs r
             LEFT JOIN run_screenshots rs ON rs.run_id = r.run_id
@@ -322,6 +340,15 @@ def _run_summary_from_row(row: dict[str, Any]) -> RunSummary:
         screenshot_path=public_filename(row["screenshot_path"]),
         screenshot_count=int(row["screenshot_count"]),
         created_at=str(row["created_at"]),
+        availability=(
+            {
+                key: sanitize_text(str(value))
+                for key, value in row.get("availability", {}).items()
+                if value is not None
+            }
+            if isinstance(row.get("availability"), dict)
+            else None
+        ),
     )
 
 
@@ -351,3 +378,23 @@ def _run_filters(*, order_id: str | None, status: str | None) -> tuple[str, list
     if not filters:
         return "", values
     return "WHERE " + " AND ".join(filters), values
+
+
+def get_run_screenshot_path(run_id: str, index: int) -> str | None:
+    settings = _settings(None)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            "SELECT screenshot_path FROM runs WHERE run_id = %s", (run_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        paths = [
+            str(item["path"])
+            for item in connection.execute(
+                "SELECT path FROM run_screenshots WHERE run_id = %s ORDER BY id ASC", (run_id,)
+            ).fetchall()
+        ]
+        paths = [path for path in paths if public_filename(path) is not None]
+        if not paths and row["screenshot_path"] and public_filename(row["screenshot_path"]):
+            paths = [str(row["screenshot_path"])]
+    return paths[index] if 0 <= index < len(paths) else None

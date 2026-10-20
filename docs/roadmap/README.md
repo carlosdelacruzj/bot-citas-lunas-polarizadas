@@ -76,7 +76,8 @@ Observar o conciliar sin crear envios de prueba:
   lease activo y WhatsApp listo, sin esperar resumen diario ni duplicar al reiniciar;
 - primer cierre diario completo: investigar la confirmacion de la publicacion
   final y conciliar componentes; refrescar el inventario, no reutilizar seis casos historicos;
-- revisar albumes, postpagos y avisos ambiguos antes de cualquier recuperacion;
+- aceptar naturalmente postpago con texto confirmado antes de PDFs y detencion sin adjuntos ante texto ambiguo;
+- aceptar naturalmente el registro durable v77 de WhatsApp: capturas por intento, componentes y recuperacion parcial; revisar historicos ambiguos sin reconstruir ni reenviar automaticamente;
 - observar el siguiente "Operacion no disponible temporalmente" natural: descanso por cuenta de al menos 180 segundos y consulta nueva sin duplicar citas; no generar reservas de prueba.
 
 Cierre: revisiones congeladas, evidencia tecnica suficiente y ningun reintento

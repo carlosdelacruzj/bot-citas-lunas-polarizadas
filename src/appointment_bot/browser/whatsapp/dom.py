@@ -13,11 +13,14 @@ def _album_thumbnails(page: Page) -> list[Any]:
     thumbnails: list[Any] = []
     for index in range(controls.count()):
         control = controls.nth(index)
-        if not control.is_visible():
+        try:
+            if not control.is_visible():
+                continue
+            box = control.bounding_box(timeout=500)
+            if box and 48 <= box["width"] <= 96 and 48 <= box["height"] <= 96:
+                thumbnails.append(control)
+        except PlaywrightError:
             continue
-        box = control.bounding_box()
-        if box and 48 <= box["width"] <= 96 and 48 <= box["height"] <= 96:
-            thumbnails.append(control)
     return thumbnails
 
 
@@ -41,6 +44,7 @@ def _album_control_summary(page: Page) -> list[dict[str, object]]:
                 "box": {key: round(value) for key, value in box.items()},
                 "images": control.locator("img").count(),
                 "canvases": control.locator("canvas").count(),
+                "svg_titles": control.locator("svg title").all_text_contents(),
                 "icons": [
                     control.locator("[data-icon]").nth(icon_index).get_attribute("data-icon")
                     for icon_index in range(min(control.locator("[data-icon]").count(), 3))
@@ -60,8 +64,7 @@ def _attachment_menu_visible(page: Page) -> bool:
     if document_option.count() and document_option.is_visible():
         return True
     document_label = page.locator(
-        "[aria-label='Documento'], [aria-label='Document'], "
-        "[title='Documento'], [title='Document']"
+        "[aria-label='Documento'], [aria-label='Document'], [title='Documento'], [title='Document']"
     ).last
     if document_label.count() and document_label.is_visible():
         return True
@@ -167,44 +170,66 @@ def _locator_has_visible_match(locator) -> bool:
 
 def _plain_text_ready(page: Page, expected: str) -> bool:
     editors = page.locator(
+        "footer div[contenteditable='true'], div[data-testid='conversation-compose-box-input']"
+    )
+    for index in range(editors.count() - 1, -1, -1):
+        text = _safe_text_content(editors.nth(index))
+        if editors.nth(index).is_visible() and _same_editor_text(text, expected):
+            return True
+    return False
+
+
+def _normal_chat_composer(page: Page):
+    editors = page.locator(
+        "footer [contenteditable='true'][role='textbox'], "
         "footer div[contenteditable='true'], "
         "div[data-testid='conversation-compose-box-input']"
     )
     for index in range(editors.count() - 1, -1, -1):
-        text = _safe_text_content(editors.nth(index))
-        if _same_editor_text(text, expected, require_full_match=True) or (
-            "TikTok" in text and "citaspolarizadasperu" in text
-        ):
-            return True
-    return False
+        editor = editors.nth(index)
+        if not editor.is_visible() or not editor.is_enabled():
+            continue
+        if editor.evaluate("""element => {
+            const rect = element.getBoundingClientRect();
+            const hit = document.elementFromPoint(rect.x + rect.width / 2,
+                                                  rect.y + rect.height / 2);
+            return !!hit && (hit === element || element.contains(hit));
+        }"""):
+            return editor
+    return None
 
 
 def _normal_chat_composer_visible(page: Page) -> bool:
-    composer = page.locator("div[data-testid='conversation-compose-box-input']").last
-    return bool(composer.count() and composer.is_visible())
+    return _normal_chat_composer(page) is not None
 
 
 def _document_preview_visible(page: Page, names: list[str]) -> bool:
-    document_icons = page.locator("[data-icon='media-document']")
-    if any(document_icons.nth(index).is_visible() for index in range(document_icons.count())):
-        return True
+    close_controls = page.locator(
+        "[data-icon='x-alt'], [data-icon='x'], [data-icon='x-viewer'], "
+        "button[aria-label='Cerrar'], button[aria-label='Close']"
+    )
+    send_controls = page.locator(
+        "[data-icon='send'], [data-icon*='send' i], "
+        "button[aria-label='Enviar'], button[aria-label='Send']"
+    )
+    if not (
+        _locator_has_visible_match(close_controls) and _locator_has_visible_match(send_controls)
+    ):
+        return False
     for name in names:
-        preview_text = page.get_by_text(name, exact=True)
-        if any(preview_text.nth(index).is_visible() for index in range(preview_text.count())):
-            return True
+        labels = page.get_by_text(name, exact=True)
+        for index in range(labels.count()):
+            label = labels.nth(index)
+            if label.is_visible() and label.evaluate("""element => !element.closest(
+                '.message-out, .message-in, [data-id^="true_"], [data-id^="false_"], '
+                + '[data-testid="msg-container"]'
+            )"""):
+                return True
     return False
 
 
 def _attachment_preview_visible(page: Page, names: list[str]) -> bool:
-    close_icons = page.locator("[data-icon='x-alt']")
-    send_icons = page.locator("[data-icon='send']")
-    close_visible = any(
-        close_icons.nth(index).is_visible() for index in range(close_icons.count())
-    )
-    send_visible = any(
-        send_icons.nth(index).is_visible() for index in range(send_icons.count())
-    )
-    return close_visible and send_visible and _document_preview_visible(page, names)
+    return _document_preview_visible(page, names)
 
 
 def _caption_editor(page: Page, *, allow_footer_editor: bool = False):
@@ -228,8 +253,7 @@ def _caption_editor(page: Page, *, allow_footer_editor: bool = False):
         description = f"{aria_label} {placeholder}"
         score = 0
         if any(
-            term in description
-            for term in ("caption", "pie de foto", "comentario", "descripci")
+            term in description for term in ("caption", "pie de foto", "comentario", "descripci")
         ):
             score += 100
         if editor.locator("xpath=ancestor::*[@role='dialog']").count():
@@ -259,34 +283,15 @@ def _same_editor_text(
 
     actual_normalized = normalize(actual or "")
     expected_normalized = normalize(expected)
-    if require_full_match:
-        return actual_normalized == expected_normalized or (
-            len(actual_normalized) >= 80
-            and actual_normalized in expected_normalized
-            and any(
-                marker in actual_normalized
-                for marker in (
-                    "TikTok",
-                    "citaspolarizadasperu",
-                    "Gracias por confiar",
-                )
-            )
-        ) or _compact_alphanumeric_text(actual or "") == _compact_alphanumeric_text(
-            expected
-        )
-    return actual_normalized == expected_normalized or len(actual_normalized) >= max(
-        20,
-        len(expected_normalized) // 2,
+    return (
+        actual_normalized == expected_normalized
+        or _compact_alphanumeric_text(actual or "") == _compact_alphanumeric_text(expected)
     )
 
 
 def _compact_alphanumeric_text(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value)
-    return "".join(
-        character.casefold()
-        for character in decomposed
-        if character.isalnum()
-    )
+    return "".join(character.casefold() for character in decomposed if character.isalnum())
 
 
 def _caption_editor_summary(page: Page) -> list[dict[str, object]]:
@@ -326,7 +331,16 @@ def _safe_get_attribute(locator, name: str) -> str | None:
 
 def _safe_text_content(locator) -> str:
     try:
-        return locator.text_content(timeout=1_000) or ""
+        return locator.evaluate(r"""element => {
+            const copy = element.cloneNode(true);
+            copy.querySelectorAll('img[alt]').forEach(image => {
+                image.replaceWith(document.createTextNode(image.getAttribute('alt') || ''));
+            });
+            copy.querySelectorAll('br').forEach(br => {
+                br.replaceWith(document.createTextNode('\n'));
+            });
+            return copy.textContent || '';
+        }""", timeout=1_000)
     except PlaywrightError:
         return ""
 

@@ -3,10 +3,10 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-10-05 17:59:35 America/Lima`.
+- Generado: `2026-10-17 17:59:30 America/Lima`.
 - Ventana solicitada: mes activo 2026-10 (America/Lima).
-- Rango real de eventos indexados: `2026-10-01 07:30:32` a `2026-10-02 17:30:11` (America/Lima).
-- Cobertura temporal verificable: 1436/1436 eventos con hora de cierre.
+- Rango real de eventos indexados: `2026-10-01 07:30:32` a `2026-10-17 17:59:29` (America/Lima).
+- Cobertura temporal verificable: 3691/3691 eventos con hora de cierre.
 - Fuente: filas sanitizadas del indice compacto de evidencia.
 
 ## Limites
@@ -16,27 +16,27 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - La ausencia de un evento no demuestra que el portal no haya sido consultado.
 
 ## Totales
-- Eventos indexados: 1436
-- Reservas registradas: 0
-- Reservas no confirmadas: 0
-- Disponibilidades completas: 1436
+- Eventos indexados: 3691
+- Reservas registradas: 21
+- Reservas no confirmadas: 1
+- Disponibilidades completas: 3667
 - Disponibilidades parciales: 0
 - Senales de defensa: 0
 
 ## Origen de deteccion
-- normal: 1436
+- normal: 3691
 
 ## Ultimos eventos utiles
-- 2026-10-02 17:30:11 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:29:26 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:28:41 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:27:55 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:27:09 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:26:24 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:25:38 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:24:53 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:24:07 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
-- 2026-10-02 17:23:19 | sin orden | available | normal | 30/12/2026 12:00 | sin outcome
+- 2026-10-17 17:59:29 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:58:44 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:57:59 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:57:13 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:56:28 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:55:42 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:54:56 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:54:11 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:53:25 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
+- 2026-10-17 17:52:40 | sin orden | available | normal | 31/12/2026 08:00 | sin outcome
 
 ## Senales de defensa
 - No se registraron senales de defensa en estos eventos.

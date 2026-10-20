@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from appointment_bot.core.service_packages import (
@@ -222,6 +222,7 @@ class RunSummary:
     screenshot_path: str | None
     screenshot_count: int
     created_at: str
+    availability: dict[str, str] | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True)

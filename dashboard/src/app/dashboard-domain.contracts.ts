@@ -272,7 +272,7 @@ export const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   summary: { label: 'Resumen', group: 'Operación' },
   orders: { label: 'Órdenes', group: 'Operación' },
   followups: { label: 'Citas y recordatorios', group: 'Operación' },
-  runs: { label: 'Runs y actividad', group: 'Operación' },
+  runs: { label: 'Actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
   messageTemplates: { label: 'Mensajes de WhatsApp', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },

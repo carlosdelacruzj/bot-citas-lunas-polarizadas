@@ -298,6 +298,28 @@ def read_program_action_rows(page: Page) -> list[dict[str, Any]]:
     return _read_program_action_rows(page)
 
 
+def program_listing_is_empty(page: Page) -> bool:
+    try:
+        return page.evaluate(
+            r"""selector => {
+                const manager = window.Sys?.WebForms?.PageRequestManager?.getInstance();
+                if (document.readyState !== "complete" || manager?.get_isInAsyncPostBack()) {
+                    return false;
+                }
+                if (document.querySelector(selector)) return false;
+                const text = (document.body?.innerText || "").replace(/\s+/g, " ");
+                return /Listado de Solicitudes/i.test(text)
+                    && /Programaci[oó]n de Expedientes/i.test(text)
+                    && /Total de registros\s*:\s*0\b/i.test(text)
+                    && /\b0 registros\b/i.test(text);
+            }""",
+            PROGRAM_ACTION_SELECTOR,
+        ) is True
+    except PlaywrightError as exc:
+        logger.warning("Could not verify empty program listing: %s", exc)
+        return False
+
+
 def _wait_for_program_detail(page: Page) -> None:
     try:
         page.wait_for_load_state("load", timeout=10_000)

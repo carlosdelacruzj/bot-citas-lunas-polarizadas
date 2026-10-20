@@ -51,7 +51,7 @@ El catálogo exacto vive en los routers. Los grupos estables son:
 - ordenes, busqueda, credenciales, preflight y restricciones;
 - pagos, finanzas, calidad y cierre mensual;
 - worker, comandos, controles, salud y rafagas;
-- runs, actividad, evidencia y CAPTCHA;
+- [runs, actividad y capturas](runs.md); evidencia y CAPTCHA;
 - bandeja del operador;
 - citas, recordatorios y seguimiento post-cita;
 - plantillas, mensajes, jobs y conciliacion WhatsApp;
@@ -81,7 +81,7 @@ Devuelve:
 - `items`: una sola siguiente accion por orden;
 - `captcha`: contador separado, actualmente excluido de la cola comercial.
 
-La precedencia evita duplicar una orden con varias tarjetas. El resumen toma el ultimo trabajo
+La precedencia evita duplicar una orden con varias tarjetas. Los errores de acceso solo generan tareas para ordenes `ready` o `paused`; un servicio pagado no requiere revalidarse para limpiar la bandeja. El resumen toma el ultimo trabajo
 de album y postpago por orden: los reintentos no multiplican filas ni eliminan historial.
 Las acciones incluyen acceso, tramites pendientes, reanudacion, contacto, cobro, postpago y comunicaciones.
 Contactos y datos sensibles se entregan enmascarados salvo en flujos autorizados

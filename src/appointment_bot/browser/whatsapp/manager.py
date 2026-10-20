@@ -7,9 +7,15 @@ from dataclasses import dataclass
 from playwright.sync_api import BrowserContext, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 
-from appointment_bot.browser.whatsapp.common import COMMAND_TIMEOUT_SECONDS, _result, logger
+from appointment_bot.browser.whatsapp.common import (
+    COMMAND_TIMEOUT_SECONDS,
+    DAILY_SUMMARY_IMAGE_BATCH_SIZE,
+    _result,
+    logger,
+)
 from appointment_bot.browser.whatsapp.drafts import _prepare_draft
 from appointment_bot.browser.whatsapp.evidence import _save_context_failure_screenshot
+from appointment_bot.browser.whatsapp.progress import reset_delivery_progress, set_delivery_progress
 from appointment_bot.browser.whatsapp.session import (
     _close_context,
     _ensure_context,
@@ -23,6 +29,17 @@ class _DraftCommand:
     response: queue.Queue[dict[str, object]]
 
 
+def _command_timeout_seconds(draft: dict[str, object]) -> int:
+    if draft.get("action") != "daily_slot_summary":
+        return COMMAND_TIMEOUT_SECONDS
+    image_count = len(draft.get("attachment_paths") or [])
+    batch_count = (
+        image_count + DAILY_SUMMARY_IMAGE_BATCH_SIZE - 1
+    ) // DAILY_SUMMARY_IMAGE_BATCH_SIZE
+    # Leave a minute before the dispatcher's ten-minute lease expires.
+    return min(540, COMMAND_TIMEOUT_SECONDS + 30 * batch_count)
+
+
 class WhatsAppWebDraftManager:
     def __init__(self) -> None:
         self._commands: queue.Queue[_DraftCommand] = queue.Queue()
@@ -32,15 +49,38 @@ class WhatsAppWebDraftManager:
     def prepare(self, draft: dict[str, object]) -> dict[str, object]:
         self._ensure_started()
         response: queue.Queue[dict[str, object]] = queue.Queue(maxsize=1)
+        progress = draft.get("delivery_progress")
+        if progress is not None:
+            progress.dispatched = True
         self._commands.put(_DraftCommand(draft=draft, response=response))
         try:
-            return response.get(timeout=COMMAND_TIMEOUT_SECONDS)
+            return response.get(timeout=_command_timeout_seconds(draft))
         except queue.Empty:
+            progress = draft.get("delivery_progress")
+            if progress is not None:
+                progress.cancel()
             return _result(
                 "web_unavailable",
-                "WhatsApp Web no respondio a tiempo. "
-                "Revisa la ventana abierta y vuelve a intentar.",
+                "El envio de WhatsApp alcanzo el limite de tiempo. "
+                "Revisa los componentes confirmados y pendientes antes de recuperar el envio; "
+                "no se reintentara automaticamente.",
+                delivery_components=dict(progress.states) if progress is not None else None,
             )
+
+    @staticmethod
+    def _complete_progress(command, result):
+        progress = command.draft.get("delivery_progress")
+        if progress is not None:
+            try:
+                progress.complete()
+            except Exception:
+                logger.exception("Could not persist WhatsApp command completion")
+                return _result(
+                    "web_unavailable",
+                    "No se pudo registrar el cierre del intento. "
+                    "Revisa el chat; no se reintentara automaticamente.",
+                )
+        return result
 
     def _ensure_started(self) -> None:
         with self._lock:
@@ -59,6 +99,7 @@ class WhatsAppWebDraftManager:
         with sync_playwright() as playwright:
             while True:
                 command = self._commands.get()
+                token = set_delivery_progress(command.draft.get("delivery_progress"))
                 requested_headless = bool(command.draft.get("headless"))
                 try:
                     if context is not None and context_headless != requested_headless:
@@ -77,52 +118,18 @@ class WhatsAppWebDraftManager:
                         command.draft,
                     )
                     if _is_closed_target_error(exc):
-                        if command.draft.get("disable_closed_target_retry"):
-                            logger.warning(
-                                "WhatsApp Web window closed while preparing draft; not retrying"
-                            )
-                            context = _close_context(context)
-                            context_headless = None
-                            result = _result(
-                                "web_unavailable",
-                                "WhatsApp Web se cerro durante la preparacion. "
-                                "Si ya enviaste el mensaje, confirma el envio manualmente; "
-                                "si no, vuelve a preparar el borrador.",
-                                message_id=str(command.draft.get("message_id") or ""),
-                                delivery_phase="send_state_unknown",
-                                evidence_path=failure_evidence,
-                            )
-                            command.response.put(result)
-                            continue
-                        logger.warning(
-                            "WhatsApp Web window closed while preparing draft; reopening once"
-                        )
+                        logger.warning("WhatsApp Web window closed; not repeating the draft")
                         context = _close_context(context)
                         context_headless = None
-                        try:
-                            context = _ensure_context(
-                                playwright,
-                                context,
-                                headless=requested_headless,
-                            )
-                            context_headless = requested_headless
-                            result = _prepare_draft(context, command.draft)
-                        except PlaywrightError as retry_exc:
-                            retry_evidence = _save_context_failure_screenshot(
-                                context,
-                                command.draft,
-                            )
-                            logger.exception(
-                                "Could not prepare WhatsApp Web draft after reopening"
-                            )
-                            context = _close_context(context)
-                            context_headless = None
-                            result = _result(
-                                "web_unavailable",
-                                f"No se pudo preparar WhatsApp Web: {retry_exc}",
-                                delivery_phase="send_state_unknown",
-                                evidence_path=retry_evidence,
-                            )
+                        result = _result(
+                            "web_unavailable",
+                            "WhatsApp Web se cerro durante la preparacion. "
+                            "Revisa el chat antes de preparar o recuperar el mensaje; "
+                            "no se repetira automaticamente.",
+                            message_id=str(command.draft.get("message_id") or ""),
+                            delivery_phase="send_state_unknown",
+                            evidence_path=failure_evidence,
+                        )
                     else:
                         logger.exception("Could not prepare WhatsApp Web draft")
                         context = _close_context(context)
@@ -148,6 +155,8 @@ class WhatsAppWebDraftManager:
                         delivery_phase="send_state_unknown",
                         evidence_path=failure_evidence,
                     )
+                result = self._complete_progress(command, result)
+                reset_delivery_progress(token)
                 command.response.put(result)
 
 

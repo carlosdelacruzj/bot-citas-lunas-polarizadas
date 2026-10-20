@@ -278,9 +278,15 @@ def complete_available_reservation(
                 "captcha_images",
                 captcha_audit.get("captcha_screenshot_image_path"),
             )
-            submission_outcome = wait_for_reservation_submission_outcome(page)
+            submission_outcome = captcha_audit.get("entry_submission_outcome")
+            if not submission_outcome or submission_outcome == "unknown":
+                submission_outcome = wait_for_reservation_submission_outcome(page)
             confirmation_text_detected = submission_outcome == "confirmed"
-            portal_text = read_visible_page_text(page)
+            portal_text = (
+                captcha_audit.get("entry_portal_text")
+                if captcha_audit.get("entry_submission_outcome") == submission_outcome
+                else None
+            ) or read_visible_page_text(page)
             portal_response.clear()
             portal_response.update(
                 {

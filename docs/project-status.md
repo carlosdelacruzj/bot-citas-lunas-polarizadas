@@ -18,7 +18,7 @@ exterior.
 Estado general:
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa, con locks, CI reproducible y cobertura critica por riesgo;
-- esquema PostgreSQL requerido por el codigo: `v76`; [registro secuencial](architecture/database-migrations.md) con 62 pasos desde `v14`;
+- esquema requerido por el codigo: `v77` (activo en Admin API; aceptacion natural por componente pendiente); [registro](architecture/database-migrations.md) con 63 pasos desde `v14`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y sesiones manuales, con cierre visible hasta terminar Chromium;
 - intentos inciertos admiten consulta manual protegida del expediente, sin nuevos envios ni conciliacion automatica;
@@ -67,7 +67,7 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 ## Flujo de una orden
 
 1. Nueva orden busca coincidencia exacta por WhatsApp normalizado o usuario y permite elegir contacto y cuentas del historial (hasta diez resultados). Solo una seleccion explicita reutiliza credenciales; cierre y fallo limpian el formulario. Se crea con contacto, credenciales, servicio, precio y restricciones; una cuenta con servicios terminados abre otra orden sin reutilizar su expediente ni pago.
-2. El preflight valida identidad y acceso antes de habilitar la busqueda.
+2. El preflight valida identidad y acceso antes de habilitar la busqueda; reconoce el listado cargado con ambos contadores en cero como `no_pending_request`, sin confundirlo con un fallo de lectura. Validacion aislada; aceptacion natural pendiente.
 3. El preflight descuenta reservas anteriores y consulta citas incluso con un
    expediente. Uno elegible se guarda automaticamente; varios requieren decidir
    uno o todos. Citas existentes e historial incierto bloquean nuevas reservas.
@@ -78,7 +78,7 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 7. La captura exige seleccion visible exacta, cupos positivos y boton habilitado estables, sin carga ASP.NET; una espera fallida conserva diagnostico y detiene el flujo. Una seleccion valida archiva su screenshot canonico; antes de resolver o
    enviar exige formulario, tokens, honeypot y firma estructural conocidos. Si
    falla la evidencia o el contrato, pausa sin iniciar el intento.
-8. La reserva solo se confirma con evidencia suficiente del portal.
+8. La reserva solo se confirma con evidencia suficiente del portal; el formulario sin CAPTCHA final conserva el resultado antes de capturas/HTML para no perder el aviso de exito de dos segundos. Validacion aislada aprobada; aceptacion natural pendiente.
 9. Pago y comunicaciones siguen estados independientes.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
@@ -118,17 +118,18 @@ cobro falla cerrado hasta disponer de una correccion contable auditada.
 | `/pendientes` | Siguiente accion comercial por orden. |
 | `/resumen` | Salud y resumen operativo. |
 | `/ordenes` | Alta, busqueda y detalle de ordenes. |
-| `/actividad` | Eventos y diagnostico. |
+| `/actividad` | Runs recientes, disponibilidad, capturas y comandos secundarios. |
 | `/seguimiento` | Citas, recordatorios y revisiones post-cita. |
 | `/finanzas` | Cobros, costos, cierres y diferencias. |
 | `/mensajes` | Plantillas y trazabilidad de comunicaciones. |
 | `/captchas` | Superficie dedicada; CAPTCHA no forma parte de Pendientes. |
 
 **Pendientes** consume `GET /api/v1/operator-inbox`. El total excluye CAPTCHA y
-reune acceso, pausas, contacto, cobro, postpago y comunicaciones. Incluye busqueda y filtros conservados al navegar, lista compacta, severidad y siguiente accion.
-El detalle lateral se comparte con Ordenes; en escritorio mantiene la lista visible y en movil confina el foco. El dato temporal disponible
-sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea. **Resumen** permite pausar y reanudar mediante comandos durables; la pausa espera una frontera segura, conserva historial y backoffs, y solo suspende nuevas revisiones y mediciones del portal. Con reserva automatica desactivada, un cupo seleccionable conserva su foto y pausa antes de cualquier clic de reserva.
+reune acciones vigentes de acceso, pausas, contacto, cobro y comunicaciones; errores de acceso de ordenes pagadas permanecen solo en historial. Incluye busqueda y filtros conservados al navegar, lista compacta, severidad y siguiente accion.
+Nueva orden abre desde cualquier vista; Ordenes limpia filtros en un clic y pliega herramientas WhatsApp. El detalle lateral mantiene la lista en escritorio y confina el foco en movil. El dato temporal disponible
+sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea. **Resumen** muestra fases comprensibles, cuenta regresiva por segundo y tiempo desde la ultima revision; al vencer espera confirmar el nuevo estado. Permite pausar y reanudar mediante comandos durables; la pausa espera una frontera segura, conserva historial y backoffs, y solo suspende nuevas revisiones y mediciones del portal. Con reserva automatica desactivada, un cupo seleccionable conserva su foto y pausa antes de cualquier clic de reserva.
 
+**Actividad** agrupa todas las fechas y horarios guardados por revision, con cuatro fechas iniciales y opcion de ver todas; distingue horarios listados de cupos comprobados y pliega datos tecnicos, el observador sin clientes listos lee horarios de hasta cuatro fechas en 25 s, sin nuevos avisos ni reservas.
 **Citas y recordatorios** separa proximas citas, casos que requieren revision e
 historial. Permite anticipacion de `1..3` dias y mantiene el seguimiento post-cita
 conservador y paginado en PostgreSQL/API. Busqueda, filtros, orden y paginas no
@@ -143,7 +144,7 @@ Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups
 El [dashboard por dominio](architecture/dashboard-domains.md) conserva `App`
 como shell. Los seis dominios poseen estado, comandos y [clientes HTTP propios](architecture/dashboard-http.md).
 Vistas y modales consumen puertos estrechos; listas y detalles autorizados siguen separados.
-Las [cargas parciales](architecture/dashboard-loading.md) muestran error, fecha y antiguedad por bloque; cancelan lecturas obsoletas. Navegar conserva el desplazamiento por vista.
+Las [cargas parciales](architecture/dashboard-loading.md) muestran solo errores por bloque; conservan frescura interna y cancelan lecturas obsoletas. Navegar conserva el desplazamiento por vista.
 
 Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
 confirmaciones y la copia diagnostica no muestran esos datos personales.
@@ -154,7 +155,6 @@ son capacidades estables. Su admision se gobierna en PostgreSQL con
 sobre cualquier modo. La capacidad configurada es de tres sesiones Playwright
 aisladas: un detector y hasta dos auxiliares compatibles, con preferencia por
 disponibilidad restringida.
-
 ## Comunicaciones WhatsApp
 
 Registro individual y conjunto son plantillas editables en Mensajes, versionadas en PostgreSQL. Cada trabajo congela
@@ -165,10 +165,13 @@ emite el alias financiero `is_complete`; el contrato usa `conversion_complete`.
 
 Reglas vigentes:
 
-- un unico perfil persistente pertenece a Admin API; [infraestructura modular](architecture/whatsapp-browser.md) en `browser/whatsapp/`;
-- albumes y paquetes postpago conservan confirmacion por componentes;
-- `sent` requiere evidencia tecnica suficiente;
-- un reloj o indicador pendiente visible veta la confirmacion;
+- un unico perfil persistente pertenece a Admin API; [infraestructura modular](architecture/whatsapp-browser.md); cierre verificado del aviso de novedades activo, validado en aislamiento y con recuperacion autorizada confirmada;
+- busqueda por usuario admite resultados exactos fuera de contactos, sin agregarlos; apertura y usuario del compositor verificados en navegador sin envio; aceptacion automatica natural pendiente;
+- albumes conservan texto independiente por imagen, verificado antes del envio; seleccionan Fotos y videos y boton identificado; recuperacion con contacto corregido requiere confirmar el destino y conserva el original; dos recuperaciones reales confirmaron ambas imagenes en PostgreSQL;
+- v77 agrega eventos por PDF, imagen y texto, capturas unicas y recuperacion manual de componentes no confirmados; historicos sin manifiesto conservan revision manual;
+- postpago confirma texto antes de los PDFs; decide con identidades confirmadas por documento y una lectura final al vencer la espera, sin reenviar; prueba autorizada confirmo cuatro componentes; correccion de confirmacion tardia validada en ensayo aislado, aceptacion natural pendiente;
+- recuperacion operativa del resumen permite solo fotos pendientes con enlace y auditoria del original; textos vacios quedan fuera del manifiesto; resumen diario envia texto, TikTok y luego imagenes; espera hasta 540 s segun lotes, sin reintento al vencer; aceptacion natural pendiente; `sent` exige evidencia tecnica suficiente;
+- textos, imagenes y PDFs usan boton identificado, sin coordenadas ni Enter; texto completo con emojis y Leer mas, check SVG e identidad estable; pendientes y errores vetan confirmacion y nuevas acciones; sin reapertura automatica de borradores;
 - los intentos distinguen preparacion, interaccion, confirmacion observada y
   confirmacion persistida; solo la preparacion demostrable puede quedar
   `failed`;

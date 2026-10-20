@@ -133,8 +133,8 @@
       <div class="sidebar-health">
         <span class="health-dot" [class.online]="operations.health()?.status === 'ok'"></span>
         <div>
-          <strong>{{ operations.health()?.status === 'ok' ? 'Sistema conectado' : 'Sin conexión' }}</strong>
-          <small>{{ operations.worker()?.worker_running ? 'Worker activo' : 'Worker sin confirmar' }}</small>
+          <strong>{{ operations.health() ? (operations.health()?.status === 'ok' ? 'Sistema conectado' : 'Sin conexión') : 'Conectando…' }}</strong>
+          <small>{{ operations.worker() ? (operations.worker()?.worker_running ? 'Búsqueda activa' : 'Búsqueda detenida') : 'Comprobando búsqueda…' }}</small>
         </div>
       </div>
       <button
@@ -176,10 +176,12 @@
         <p class="eyebrow">{{ navigation.activeViewGroup() }}</p>
         <h1>{{ navigation.activeViewLabel() }}</h1>
         <p class="subhead">
-          {{ operations.health()?.message ?? 'Cargando datos administrativos desde el admin API local.' }}
+          {{ operations.health() ? (operations.health()?.status === 'ok' ? 'Panel conectado · datos actualizados automáticamente' : 'Revisa el estado del sistema en Resumen') : 'Conectando con el sistema…' }}
         </p>
       </div>
 
+      <div class="header-tools">
+      <button type="button" class="primary" (click)="orders.openCreateOrder()">Nueva orden</button>
       <div class="refresh-panel" aria-live="polite">
         <span>Actualización</span>
         <strong>{{
@@ -195,6 +197,7 @@
           navigation.lastUpdatedAt() ? 'Última: ' + navigation.lastUpdatedAt() : (operations.health()?.status ?? 'sin datos')
         }}</small>
         <button type="button" class="primary" (click)="navigation.refreshNow()">Actualizar</button>
+      </div>
       </div>
     </header>
 
@@ -266,15 +269,6 @@
       </section>
     }
 
-    <details [open]="!!(operations.loads.health.error() || operations.loads.worker.error() || orders.loads.sessions.error() || orders.loads.catalog.error() || captchas.loads.pendingReview.error())">
-      <summary>Estado de servicios</summary>
-      <app-load-status [section]="operations.loads.health" />
-      <app-load-status [section]="operations.loads.worker" />
-      <app-load-status [section]="orders.loads.sessions" />
-      <app-load-status [section]="orders.loads.catalog" />
-      <app-load-status [section]="captchas.loads.pendingReview" />
-
-    </details>
     @if (navigation.activeViewState(); as state) {
       <app-view-state
         [state]="state"

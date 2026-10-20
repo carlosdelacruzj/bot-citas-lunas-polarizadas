@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
 
+from appointment_bot.configuration.loading import load_evidence_settings
 from appointment_bot.core.statuses import sanitize_details
-from appointment_bot.db.runs import get_run, list_runs
+from appointment_bot.db.runs import get_run, get_run_screenshot_path, list_runs
 from appointment_bot.services.api.http import error_payload
 
 PUBLIC_RUN_FIELDS = (
+    "availability",
     "run_id",
     "order_id",
     "status",
@@ -97,3 +101,30 @@ def query_bool(query: dict[str, list[str]], name: str, *, default: bool) -> bool
     if not value:
         return default
     return value in {"1", "true", "yes", "y", "on"}
+
+
+def run_screenshot_match(path: str) -> tuple[str, int] | None:
+    match = re.fullmatch(r"/api/v1/runs/([^/]+)/screenshots/(\d+)", path)
+    return (unquote(match[1]), int(match[2])) if match else None
+
+
+def run_screenshot_payload(run_id: str, index: int) -> tuple[HTTPStatus, Path | dict[str, Any]]:
+    value = get_run_screenshot_path(run_id, index)
+    if value is None:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "La corrida no tiene esta captura.")
+    root = load_evidence_settings(require_login=False).screenshots_dir.resolve()
+    path = Path(value).resolve()
+    if not path.is_relative_to(root) or path.suffix.lower() not in {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+    }:
+        return HTTPStatus.FORBIDDEN, error_payload(
+            "forbidden", "Captura fuera del directorio autorizado."
+        )
+    if not path.is_file():
+        return HTTPStatus.NOT_FOUND, error_payload(
+            "not_found", "Esta captura ya no esta disponible."
+        )
+    return HTTPStatus.OK, path

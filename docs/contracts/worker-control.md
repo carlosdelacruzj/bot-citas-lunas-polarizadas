@@ -197,3 +197,4 @@ y defensas mantienen prioridad; no se habilita observacion durante una pausa
 global ni se evita la pausa por `AUTO_RESERVE=false`. Los descansos y exclusiones
 de cuentas siguen siendo los de la rotacion existente. Un fallo conserva las
 fotos ya archivadas y el avance parcial del run, sin acreditar la consulta fallida.
+Lectura de horarios para Actividad: ver [presupuesto y limites](runs.md#lectura-de-horarios-para-actividad).

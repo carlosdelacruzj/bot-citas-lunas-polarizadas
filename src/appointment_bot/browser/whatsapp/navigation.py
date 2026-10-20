@@ -48,7 +48,6 @@ def _open_recipient_chat(
             message_id=message_id,
         )
     page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded", timeout=45_000)
-    _dismiss_whatsapp_updates_dialog(page)
     search = _visible_whatsapp_search(page)
     if search is None:
         return _chat_not_ready_result(
@@ -56,10 +55,11 @@ def _open_recipient_chat(
             message_id=message_id,
             screenshot_name=screenshot_name,
         )
+    _dismiss_whatsapp_updates_dialog(page)
     search.click()
     search.fill(username)
     page.wait_for_timeout(700)
-    rows = _wait_for_stable_username_chat_results(page)
+    rows = _wait_for_stable_username_chat_results(page, username)
     if len(rows) != 1:
         logger.info(
             "WhatsApp username search retry before send: phase=username_search_retry"
@@ -74,7 +74,7 @@ def _open_recipient_chat(
             page.wait_for_timeout(800)
             search.fill(username)
             page.wait_for_timeout(1_200)
-            rows = _wait_for_stable_username_chat_results(page)
+            rows = _wait_for_stable_username_chat_results(page, username)
     if len(rows) != 1:
         _save_whatsapp_debug_screenshot(page, screenshot_name)
         status = "recipient_not_found" if not rows else "recipient_ambiguous"
@@ -108,6 +108,12 @@ def _open_recipient_chat(
         )
     except PlaywrightError:
         pass
+    if not _wait_for_chat(page):
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name=screenshot_name,
+        )
     header = page.locator("header[data-testid='conversation-header']")
     header_text = _safe_text_content(header).casefold() if header.count() else ""
     header_titles = [
@@ -115,19 +121,26 @@ def _open_recipient_chat(
         for index in range(header.locator("[title]").count())
     ] if header.count() else []
     expected_label = expected_chat_label.casefold()
-    if expected_label not in header_text and expected_label not in header_titles:
+    composer = page.locator("div[data-testid='conversation-compose-box-input']")
+    composer_label = str(composer.get_attribute("aria-label") or "").strip().casefold() if (
+        composer.count() == 1 and composer.is_visible()
+    ) else ""
+    username_matches = expected_label.startswith("@") and composer_label in {
+        f"escribir un mensaje para {expected_label}",
+        f"type a message to {expected_label}",
+    }
+    identity_matches = (
+        username_matches or expected_label in header_titles
+        if expected_label.startswith("@")
+        else expected_label in header_text or expected_label in header_titles
+    )
+    if not identity_matches:
         _save_whatsapp_debug_screenshot(page, screenshot_name)
         return _result(
             "recipient_mismatch",
             "WhatsApp abrio un chat distinto del resultado unico para "
             f"{username}. No se envio nada.",
             message_id=message_id,
-        )
-    if not _wait_for_chat(page):
-        return _chat_not_ready_result(
-            page,
-            message_id=message_id,
-            screenshot_name=screenshot_name,
         )
     return None
 
@@ -159,9 +172,20 @@ def _dismiss_whatsapp_updates_dialog(page: Page) -> None:
         text = _safe_text_content(dialog).casefold()
         if "novedades en whatsapp web" not in text and "what's new in whatsapp web" not in text:
             continue
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(300)
-        return
+        for label in ("Continuar", "Continue", "Cerrar", "Close"):
+            button = dialog.get_by_role("button", name=label, exact=True)
+            if button.count() and button.first.is_visible():
+                button.first.click(timeout=2_000)
+                break
+        else:
+            page.keyboard.press("Escape")
+        try:
+            dialog.wait_for(state="hidden", timeout=3_000)
+        except PlaywrightError as exc:
+            raise RuntimeError(
+                "No se pudo cerrar el aviso de novedades de WhatsApp Web. "
+                "No se abrio el chat ni se escribio o envio ningun mensaje."
+            ) from exc
 
 
 def _click_username_chat_result(
@@ -215,7 +239,7 @@ def _click_username_chat_result(
     search.click()
     search.fill(username)
     page.wait_for_timeout(700)
-    rows = _wait_for_stable_username_chat_results(page)
+    rows = _wait_for_stable_username_chat_results(page, username)
     if len(rows) != 1 or _whatsapp_chat_row_label(rows[0]) != expected_chat_label:
         retry_evidence_path = _save_whatsapp_debug_screenshot(
             page,
@@ -256,13 +280,13 @@ def _click_username_chat_result(
     return None
 
 
-def _wait_for_stable_username_chat_results(page: Page) -> list[Any]:
+def _wait_for_stable_username_chat_results(page: Page, username: str) -> list[Any]:
     deadline = time.monotonic() + 15
     rows: list[Any] = []
     previous_labels: tuple[str, ...] | None = None
     stable_reads = 0
     while time.monotonic() < deadline:
-        rows = _visible_username_chat_result_rows(page)
+        rows = _visible_username_chat_result_rows(page, username)
         labels = tuple(_whatsapp_chat_row_label(row) for row in rows)
         stable_reads = stable_reads + 1 if labels == previous_labels else 0
         previous_labels = labels
@@ -304,17 +328,19 @@ def _dismiss_safe_whatsapp_dialog(page: Page, dialogs: list[Any]) -> bool:
     return not _visible_whatsapp_dialogs(page)
 
 
-def _visible_username_chat_result_rows(page: Page) -> list[Any]:
+def _visible_username_chat_result_rows(page: Page, username: str) -> list[Any]:
     rows: list[Any] = []
     seen: set[str] = set()
     candidates = page.locator("[data-testid='cell-frame-container']")
     for index in range(candidates.count()):
         row = candidates.nth(index)
-        if not row.is_visible() or not _row_belongs_to_chat_results(row):
+        if not row.is_visible() or not (
+            _row_belongs_to_chat_results(row) or _row_is_exact_noncontact(row, username)
+        ):
             continue
         container = row.locator("xpath=ancestor::*[@role='row'][1]")
         key = str(
-            container.get_attribute("data-testid")
+            (container.get_attribute("data-testid") if container.count() == 1 else None)
             or row.get_attribute("data-id")
             or _whatsapp_chat_row_label(row)
         ).strip()
@@ -333,6 +359,23 @@ def _row_belongs_to_chat_results(row) -> bool:
     if section.count() != 1:
         return False
     return _safe_text_content(section).strip().casefold() == "chats"
+
+
+def _row_is_exact_noncontact(row, username: str) -> bool:
+    if row.get_attribute("role") != "button":
+        return False
+    section = row.locator("xpath=preceding-sibling::*[@data-testid='section-header'][1]")
+    if section.count() != 1 or _safe_text_content(section).strip().casefold() not in {
+        "usuarios que no están en tus contactos",
+        "users not in your contacts",
+    }:
+        return False
+    titles = row.locator("[data-testid='cell-frame-title'] span[title]")
+    return (
+        titles.count() == 1
+        and titles.is_visible()
+        and str(titles.get_attribute("title") or "").strip().casefold() == username.casefold()
+    )
 
 
 def _whatsapp_chat_row_label(row) -> str:

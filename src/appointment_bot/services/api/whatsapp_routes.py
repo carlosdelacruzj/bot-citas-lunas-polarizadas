@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Literal
@@ -32,8 +33,20 @@ from appointment_bot.db.whatsapp_messages import (
     prepare_order_whatsapp_message,
     prepare_test_whatsapp_message,
 )
-from appointment_bot.db.whatsapp_recovery import retry_whatsapp_job
+from appointment_bot.db.whatsapp_recovery import current_whatsapp_recipient, retry_whatsapp_job
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.whatsapp_delivery import manual_delivery_recorder
+
+logger = logging.getLogger(__name__)
+
+
+def _preparation_unavailable() -> tuple[HTTPStatus, dict[str, Any]]:
+    logger.exception("Could not prepare the WhatsApp package before browser dispatch")
+    return HTTPStatus.SERVICE_UNAVAILABLE, error_payload(
+        "preparation_unavailable",
+        "No se pudo preparar el paquete de WhatsApp. Revisa sus archivos y configuracion; "
+        "no se inicio el envio.",
+    )
 
 
 def prepare_test_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
@@ -48,6 +61,8 @@ def prepare_test_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str,
         result = prepare_test_whatsapp_message(recipient)
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
     return HTTPStatus.CREATED, result
 
 
@@ -63,6 +78,8 @@ def prepare_followup_test_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, 
         result = prepare_test_post_payment_whatsapp_message(recipient)
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
     return HTTPStatus.CREATED, result
 
 
@@ -80,6 +97,8 @@ def prepare_order_payload(
         if "reenvio" in message.casefold():
             return HTTPStatus.CONFLICT, error_payload("conflict", message)
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", message)
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
     return HTTPStatus.CREATED, result
 
 
@@ -104,6 +123,8 @@ def prepare_followup_payload(
         if "reenvio" in message.casefold():
             return HTTPStatus.CONFLICT, error_payload("conflict", message)
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", message)
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
     return HTTPStatus.CREATED, result
 
 
@@ -150,7 +171,12 @@ def whatsapp_review_payload(
             }
         except ValueError:
             preview = None
-    return HTTPStatus.OK, {"job": job, "message": message, "preview": preview}
+    return HTTPStatus.OK, {
+        "job": job,
+        "message": message,
+        "preview": preview,
+        "current_recipient": current_whatsapp_recipient(order_id),
+    }
 
 
 def retry_whatsapp_payload(
@@ -164,6 +190,9 @@ def retry_whatsapp_payload(
             job_key,
             confirmed_no_delivery=payload.get("confirmed_no_delivery") is True,
             reviewed_by=requested_by or "system",
+            expected_recipient=str(payload["expected_recipient"])
+            if payload.get("expected_recipient")
+            else None,
         )
     except ValueError as exc:
         return HTTPStatus.CONFLICT, error_payload("conflict", str(exc))
@@ -264,8 +293,17 @@ def prepare_web_payload(
             HTTPStatus.NOT_FOUND if "not found" in message.casefold() else HTTPStatus.BAD_REQUEST
         )
         return status, error_payload("not_found" if status == 404 else "bad_request", message)
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
     result = (
-        prepare_whatsapp_web_album(confirmation, payment, auto_send=auto_send)
+        prepare_whatsapp_web_album(
+            confirmation,
+            payment,
+            auto_send=auto_send,
+            delivery_progress=manual_delivery_recorder(confirmation, "reservation_album")
+            if auto_send
+            else None,
+        )
         if draft_kind == "album"
         else prepare_whatsapp_web_draft(draft)
     )
@@ -305,7 +343,11 @@ def prepare_followup_web_payload(
             HTTPStatus.NOT_FOUND if "not found" in message.casefold() else HTTPStatus.BAD_REQUEST
         )
         return status, error_payload("not_found" if status == 404 else "bad_request", message)
-    result = prepare_whatsapp_web_documents(draft)
+    except (OSError, RuntimeError):
+        return _preparation_unavailable()
+    result = prepare_whatsapp_web_documents(
+        draft, delivery_progress=manual_delivery_recorder(draft, "post_payment_followup")
+    )
     if result.get("sent"):
         sent_payload = mark_followup_message_sent(message_id)
         result = {

@@ -1,7 +1,7 @@
 # Migraciones PostgreSQL
 
 `db/migrations.py` conserva la version requerida y el registro explicito de
-62 pasos consecutivos desde `v14` hasta `v76`. El registro se valida al importar:
+63 pasos consecutivos desde `v14` hasta `v77`. El registro se valida al importar:
 rechaza saltos, duplicados, desorden y una version final distinta de la requerida.
 
 Una base sin fila de version se crea directamente con `schema_definition.py`.
@@ -31,3 +31,9 @@ sinteticos y dump/restore; no acredita un backup externo de la base operativa.
 turno, descanso, bloqueo y capacidad observada por cuenta. No altera reservas ni
 trabajos de mensajes. Volver a binarios que exigen `v75` requiere una restauracion
 coordinada; no degradar la version ni borrar estas tablas para forzar compatibilidad.
+
+`v77` agrega intentos y eventos append-only de entrega WhatsApp, ademas del
+linaje y la seleccion de componentes de recuperacion. No reconstruye los
+resultados historicos ni encola recuperaciones. Validada en esquema aislado y activa en Admin API. La migracion preserva
+ordenes, reservas, pagos y resultados historicos; la aceptacion natural de
+los primeros eventos por componente sigue pendiente.

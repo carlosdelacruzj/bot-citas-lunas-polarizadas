@@ -58,6 +58,13 @@ No se requiere el resumen diario de evidencias. `summary_status=not_required`
 conserva la forma historica del payload; la configuracion de gracia del resumen
 permanece por compatibilidad, sin condicionar el envio.
 
+Los recordatorios se procesan de forma serial, con una pausa configurable entre
+trabajos (`APPOINTMENT_REMINDERS_SEND_INTERVAL_SECONDS`, predeterminado `5`).
+Tras pulsar Enviar, se esperan hasta `60` segundos y `5` segundos adicionales
+de gracia para observar el texto saliente completo y una confirmacion de
+WhatsApp. Si sigue pendiente o falta evidencia al vencer la espera, el job queda
+`uncertain`; nunca se reenvia automaticamente.
+
 Reiniciar no duplica trabajos: la clave sigue siendo reserva y fecha de cita.
 Una fecha de servicio pasada no se envia tardia; se conserva la revalidacion
 antes del envio y nunca se reencola un resultado `uncertain`.

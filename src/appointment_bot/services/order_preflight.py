@@ -37,7 +37,10 @@ from appointment_bot.db.program_eligibility import (
 from appointment_bot.reservation_engine.appointment_dom import read_person_name
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
 from appointment_bot.reservation_engine.program_review import review_programs
-from appointment_bot.reservation_engine.programs import read_program_action_rows
+from appointment_bot.reservation_engine.programs import (
+    program_listing_is_empty,
+    read_program_action_rows,
+)
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.registration_notices import enqueue_registration_notice
 from appointment_bot.utils.sanitization import sanitize_text
@@ -201,7 +204,7 @@ def _validate_order_preflight_owned(
             if not applicant_name or _looks_like_document(applicant_name, order.username):
                 raise RuntimeError("El portal no mostro un nombre completo verificable.")
             rows = read_program_action_rows(page)
-            if not rows:
+            if not rows and not program_listing_is_empty(page):
                 raise RuntimeError("No se pudo verificar el listado de expedientes del portal.")
             reconcile_program_history(order_id, settings=runtime_settings)
             rows = review_programs(

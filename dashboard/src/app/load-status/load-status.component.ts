@@ -5,21 +5,24 @@ import { formatPeruDateTime } from '../peru-date-time';
 @Component({
   selector: 'app-load-status',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[hidden]': '!section()?.error()' },
   template: `
     @if (section(); as state) {
-      <p class="load-status" [class.load-error]="state.error()" role="status">
+      @if (state.error(); as error) {
+      <p class="load-status load-error" role="status">
         <strong>{{ state.label }}:</strong>
-        @if (state.loading()) { actualizando. }
-        @if (state.error(); as error) { {{ error }} }
+        {{ error }}
         @if (state.updatedAt(); as updated) {
           {{ state.error() ? 'Datos anteriores del' : 'Actualizado el' }}
           {{ formatUpdated(updated) }}.
         } @else if (!state.loading()) { Sin datos actualizados. }
       </p>
+      }
     }
   `,
   styles: `
     :host { display: block; }
+    :host([hidden]) { display: none; }
     .load-status { margin: .35rem 0; font-size: .8rem; color: #475569; }
     .load-error { color: #9a3412; }
   `,

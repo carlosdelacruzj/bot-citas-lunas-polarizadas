@@ -56,6 +56,11 @@ reservas, pagos ni envios ambiguos. Cerrar o fallar un alta limpia datos sensibl
 
 Pendientes y el detalle compartido de ordenes encapsulan sus estilos. La bandeja conserva
 busqueda y filtros en Operaciones; el shell conserva desplazamiento por vista.
+
+El encabezado permite abrir Nueva orden desde cualquier vista. Ordenes conserva
+filtros y busqueda al navegar, permite limpiarlos juntos y pliega las herramientas
+de WhatsApp; sus contadores no se parten. Resumen y Mensajes ajustan sus controles
+al ancho movil y tablet, sin desplazamiento horizontal de la pagina.
 `FocusBoundaryDirective` gobierna Tab e inert de modales, detalle movil y menu movil.
 La encapsulacion de las otras vistas y la revision completa siguen en
 [6.4](../roadmap/development-hardening-plan.md).

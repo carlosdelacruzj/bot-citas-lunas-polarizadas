@@ -22,6 +22,7 @@ from appointment_bot.services.api.handlers import (
 )
 from appointment_bot.services.api.opportunity_routes import opportunity_burst_id
 from appointment_bot.services.api.routing import Route
+from appointment_bot.services.api.run_routes import run_screenshot_match
 from appointment_bot.services.api.whatsapp_routes import whatsapp_message_path
 
 GET_ROUTES = (
@@ -83,5 +84,6 @@ GET_ROUTES = (
         service_order.get_service_order_detail,
     ),
     Route("/api/v1/runs", run.get_list_runs),
+    Route(run_screenshot_match, run.get_run_screenshot),
     Route(lambda path: True if path.startswith("/api/v1/runs/") else None, run.get_run),
 )

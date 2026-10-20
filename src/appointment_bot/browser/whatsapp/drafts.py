@@ -6,7 +6,11 @@ from playwright.sync_api import BrowserContext
 
 from appointment_bot.browser.whatsapp.album import _prepare_album
 from appointment_bot.browser.whatsapp.attachments import _attach_image
-from appointment_bot.browser.whatsapp.common import _result, logger
+from appointment_bot.browser.whatsapp.common import (
+    _AttachmentBeforeFileSelectionError,
+    _result,
+    logger,
+)
 from appointment_bot.browser.whatsapp.composition import _fill_caption
 from appointment_bot.browser.whatsapp.documents import _prepare_documents
 from appointment_bot.browser.whatsapp.navigation import _open_recipient_chat
@@ -44,9 +48,7 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
         raise FileNotFoundError("La constancia preparada ya no esta disponible.")
     try:
         _attach_image(page, attachment)
-    except RuntimeError as exc:
-        if "control para adjuntar" not in str(exc):
-            raise
+    except _AttachmentBeforeFileSelectionError as exc:
         recipient_error = _open_recipient_chat(
             page, draft, message_id, "whatsapp-confirmation-chat-retry-not-ready"
         )
@@ -54,18 +56,6 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
             raise RuntimeError(str(recipient_error["message"])) from exc
         _attach_image(page, attachment)
     draft_mode = _fill_caption(page, str(draft["caption"]))
-    if draft_mode == "queued_text":
-        recipient_error = _open_recipient_chat(
-            page, draft, message_id, "whatsapp-confirmation-text-retry-not-ready"
-        )
-        if recipient_error is not None:
-            raise RuntimeError(str(recipient_error["message"]))
-        _attach_image(page, attachment)
-        draft_mode = _fill_caption(page, str(draft["caption"]))
-        if draft_mode != "caption":
-            raise RuntimeError(
-                "WhatsApp no permitio unir el texto a la imagen; el borrador no se considera listo."
-            )
     logger.info(
         "WhatsApp Web draft ready: message_id=%s test_mode=%s",
         message_id,
@@ -75,9 +65,6 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
         "draft_ready",
         (
             "Imagen y texto listos. Revisa la ventana de WhatsApp y pulsa Enviar manualmente."
-            if draft_mode == "caption"
-            else "La imagen esta lista y el texto quedo preparado detras de la vista previa. "
-            "Envia primero la imagen y luego pulsa Enviar una segunda vez para el texto."
         ),
         message_id=message_id,
         draft_mode=draft_mode,
