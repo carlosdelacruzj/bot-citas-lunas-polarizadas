@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 
@@ -19,9 +20,9 @@ from appointment_bot.browser.whatsapp.dom import (
     _normal_chat_composer_visible,
     _plain_text_ready,
     _safe_get_attribute,
-    _safe_text_content,
 )
 from appointment_bot.browser.whatsapp.evidence import _save_whatsapp_debug_screenshot
+from appointment_bot.browser.whatsapp.message_snapshot import outgoing_snapshot
 from appointment_bot.browser.whatsapp.progress import confirm_components
 
 
@@ -50,29 +51,11 @@ def _wait_until_outgoing_images_uploaded(
 
 
 def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
-    messages = page.locator("div.message-out")
-    require_marker = False
-    if not messages.count():
-        messages = page.locator("[data-testid='msg-container']")
-        require_marker = True
-
-    records: list[tuple[str, str]] = []
-    for index in range(messages.count()):
-        message = messages.nth(index)
-        if require_marker and not _message_container_is_outgoing(message):
-            continue
-        if not _message_container_has_large_image(message):
-            continue
-        if _message_container_has_pending_status(message):
-            state = "pending"
-        elif _message_container_has_confirmed_status(message):
-            state = "confirmed"
-        else:
-            state = "unknown"
-        signature = _message_container_signature(message)
-        if signature:
-            records.append((signature, state))
-    return records
+    return [
+        (record["signature"], record["state"])
+        for record in outgoing_snapshot(page)
+        if record["largeImage"]
+    ]
 
 
 def _message_container_has_large_image(message) -> bool:
@@ -120,6 +103,7 @@ def _plain_text_send_is_confirmed(
         page,
         confirmed_only=True,
         expected_text=expected,
+        excluded=outgoing_signatures,
     )
     return not _plain_text_ready(page, expected) and bool(
         confirmed_signatures - outgoing_signatures
@@ -131,36 +115,32 @@ def _outgoing_message_signatures(
     *,
     confirmed_only: bool = False,
     expected_text: str | None = None,
+    excluded: set[str] | None = None,
 ) -> set[str]:
-    expected_compact = (
-        _compact_alphanumeric_text(expected_text) if expected_text is not None else None
-    )
-    selectors = (
-        ("div.message-out", False),
-        ("div[data-id^='true_']", False),
-        ("[data-testid='msg-container']", True),
-    )
+    expected = _compact_alphanumeric_text(expected_text) if expected_text is not None else None
+    records = outgoing_snapshot(page, excluded)
     signatures: set[str] = set()
-    for selector, requires_outgoing_marker in selectors:
-        messages = page.locator(selector)
-        if not messages.count():
+    expanded = False
+    for record in records:
+        if confirmed_only and record["state"] != "confirmed":
             continue
-        for index in range(messages.count()):
-            message = messages.nth(index)
-            if requires_outgoing_marker and not _message_container_is_outgoing(message):
+        actual = _compact_alphanumeric_text(record["text"])
+        if expected is not None and (not expected or expected not in actual):
+            if (
+                record["expandable"] and expected
+                and len(expected) >= 80 and expected[:80] in actual
+            ):
+                data_id = record["signature"].removeprefix("data-id:")
+                message = page.locator(f"[data-id={json.dumps(data_id)}]")
+                expanded = _expand_matching_message_text(message, expected, actual) or expanded
+            continue
+        signatures.add(record["signature"])
+    if expanded:
+        for record in outgoing_snapshot(page, excluded):
+            if confirmed_only and record["state"] != "confirmed":
                 continue
-            if confirmed_only and not _message_container_has_confirmed_status(message):
-                continue
-            if expected_compact is not None:
-                actual_text = _compact_alphanumeric_text(_safe_text_content(message))
-                if expected_compact and expected_compact not in actual_text:
-                    if _expand_matching_message_text(message, expected_compact, actual_text):
-                        actual_text = _compact_alphanumeric_text(_safe_text_content(message))
-                if not expected_compact or expected_compact not in actual_text:
-                    continue
-            signature = _message_container_signature(message)
-            if signature:
-                signatures.add(signature)
+            if expected and expected in _compact_alphanumeric_text(record["text"]):
+                signatures.add(record["signature"])
     return signatures
 
 
@@ -269,7 +249,9 @@ def _wait_until_send_attempt_finishes(
         documents_confirmed = bool(attachment_names)
         for index, name in enumerate(attachment_names):
             matches = (
-                _outgoing_message_signatures(page, confirmed_only=True, expected_text=name)
+                _outgoing_message_signatures(
+                    page, confirmed_only=True, expected_text=name, excluded=outgoing_signatures
+                )
                 - outgoing_signatures
             )
             confirmed_ids.update(matches)
@@ -289,7 +271,7 @@ def _wait_until_send_attempt_finishes(
             confirmed_count,
         )
 
-    deadline = time.monotonic() + 20
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         documents_confirmed, new_confirmed_count = check_documents()
         if documents_confirmed:

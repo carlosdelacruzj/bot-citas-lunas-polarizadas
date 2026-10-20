@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 from threading import Event, RLock
+from time import monotonic
 
 from appointment_bot.configuration.loading import load_runtime_settings
 from appointment_bot.core.whatsapp_delivery import WhatsAppAttemptContext, masked_whatsapp_recipient
@@ -23,6 +25,9 @@ class WhatsAppDeliveryRecorder:
         self.inherited = inherited or {}
         self.active = []
         self.states = {}
+        self.on_delayed = None
+        self.started = monotonic()
+        self.component_started = {}
         self.attempt_id = start_delivery_attempt(
             job["job_key"], attempt.recipient, settings=settings
         )
@@ -54,6 +59,17 @@ class WhatsAppDeliveryRecorder:
 
     def complete(self):
         complete_delivery_attempt(self.attempt_id, settings=self.settings)
+        logging.getLogger(__name__).info(
+            "WhatsApp attempt closed: attempt_id=%s elapsed=%.3fs components=%s",
+            self.attempt_id, monotonic() - self.started, self.states,
+        )
+
+    def notify_delayed(self):
+        if self.on_delayed is not None:
+            try:
+                self.on_delayed()
+            except Exception:
+                logging.getLogger(__name__).exception("Could not notify delayed confirmation")
 
     def cancel(self):
         with self.lock:
@@ -80,6 +96,11 @@ class WhatsAppDeliveryRecorder:
             )
             self.active = keys
             self.states.update(dict.fromkeys(keys, "uncertain"))
+            self.component_started.update(dict.fromkeys(keys, monotonic()))
+            logging.getLogger(__name__).info(
+                "WhatsApp component started: attempt_id=%s components=%s preparation=%.3fs",
+                self.attempt_id, keys, monotonic() - self.started,
+            )
             self.attempt.advance("interaction_started", component=",".join(keys))
 
     def confirm(self, keys, outgoing_id):
@@ -92,6 +113,11 @@ class WhatsAppDeliveryRecorder:
             self.attempt_id, keys, "confirmed", None, outgoing_id, settings=self.settings
         )
         self.states.update(dict.fromkeys(keys, "confirmed"))
+        for key in keys:
+            logging.getLogger(__name__).info(
+                "WhatsApp component confirmed: attempt_id=%s component=%s elapsed=%.3fs",
+                self.attempt_id, key, monotonic() - self.component_started.get(key, self.started),
+            )
 
     def evidence(self, path):
         self.attempt.evidence_path = path

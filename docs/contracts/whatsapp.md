@@ -63,7 +63,7 @@ enviado, entregado o leido puede confirmar el componente correspondiente.
 Marcadores ocultos o etiquetas genericas no deciden.
 
 `sent`, llegada al destinatario, lectura y confirmacion del cliente son hechos
-distintos. `uncertain` nunca se reintenta automaticamente.
+distintos. `uncertain` nunca se reintenta automaticamente. La [confirmacion tardia](../architecture/whatsapp-confirmation.md) conserva el timeout historico, exige evidencia completa del mismo intento y no sustituye decisiones manuales.
 
 Cada intento automatico se clasifica mediante cuatro fases:
 

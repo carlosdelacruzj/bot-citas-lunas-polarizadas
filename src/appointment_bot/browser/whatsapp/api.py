@@ -3,6 +3,10 @@ from __future__ import annotations
 from appointment_bot.browser.whatsapp.manager import _MANAGER
 
 
+def whatsapp_web_busy() -> bool:
+    return _MANAGER.busy
+
+
 def prepare_whatsapp_web_draft(draft: dict[str, object]) -> dict[str, object]:
     return _MANAGER.prepare(draft)
 

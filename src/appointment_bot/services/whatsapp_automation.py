@@ -13,6 +13,7 @@ from appointment_bot.browser.whatsapp.api import (
     send_whatsapp_web_daily_slot_summary,
     send_whatsapp_web_registration_notice,
     validate_whatsapp_web_session,
+    whatsapp_web_busy,
 )
 from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.runtime import RuntimeSettings
@@ -29,6 +30,7 @@ from appointment_bot.db.appointment_reminder_control import (
 from appointment_bot.db.appointment_reminders import (
     get_current_appointment_reminder_candidate,
 )
+from appointment_bot.db.telegram_alert_outbox import enqueue_telegram_alert
 from appointment_bot.db.whatsapp_automation import (
     WhatsAppAutomationJob,
     WhatsAppAutomationStatus,
@@ -41,7 +43,10 @@ from appointment_bot.db.whatsapp_automation import (
     refresh_running_appointment_reminder_snapshot,
     return_running_whatsapp_job_to_blocked,
 )
-from appointment_bot.db.whatsapp_delivery import recovery_delivery_plan
+from appointment_bot.db.whatsapp_delivery import (
+    reconcile_late_confirmations,
+    recovery_delivery_plan,
+)
 from appointment_bot.db.whatsapp_followup_messages import (
     get_followup_web_draft,
     mark_followup_message_sent,
@@ -122,6 +127,11 @@ class WhatsAppAutomationDispatcher:
     def _run(self) -> None:
         while not self._stop_event.is_set():
             try:
+                for confirmed in reconcile_late_confirmations(settings=self.runtime_settings):
+                    logger.info("Late WhatsApp confirmation reconciled: %s", confirmed["job_key"])
+                if whatsapp_web_busy():
+                    self._stop_event.wait(POLL_SECONDS)
+                    continue
                 expired_jobs = recover_expired_whatsapp_automation_jobs(
                     settings=self.runtime_settings
                 )
@@ -194,6 +204,9 @@ class WhatsAppAutomationDispatcher:
         )
         attempt.delivery_progress = WhatsAppDeliveryRecorder(
             job, attempt, self.runtime_settings, selection, inherited
+        )
+        attempt.delivery_progress.on_delayed = lambda: self._notify_confirmation_update(
+            job, confirmed=False
         )
         logger.info(
             "Starting automatic WhatsApp attempt: target=%s kind=%s",
@@ -283,6 +296,8 @@ class WhatsAppAutomationDispatcher:
         if result.get("sent"):
             if self._finish(job, status="sent", message_id=message_id):
                 attempt.advance("confirmation_persisted")
+                if result.get("confirmation_delayed"):
+                    self._notify_confirmation_update(job, confirmed=True)
             logger.info(
                 "Automatic WhatsApp attempt completed: order_id=%s kind=%s message_id=%s",
                 order_id,
@@ -599,6 +614,26 @@ class WhatsAppAutomationDispatcher:
                 ]
             ),
             telegram_settings=self.telegram_settings,
+        )
+
+    def _notify_confirmation_update(self, job, *, confirmed):
+        target = (
+            f"Orden: {job['order_id']}" if job["order_id"] is not None
+            else f"Fecha: {job['report_date']}"
+        )
+        message = (
+            "WhatsApp: envio confirmado posteriormente.\n"
+            "Se observo evidencia tecnica completa del mismo intento. No se reenvio."
+            if confirmed else
+            "WhatsApp: confirmacion demorada.\n"
+            "El navegador sigue verificando el intento. Esto no demuestra un fallo de envio. "
+            "No se iniciaran mas componentes ni se repetira el envio."
+        )
+        enqueue_telegram_alert(
+            dedupe_key=(f"whatsapp-confirmation:{job['job_key']}:"
+                        f"{'confirmed' if confirmed else 'delayed'}"),
+            payload={"message": f"{message}\n{target}", "alert_kind": "operational"},
+            settings=self.runtime_settings,
         )
 
     def _notify_preflight_blocked(

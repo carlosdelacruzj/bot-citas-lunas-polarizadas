@@ -175,7 +175,7 @@ Reglas vigentes:
 - los intentos distinguen preparacion, interaccion, confirmacion observada y
   confirmacion persistida; solo la preparacion demostrable puede quedar
   `failed`;
-- `uncertain` preserva contexto y nunca genera reintento automatico;
+- confirmacion DOM en lote, presupuestos coordinados y gracia acotada; eventos tardios completos cierran solo incidencias nuevas del mismo intento, sin reenvio y conservando timeout historico; validacion aislada aprobada, aceptacion natural pendiente; `uncertain` nunca se reintenta automaticamente;
 - conciliacion conserva el resultado tecnico; registro, album y postpago admiten reintento manual deduplicado de fallo total, con revision del chat si es incierto;
 - llegada al destinatario y lectura son afirmaciones separadas.
 

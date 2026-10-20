@@ -106,7 +106,9 @@ def _send_plain_text_message(
     _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-sent")
     logger.info("WhatsApp Web follow-up text message sent")
     identifiers = (
-        _outgoing_message_signatures(page, confirmed_only=True, expected_text=text)
+        _outgoing_message_signatures(
+            page, confirmed_only=True, expected_text=text, excluded=outgoing_signatures
+        )
         - outgoing_signatures
     )
     outgoing_id = next((value for value in identifiers if value.startswith("data-id:")), None)
