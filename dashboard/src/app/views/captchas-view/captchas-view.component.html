@@ -1,0 +1,953 @@
+<app-load-status [section]="captchasDomain.loads.cases" />
+<app-load-status [section]="captchasDomain.loads.quality" />
+<app-load-status [section]="captchasDomain.loads.history" />
+<app-load-status [section]="captchasDomain.loads.review" />
+<app-load-status [section]="captchasDomain.loads.summary" />
+<section class="captcha-dashboard" aria-labelledby="captcha-dashboard-title">
+  <div class="captcha-heading">
+    <div>
+      <p class="eyebrow">Comparación en tiempo real</p>
+      <h2 id="captcha-dashboard-title">Control de CAPTCHA</h2>
+      <p>La misma imagen frente a 2Captcha y tus modelos locales.</p>
+    </div>
+    <div class="captcha-heading-actions">
+      <button
+        type="button"
+        class="secondary"
+        (click)="captchasDomain.showAllPendingCaptchas()"
+      >
+        Todos los pendientes
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="captchasDomain.captchaState() === 'loading'"
+        (click)="captchasDomain.loadCaptchaData()"
+      >
+        Actualizar CAPTCHA
+      </button>
+    </div>
+  </div>
+
+  @if (captchasDomain.captchaSummary(); as summary) {
+    <div class="captcha-summary-strip" aria-label="Resumen de CAPTCHA">
+      <span class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
+        {{ summary.status === 'ok' ? 'Servicio activo' : presentationDomain.statusLabel(summary.status) }}
+      </span>
+      <strong>{{ summary.stats.events }} total</strong>
+      <span>{{ summary.stats.human_labeled }} validados</span>
+      <span class="{{ captchasDomain.captchaReviewTotal() ? 'warn' : 'good' }}">
+        {{ captchasDomain.captchaReviewTotal() }} prioritarios
+      </span>
+      <span>{{ captchasDomain.captchaPendingTotal() }} pendientes guardados</span>
+      <small
+        >{{ summary.models.length }} modelos · {{ summary.outbox.pending }} entregas en
+        cola</small
+      >
+    </div>
+  }
+
+  <nav class="captcha-workspace-switch" aria-label="Modo de trabajo CAPTCHA">
+    <button
+      type="button"
+      [class.active]="captchasDomain.captchaWorkspaceMode() === 'review'"
+      (click)="captchasDomain.showCaptchaWorkspace('review')"
+    >
+      Revisar
+      <span>{{ captchasDomain.captchaReviewTotal() }}</span>
+    </button>
+    <button
+      type="button"
+      [class.active]="captchasDomain.captchaWorkspaceMode() === 'history'"
+      (click)="captchasDomain.showCaptchaWorkspace('history')"
+    >
+      Historial
+      <span>{{ captchasDomain.captchaTotal() }}</span>
+    </button>
+    <button
+      type="button"
+      [class.active]="captchasDomain.captchaWorkspaceMode() === 'quality'"
+      (click)="captchasDomain.showCaptchaWorkspace('quality')"
+    >
+      Calidad
+      <span>{{ captchasDomain.captchaQuality()?.validated_images ?? 0 }}</span>
+    </button>
+  </nav>
+
+  @if (captchasDomain.captchaWorkspaceMode() === 'review') {
+    @if (captchasDomain.captchaState() === 'loading' && !captchasDomain.loads.review.updatedAt()) {
+      <section class="panel captcha-state" role="status">
+        Preparando la cola de revisión...
+      </section>
+    } @else if (captchasDomain.captchaState() === 'error' && !captchasDomain.loads.review.updatedAt()) {
+      <section class="notice bad captcha-state" role="alert">
+        <strong>No se pudo cargar la cola.</strong>
+        <span>{{ captchasDomain.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="captchasDomain.loadCaptchaData()">
+          Reintentar
+        </button>
+      </section>
+    } @else if (captchasDomain.activeCaptchaReview(); as event) {
+      <div class="captcha-review-progress">
+        <div>
+          <strong>{{ captchasDomain.captchaReviewPosition() + 1 }} de {{ captchasDomain.captchaReviewTotal() }}</strong>
+          <span
+            >{{ captchasDomain.captchaReviewReasonLabel(event) }} ·
+            {{ captchasDomain.captchaChoiceLabel(event) }} ·
+            {{ captchasDomain.captchaSourceLabel(event) }}</span
+          >
+        </div>
+        <small>Atajos: 1–4 elegir · Enter confirmar consenso · ← → navegar</small>
+      </div>
+
+      @if (captchasDomain.captchaReviewMessage()) {
+        <div class="notice neutral captcha-review-message" role="status">
+          {{ captchasDomain.captchaReviewMessage() }}
+        </div>
+      }
+
+      <article class="captcha-event-card captcha-review-focus">
+        <div class="captcha-event-topline">
+          <div>
+            <strong>{{ captchasDomain.captchaOrderLabel(event) }}</strong>
+            <span>{{
+              presentationDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+            }}</span>
+          </div>
+          <span class="badge warn">{{ captchasDomain.captchaReviewReasonLabel(event) }}</span>
+        </div>
+
+        <div class="captcha-focus-layout">
+          <a
+            class="captcha-image-link captcha-focus-image"
+            [href]="event.image_url"
+            target="_blank"
+            rel="noopener"
+            title="Abrir imagen original"
+          >
+            <img [src]="event.image_url" alt="CAPTCHA original" />
+            <span>Imagen original · abrir</span>
+          </a>
+
+          <section class="captcha-human-review">
+            <div class="captcha-review-intro">
+              <span class="eyebrow">Elige la respuesta válida</span>
+              @if (captchasDomain.captchaChoiceMode(event) === 'consensus') {
+                <strong>Todos los modelos coinciden</strong>
+                <small>Confirma con un clic o escribe otra respuesta.</small>
+              } @else if (captchasDomain.captchaChoiceMode(event) === 'majority') {
+                <strong>La mayoría de modelos coincide</strong>
+                <small>Escoge la lectura correcta.</small>
+              } @else if (captchasDomain.captchaChoiceMode(event) === 'plurality') {
+                <strong>Hay una coincidencia parcial</strong>
+                <small>Dos modelos coinciden, pero no forman mayoría.</small>
+              } @else {
+                <strong>Los modelos no llegaron a un acuerdo</strong>
+                <small>Ingresa manualmente los cinco caracteres.</small>
+              }
+            </div>
+
+            @if (captchasDomain.captchaChoiceMode(event) !== 'manual') {
+              <div class="captcha-suggestion-list">
+                @for (
+                  option of captchasDomain.captchaPredictionOptions(event);
+                  track option.answer;
+                  let index = $index
+                ) {
+                  <button
+                    type="button"
+                    class="captcha-suggestion {{
+                      captchasDomain.captchaSuggestionTone(event, option.answer)
+                    }}"
+                    [disabled]="captchasDomain.captchaSavingEventId() === event.event_id"
+                    (click)="captchasDomain.chooseCaptchaPrediction(event, option.answer)"
+                  >
+                    <span class="captcha-shortcut">{{ index + 1 }}</span>
+                    <strong>{{ option.answer }}</strong>
+                    <span>
+                      {{ option.modelNames.length }}
+                      {{ option.modelNames.length === 1 ? 'modelo' : 'modelos' }}
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+
+            <form
+              class="captcha-manual-review"
+              (submit)="$event.preventDefault(); captchasDomain.saveCaptchaHumanLabel(event)"
+            >
+              <label [for]="'reviewAnswer-' + event.event_id">
+                {{
+                  captchasDomain.captchaChoiceMode(event) === 'manual'
+                    ? 'Respuesta manual'
+                    : 'Otra respuesta'
+                }}
+              </label>
+              <div class="captcha-review-actions">
+                <input
+                  [id]="'reviewAnswer-' + event.event_id"
+                  [name]="'reviewAnswer-' + event.event_id"
+                  type="text"
+                  autocomplete="off"
+                  maxlength="5"
+                  placeholder="ABCDE"
+                  [ngModel]="captchasDomain.captchaDraft(event)"
+                  (ngModelChange)="captchasDomain.updateCaptchaDraft(event.event_id, $event)"
+                />
+                <button
+                  type="submit"
+                  class="secondary"
+                  [disabled]="captchasDomain.captchaSavingEventId() === event.event_id"
+                >
+                  {{
+                    captchasDomain.captchaSavingEventId() === event.event_id
+                      ? 'Guardando...'
+                      : 'Guardar manual'
+                  }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div class="captcha-comparison-grid compact">
+          @if (!captchasDomain.isObserverCaptcha(event)) {
+            <article class="captcha-answer external">
+              <span>2Captcha</span>
+              <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
+              <small>{{ captchasDomain.formatMilliseconds(event.external_solve_ms) }}</small>
+            </article>
+          }
+          @for (prediction of event.predictions; track prediction.model_name) {
+            <article class="captcha-answer {{ captchasDomain.captchaPredictionTone(event, prediction) }}">
+              <span>{{ captchasDomain.captchaModelLabel(prediction.model_name) }}</span>
+              <strong>{{ prediction.prediction }}</strong>
+              <small>{{ captchasDomain.formatMilliseconds(prediction.inference_ms) }}</small>
+            </article>
+          }
+        </div>
+      </article>
+
+      <nav class="captcha-review-navigation" aria-label="Navegar cola de CAPTCHA">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="captchasDomain.captchaReviewPosition() === 0"
+          (click)="captchasDomain.moveCaptchaReview(-1)"
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="captchasDomain.captchaReviewPosition() + 1 >= captchasDomain.captchaReviewQueue().length"
+          (click)="captchasDomain.moveCaptchaReview(1)"
+        >
+          Omitir por ahora
+        </button>
+      </nav>
+    } @else {
+      <section class="panel captcha-empty-review">
+        <span aria-hidden="true">✓</span>
+        <h3>Revisión prioritaria completa</h3>
+        <p>
+          No quedan decisiones V6, anomalías, desacuerdos ni muestras de control pendientes.
+          Los demás CAPTCHA permanecen guardados.
+        </p>
+        <button type="button" class="secondary" (click)="captchasDomain.showAllPendingCaptchas()">
+          Ver todos los pendientes
+        </button>
+      </section>
+    }
+  } @else if (captchasDomain.captchaWorkspaceMode() === 'history') {
+    <section class="panel captcha-controls" aria-label="Filtros de CAPTCHA">
+      <form class="captcha-search" (submit)="$event.preventDefault(); captchasDomain.applyCaptchaFilters()">
+        <label class="filter captcha-query">
+          Buscar orden, run o respuesta
+          <input
+            name="captchaSearch"
+            type="search"
+            placeholder="Ej. order-09045304 o 9M9FH"
+            [ngModel]="captchasDomain.captchaSearch()"
+            (ngModelChange)="captchasDomain.captchaSearch.set($event)"
+          />
+        </label>
+        <button type="submit" class="primary">Buscar</button>
+      </form>
+
+      <div class="captcha-history-toolbar">
+        <div class="captcha-filter-chips" aria-label="Estado de revisión humana">
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="captchasDomain.captchaReviewStatus() === 'all'"
+            (click)="captchasDomain.changeCaptchaReviewStatus('all')"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="captchasDomain.captchaReviewStatus() === 'pending'"
+            (click)="captchasDomain.changeCaptchaReviewStatus('pending')"
+          >
+            Pendientes
+          </button>
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="captchasDomain.captchaReviewStatus() === 'validated'"
+            (click)="captchasDomain.changeCaptchaReviewStatus('validated')"
+          >
+            Validados
+          </button>
+        </div>
+        <button type="button" class="secondary" (click)="captchasDomain.toggleCaptchaHistoryFilters()">
+          Filtros{{
+            captchasDomain.captchaActiveFilterCount() ? ' (' + captchasDomain.captchaActiveFilterCount() + ')' : ''
+          }}
+        </button>
+      </div>
+
+      @if (captchasDomain.captchaHistoryFiltersOpen()) {
+        <div class="captcha-filter-row">
+          <div class="captcha-filter-chips" aria-label="Coincidencia con 2Captcha">
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchasDomain.captchaAgreement() === 'all'"
+              (click)="captchasDomain.setCaptchaAgreement('all')"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchasDomain.captchaAgreement() === 'match'"
+              (click)="captchasDomain.setCaptchaAgreement('match')"
+            >
+              Coinciden
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchasDomain.captchaAgreement() === 'mismatch'"
+              (click)="captchasDomain.setCaptchaAgreement('mismatch')"
+            >
+              Difieren
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchasDomain.captchaAgreement() === 'pending'"
+              (click)="captchasDomain.setCaptchaAgreement('pending')"
+            >
+              Pendientes
+            </button>
+          </div>
+
+          <label class="filter">
+            Origen
+            <select
+              name="captchaSource"
+              [ngModel]="captchasDomain.captchaSource()"
+              (ngModelChange)="captchasDomain.changeCaptchaSource($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="reservation">Reservas con cliente</option>
+              <option value="observer">Observador local</option>
+            </select>
+          </label>
+          <label class="filter">
+            Portal
+            <select
+              name="captchaPortalStatus"
+              [ngModel]="captchasDomain.captchaPortalStatus()"
+              (ngModelChange)="captchasDomain.changeCaptchaPortalStatus($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="accepted">Aceptados</option>
+              <option value="rejected">Rechazados</option>
+              <option value="unverified">Sin validar</option>
+            </select>
+          </label>
+        </div>
+      }
+    </section>
+
+    @if (captchasDomain.captchaState() === 'loading' && !captchasDomain.loads.history.updatedAt()) {
+      <section class="panel captcha-state" role="status">
+        Cargando evidencias CAPTCHA...
+      </section>
+    } @else if (captchasDomain.captchaState() === 'error' && !captchasDomain.loads.history.updatedAt()) {
+      <section class="notice bad captcha-state" role="alert">
+        <strong>No se pudo cargar esta vista.</strong>
+        <span>{{ captchasDomain.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="captchasDomain.loadCaptchaData()">
+          Reintentar
+        </button>
+      </section>
+    } @else {
+      <div class="captcha-results-meta">
+        <strong>{{ captchasDomain.captchaTotal() }} resultados</strong>
+        <span>Página {{ captchasDomain.captchaPage() }} de {{ captchasDomain.captchaTotalPages() }}</span>
+      </div>
+
+      @if (captchasDomain.captchaReviewMessage()) {
+        <div class="notice neutral captcha-review-message" role="status">
+          {{ captchasDomain.captchaReviewMessage() }}
+        </div>
+      }
+
+      <div class="captcha-event-list">
+        @for (event of captchasDomain.captchaEvents(); track event.event_id) {
+          <article class="captcha-event-card captcha-history-card">
+            <div class="captcha-event-topline">
+              <div>
+                <strong>{{ captchasDomain.captchaOrderLabel(event) }}</strong>
+                <span>
+                  {{
+                    presentationDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+                  }}
+                  · intento {{ event.metadata.attempt ?? 1 }}
+                </span>
+              </div>
+              <div class="captcha-statuses">
+                <span class="badge {{ captchasDomain.captchaAgreementTone(event) }}">
+                  {{ captchasDomain.captchaAgreementLabel(event) }}
+                </span>
+                <span class="badge {{ captchasDomain.captchaPortalTone(event) }}">
+                  {{ captchasDomain.captchaPortalLabel(event) }}
+                </span>
+                <span class="badge {{ event.human_label ? 'good' : 'neutral' }}">
+                  {{
+                    event.human_label
+                      ? 'Validado: ' + event.human_label.answer
+                      : 'Sin validar por ti'
+                  }}
+                </span>
+                <span class="badge neutral">
+                  Total local: {{ captchasDomain.formatMilliseconds(captchasDomain.captchaLocalTotalMs(event)) }}
+                </span>
+              </div>
+            </div>
+
+            <details class="captcha-history-details">
+              <summary>
+                <img [src]="event.image_url" alt="" loading="lazy" />
+                <div>
+                  <strong>{{ event.human_label?.answer ?? 'Sin validar' }}</strong>
+                  <span
+                    >{{ captchasDomain.captchaChoiceLabel(event) }} · {{ captchasDomain.captchaSourceLabel(event) }}</span
+                  >
+                </div>
+                <span>{{ captchasDomain.formatMilliseconds(captchasDomain.captchaLocalTotalMs(event)) }}</span>
+                <small>Ver detalles</small>
+              </summary>
+
+              <div class="captcha-event-body">
+                <a
+                  class="captcha-image-link"
+                  [href]="event.image_url"
+                  target="_blank"
+                  rel="noopener"
+                  title="Abrir imagen original"
+                >
+                  <img [src]="event.image_url" alt="CAPTCHA original" loading="lazy" />
+                  <span>Imagen original · abrir</span>
+                </a>
+
+                <div class="captcha-review-column">
+                  <section class="captcha-human-review">
+                    <div class="captcha-review-intro">
+                      <span class="eyebrow">Elige la respuesta válida</span>
+                      @if (captchasDomain.captchaChoiceMode(event) === 'consensus') {
+                        <strong>Todos los modelos coinciden</strong>
+                        <small>Confirma con un clic o escribe otra respuesta.</small>
+                      } @else if (captchasDomain.captchaChoiceMode(event) === 'majority') {
+                        <strong>La mayoría de modelos coincide</strong>
+                        <small
+                          >Escoge la lectura correcta; luego se compararán todos.</small
+                        >
+                      } @else if (captchasDomain.captchaChoiceMode(event) === 'plurality') {
+                        <strong>Hay una coincidencia parcial</strong>
+                        <small>Dos modelos coinciden, pero no forman mayoría.</small>
+                      } @else {
+                        <strong>Los modelos no llegaron a un acuerdo</strong>
+                        <small
+                          >Lee la imagen e ingresa manualmente los cinco caracteres.</small
+                        >
+                      }
+                    </div>
+
+                    @if (captchasDomain.captchaChoiceMode(event) !== 'manual') {
+                      <div class="captcha-suggestion-list">
+                        @for (
+                          option of captchasDomain.captchaPredictionOptions(event);
+                          track option.answer
+                        ) {
+                          <button
+                            type="button"
+                            class="captcha-suggestion {{
+                              captchasDomain.captchaSuggestionTone(event, option.answer)
+                            }}"
+                            [disabled]="captchasDomain.captchaSavingEventId() === event.event_id"
+                            (click)="captchasDomain.chooseCaptchaPrediction(event, option.answer)"
+                          >
+                            <strong>{{ option.answer }}</strong>
+                            <span>
+                              {{ option.modelNames.length }}
+                              {{ option.modelNames.length === 1 ? 'modelo' : 'modelos' }}
+                            </span>
+                            <small>{{ option.modelNames.join(' · ') }}</small>
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <form
+                      class="captcha-manual-review"
+                      (submit)="$event.preventDefault(); captchasDomain.saveCaptchaHumanLabel(event)"
+                    >
+                      <label [for]="'humanAnswer-' + event.event_id">
+                        {{
+                          captchasDomain.captchaChoiceMode(event) === 'manual'
+                            ? 'Respuesta manual'
+                            : 'Otra respuesta'
+                        }}
+                      </label>
+                      <div class="captcha-review-actions">
+                        <input
+                          [id]="'humanAnswer-' + event.event_id"
+                          [name]="'humanAnswer-' + event.event_id"
+                          type="text"
+                          inputmode="text"
+                          autocomplete="off"
+                          maxlength="5"
+                          placeholder="ABCDE"
+                          aria-label="Respuesta humana del CAPTCHA"
+                          [ngModel]="captchasDomain.captchaDraft(event)"
+                          (ngModelChange)="captchasDomain.updateCaptchaDraft(event.event_id, $event)"
+                        />
+                        <button
+                          type="submit"
+                          class="secondary"
+                          [disabled]="captchasDomain.captchaSavingEventId() === event.event_id"
+                        >
+                          {{
+                            captchasDomain.captchaSavingEventId() === event.event_id
+                              ? 'Guardando...'
+                              : 'Guardar manual'
+                          }}
+                        </button>
+                      </div>
+                    </form>
+
+                    @if (captchasDomain.pendingCaptchaCorrection(event.event_id); as correction) {
+                      <div class="notice warn captcha-correction-confirmation" role="alert">
+                        <div>
+                          <strong
+                            >¿Cambiar {{ correction.previousAnswer }} por
+                            {{ correction.nextAnswer }}?</strong
+                          >
+                          <small
+                            >La etiqueta actual seguirá intacta hasta que confirmes.</small
+                          >
+                        </div>
+                        <div class="button-row">
+                          <button
+                            type="button"
+                            class="danger"
+                            [disabled]="captchasDomain.captchaSavingEventId() === event.event_id"
+                            (click)="captchasDomain.confirmCaptchaCorrection(event)"
+                          >
+                            Confirmar cambio
+                          </button>
+                          <button
+                            type="button"
+                            class="secondary"
+                            (click)="captchasDomain.cancelCaptchaCorrection(event)"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </section>
+
+                  <div class="captcha-comparison-grid">
+                    @if (!captchasDomain.isObserverCaptcha(event)) {
+                      <article class="captcha-answer external">
+                        <span>2Captcha</span>
+                        <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
+                        <small>{{ captchasDomain.formatMilliseconds(event.external_solve_ms) }}</small>
+                      </article>
+                    }
+
+                    @for (prediction of event.predictions; track prediction.model_name) {
+                      <article
+                        class="captcha-answer {{
+                          captchasDomain.captchaPredictionTone(event, prediction)
+                        }}"
+                      >
+                        <span>{{ captchasDomain.captchaModelLabel(prediction.model_name) }}</span>
+                        <strong>{{ prediction.prediction }}</strong>
+                        <small>{{ captchasDomain.formatMilliseconds(prediction.inference_ms) }}</small>
+                        <small>
+                          Confianza {{ captchasDomain.formatConfidence(prediction.mean_confidence) }} ·
+                          mínima
+                          {{ captchasDomain.formatConfidence(prediction.min_char_confidence) }}
+                        </small>
+                      </article>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <details class="captcha-details">
+                <summary>Detalles técnicos</summary>
+                <dl>
+                  <div>
+                    <dt>Evento</dt>
+                    <dd>{{ event.event_id }}</dd>
+                  </div>
+                  <div>
+                    <dt>Run</dt>
+                    <dd>{{ event.metadata.run_id ?? 'Sin run' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Origen</dt>
+                    <dd>{{ event.metadata.source_image_kind ?? 'Sin dato' }}</dd>
+                  </div>
+                </dl>
+              </details>
+            </details>
+          </article>
+        } @empty {
+          <section class="panel captcha-state">
+            No hay CAPTCHA que coincidan con los filtros actuales.
+          </section>
+        }
+      </div>
+
+      <div class="captcha-history-footer">
+        <label class="filter">
+          Resultados por página
+          <select
+            name="captchaPageSize"
+            [ngModel]="captchasDomain.captchaPageSize()"
+            (ngModelChange)="captchasDomain.changeCaptchaPageSize($event)"
+          >
+            <option [ngValue]="12">12</option>
+            <option [ngValue]="24">24</option>
+            <option [ngValue]="48">48</option>
+          </select>
+        </label>
+      </div>
+
+      @if (captchasDomain.captchaTotalPages() > 1) {
+        <nav class="captcha-pagination" aria-label="Páginas de CAPTCHA">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="captchasDomain.captchaPage() === 1"
+            (click)="captchasDomain.goToCaptchaPage(captchasDomain.captchaPage() - 1)"
+          >
+            Anterior
+          </button>
+          @for (page of captchasDomain.captchaPageNumbers(); track page) {
+            <button
+              type="button"
+              class="page-button"
+              [class.active]="page === captchasDomain.captchaPage()"
+              [attr.aria-current]="page === captchasDomain.captchaPage() ? 'page' : null"
+              (click)="captchasDomain.goToCaptchaPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="captchasDomain.captchaPage() === captchasDomain.captchaTotalPages()"
+            (click)="captchasDomain.goToCaptchaPage(captchasDomain.captchaPage() + 1)"
+          >
+            Siguiente
+          </button>
+        </nav>
+      }
+    }
+  } @else {
+    @if (captchasDomain.captchaQualityState() === 'loading' && !captchasDomain.captchaQuality()) {
+      <app-view-state
+        state="loading"
+        title="Calculando calidad"
+        message="Comparando las validaciones humanas con cada modelo…"
+        [skeletonRows]="4"
+      />
+    } @else if (captchasDomain.captchaQualityState() === 'error' && !captchasDomain.captchaQuality()) {
+      <app-view-state
+        state="error"
+        title="No se pudo calcular la calidad"
+        [message]="captchasDomain.captchaQualityError() ?? 'Intenta nuevamente.'"
+        (retry)="captchasDomain.loadCaptchaQuality()"
+      />
+    } @else if (captchasDomain.captchaQuality(); as quality) {
+      @if (captchasDomain.captchaQualityError()) {
+        <app-view-state
+          state="stale"
+          title="Mostrando la última medición disponible"
+          [message]="captchasDomain.captchaQualityError() ?? 'No se pudo cargar la revisión de calidad.'"
+          [compact]="true"
+          (retry)="captchasDomain.loadCaptchaQuality()"
+        />
+      }
+
+      <div class="captcha-quality-actions">
+        <div>
+          <strong>Calidad con referencia humana</strong>
+          <span>Cada imagen cuenta una vez, aunque aparezca en varias corridas.</span>
+        </div>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="captchasDomain.captchaDatasetExporting() || !quality.validated_images"
+          (click)="captchasDomain.exportCaptchaDataset()"
+        >
+          {{ captchasDomain.captchaDatasetExporting() ? 'Preparando ZIP…' : 'Exportar dataset' }}
+        </button>
+      </div>
+
+      <div class="captcha-kpis captcha-quality-kpis" aria-label="Indicadores de calidad CAPTCHA">
+        <article>
+          <span>Validados</span>
+          <strong>{{ quality.validated_images }}</strong>
+          <small>Imágenes con lectura humana</small>
+        </article>
+        <article>
+          <span>Mejor exactitud</span>
+          @if (captchasDomain.captchaQualityBestModel(); as bestModel) {
+            <strong>{{ captchasDomain.captchaQualityAccuracy(bestModel.accuracy) }}</strong>
+            <small>{{ captchasDomain.captchaModelLabel(bestModel.model_name) }} · {{ bestModel.evaluated }} casos</small>
+          } @else {
+            <strong>Sin dato</strong>
+            <small>Faltan validaciones</small>
+          }
+        </article>
+        <article>
+          <span>p90 modelos locales</span>
+          <strong>{{ captchasDomain.formatMilliseconds(quality.local_total_ms.p90) }}</strong>
+          <small>Suma de los modelos disponibles por imagen</small>
+        </article>
+        <article>
+          <span>p90 de 2Captcha</span>
+          <strong>{{ captchasDomain.formatMilliseconds(quality.external_solver_ms.p90) }}</strong>
+          <small>{{ quality.external_solver_ms.samples }} respuestas externas</small>
+        </article>
+      </div>
+
+      @if (!quality.trend_ready) {
+        <div class="notice neutral captcha-quality-sample-note" role="status">
+          <strong>Muestra todavía pequeña.</strong>
+          <span>
+            Hay {{ quality.validated_images }} validaciones en {{ quality.weeks_observed }}
+            {{ quality.weeks_observed === 1 ? 'semana' : 'semanas' }}. La tendencia se habilita con
+            al menos 30 imágenes y dos semanas.
+          </span>
+        </div>
+      }
+
+      <section class="panel captcha-quality-panel">
+        <div class="captcha-quality-section-heading">
+          <div>
+            <h3>Rendimiento por modelo</h3>
+            <p>Exactitud humana, confianza y latencia sobre la misma muestra.</p>
+          </div>
+        </div>
+        <div class="captcha-quality-table-wrap">
+          <table class="captcha-quality-table">
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Muestra</th>
+                <th>Exactitud</th>
+                <th>Confianza</th>
+                <th>Promedio</th>
+                <th>p50</th>
+                <th>p90</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (model of quality.models; track model.model_name) {
+                <tr>
+                  <td><strong>{{ captchasDomain.captchaModelLabel(model.model_name) }}</strong></td>
+                  <td>{{ model.correct }}/{{ model.evaluated }}</td>
+                  <td>
+                    <span class="badge {{ captchasDomain.captchaQualityModelTone(model) }}">
+                      {{ captchasDomain.captchaQualityAccuracy(model.accuracy) }}
+                    </span>
+                  </td>
+                  <td>
+                    {{ captchasDomain.formatConfidence(model.confidence.average) }}
+                    @if (model.confidence.wrong_average !== null) {
+                      <small>Error: {{ captchasDomain.formatConfidence(model.confidence.wrong_average) }}</small>
+                    }
+                  </td>
+                  <td>{{ captchasDomain.formatMilliseconds(model.inference_ms.average) }}</td>
+                  <td>{{ captchasDomain.formatMilliseconds(model.inference_ms.p50) }}</td>
+                  <td>{{ captchasDomain.formatMilliseconds(model.inference_ms.p90) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="captcha-quality-two-column">
+        <section class="panel captcha-quality-panel">
+          <div class="captcha-quality-section-heading">
+            <div>
+              <h3>Acuerdo entre modelos</h3>
+              <p>Separa unanimidad de mayoría para no ocultar decisiones incorrectas.</p>
+            </div>
+          </div>
+          <div class="captcha-quality-ensemble">
+            <article><span>Unanimidad</span><strong>{{ quality.ensemble.unanimous }}</strong></article>
+            <article class="{{ quality.ensemble.unanimous_wrong ? 'bad' : 'good' }}">
+              <span>Consenso incorrecto</span><strong>{{ quality.ensemble.unanimous_wrong }}</strong>
+            </article>
+            <article><span>Mayoría 2–1</span><strong>{{ quality.ensemble.majority }}</strong></article>
+            <article class="{{ quality.ensemble.majority_wrong ? 'warn' : 'good' }}">
+              <span>Mayoría incorrecta</span><strong>{{ quality.ensemble.majority_wrong }}</strong>
+            </article>
+            <article><span>Todos diferentes</span><strong>{{ quality.ensemble.all_different }}</strong></article>
+          </div>
+        </section>
+
+        <section class="panel captcha-quality-panel">
+          <div class="captcha-quality-section-heading">
+            <div>
+              <h3>Evolución semanal</h3>
+              <p>Exactitud por semana ISO y cantidad realmente validada.</p>
+            </div>
+          </div>
+          @if (quality.weekly.length) {
+            <div class="captcha-quality-week-list">
+              @for (week of quality.weekly; track week.week) {
+                <article>
+                  <div><strong>{{ week.week }}</strong><span>{{ week.validated }} validados</span></div>
+                  <div class="captcha-quality-week-models">
+                    @for (model of quality.models; track model.model_name) {
+                      @if (captchasDomain.captchaQualityWeeklyModel(week, model.model_name); as weeklyModel) {
+                        <span>
+                          {{ captchasDomain.captchaModelLabel(model.model_name) }}
+                          <strong>{{ captchasDomain.captchaQualityAccuracy(weeklyModel.accuracy) }}</strong>
+                        </span>
+                      }
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <app-view-state
+              state="empty"
+              title="Sin evolución disponible"
+              message="Las semanas aparecerán cuando existan validaciones humanas."
+              [compact]="true"
+            />
+          }
+        </section>
+      </div>
+
+      <section class="panel captcha-quality-panel captcha-quality-cases">
+        <div class="captcha-quality-section-heading">
+          <div>
+            <h3>Casos útiles para mejorar</h3>
+            <p>Prioriza errores y desacuerdos sin revisar nuevamente todo el historial.</p>
+          </div>
+          @if (captchasDomain.captchaQualityCases(); as casesPage) {
+            <span>{{ casesPage.pagination.total }} casos</span>
+          }
+        </div>
+        <div class="captcha-filter-chips captcha-quality-case-filters">
+          @for (filter of captchasDomain.captchaQualityCaseFilters; track filter.value) {
+            <button
+              type="button"
+              [class.active]="captchasDomain.captchaQualityCaseType() === filter.value"
+              (click)="captchasDomain.changeCaptchaQualityCaseType(filter.value)"
+            >
+              {{ filter.label }}
+              <span>{{ quality.useful_case_counts[filter.value] }}</span>
+            </button>
+          }
+        </div>
+
+        @if (captchasDomain.captchaQualityCases(); as casesPage) {
+          @if (casesPage.cases.length) {
+            <div class="captcha-quality-case-list">
+              @for (item of casesPage.cases; track item.event_id) {
+                <article>
+                  <a [href]="item.image_url" target="_blank" rel="noopener">
+                    <img [src]="item.image_url" alt="CAPTCHA validado {{ item.human_answer }}" loading="lazy" />
+                  </a>
+                  <div class="captcha-quality-case-copy">
+                    <div>
+                      <strong>{{ captchasDomain.captchaQualityCaseSummary(item) }}</strong>
+                      <span>{{ presentationDomain.formatDateTime(item.received_at_utc) }}</span>
+                    </div>
+                    <div class="captcha-quality-case-answers">
+                      <span class="good">Humano <strong>{{ item.human_answer }}</strong></span>
+                      <span [class.bad]="item.consensus_answer !== item.human_answer">
+                        Voto {{ item.consensus_answer }} ({{ item.vote_count }})
+                      </span>
+                      @for (prediction of item.predictions; track prediction.model_name) {
+                        <span [class.bad]="prediction.prediction !== item.human_answer">
+                          {{ captchasDomain.captchaModelLabel(prediction.model_name) }}
+                          <strong>{{ prediction.prediction }}</strong>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <app-view-state
+              state="empty"
+              title="No hay casos en esta categoría"
+              message="Es una buena señal: ninguna validación coincide con este filtro."
+              [compact]="true"
+            />
+          }
+
+          @if (casesPage.pagination.total_pages > 1) {
+            <nav class="captcha-pagination" aria-label="Páginas de casos de calidad">
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="casesPage.pagination.page === 1"
+                (click)="captchasDomain.goToCaptchaQualityCasePage(casesPage.pagination.page - 1)"
+              >Anterior</button>
+              @for (page of captchasDomain.captchaQualityCasePageNumbers(); track page) {
+                <button
+                  type="button"
+                  class="page-button"
+                  [class.active]="page === casesPage.pagination.page"
+                  (click)="captchasDomain.goToCaptchaQualityCasePage(page)"
+                >{{ page }}</button>
+              }
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="casesPage.pagination.page === casesPage.pagination.total_pages"
+                (click)="captchasDomain.goToCaptchaQualityCasePage(casesPage.pagination.page + 1)"
+              >Siguiente</button>
+            </nav>
+          }
+        }
+      </section>
+    }
+  }
+</section>

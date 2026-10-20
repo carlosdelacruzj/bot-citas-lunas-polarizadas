@@ -1,0 +1,586 @@
+from __future__ import annotations
+
+import logging
+import re
+import threading
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from appointment_bot.core.models import RunReport
+from appointment_bot.core.statuses import ResultStatus
+from appointment_bot.reservation_engine.timings import TIMING_DETAILS_KEY
+from appointment_bot.services.detail_helpers import (
+    LIMA_TZ,
+    detail_text,
+    detection_origin,
+    format_lima_datetime,
+    parse_datetime,
+)
+from appointment_bot.utils.sanitization import sanitize_text
+
+logger = logging.getLogger(__name__)
+
+OPTIMIZATION_LOG_DIRECTORY = Path("reports/evidence/history/reservation-optimization")
+PARTIAL_AVAILABILITY_LOG_DIRECTORY = Path("reports/evidence/history/partial-availability")
+ORDER_IDENTIFIER_PATTERN = re.compile(r"(?i)\border-[a-z0-9_*.-]+\b")
+REJECTED_AFTER_SUBMISSION = {"captcha_invalid", "slot_lost", "rejected"}
+OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
+
+_LAST_ORDER_FINISH: tuple[str, datetime] | None = None
+_LOG_WRITE_LOCK = threading.RLock()
+
+
+def append_optimization_case(report: RunReport) -> None:
+    """Append one curated optimization entry when a run reached a useful outcome."""
+    global _LAST_ORDER_FINISH
+
+    with _LOG_WRITE_LOCK:
+        switch_context = _switch_context(report, _LAST_ORDER_FINISH)
+        if report.order_id and report.finished_at:
+            finished_at = _parse_datetime(report.finished_at)
+            if finished_at is not None:
+                _LAST_ORDER_FINISH = (report.order_id, finished_at)
+        entry = _entry_for_report(report, switch_context=switch_context)
+        if entry is not None:
+            _append_monthly_entry(
+                _monthly_log_path(OPTIMIZATION_LOG_DIRECTORY, report.finished_at),
+                entry,
+                run_id=report.run_id,
+                header=_document_header(),
+            )
+
+
+def append_partial_availability_case(report: RunReport) -> None:
+    """Append one curated entry for partial or rule-blocked availability."""
+    entry = _partial_entry_for_report(report)
+    if entry is None:
+        return
+
+    with _LOG_WRITE_LOCK:
+        _append_monthly_entry(
+            _monthly_log_path(PARTIAL_AVAILABILITY_LOG_DIRECTORY, report.finished_at),
+            entry,
+            run_id=report.run_id,
+            header=_partial_document_header(),
+        )
+
+
+def _append_monthly_entry(
+    path: Path,
+    entry: str,
+    *,
+    run_id: str | None,
+    header: str,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    if run_id and f"- Run: {run_id}" in existing:
+        return
+    with path.open("a", encoding="utf-8", newline="\n") as file:
+        if not existing:
+            file.write(header)
+        elif not existing.endswith("\n"):
+            file.write("\n")
+        file.write(entry)
+
+
+def _partial_entry_for_report(report: RunReport) -> str | None:
+    if not report.run_id or not report.order_id:
+        return None
+    details = report.details or {}
+    if not _is_partial_availability_case(report, details):
+        return None
+
+    title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
+    timing = details.get(TIMING_DETAILS_KEY)
+    timing = timing if isinstance(timing, dict) else {}
+    slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
+    lines = [
+        f"## {title_time} - {_masked_order_id(report.order_id)} - {report.status.value}\n\n",
+        f"- Run: {report.run_id}\n",
+        f"- Orden: {_masked_order_id(details.get('orden') or report.order_id)}\n",
+        f"- Cliente: {_masked_presence(details.get('cliente'))}\n",
+        f"- Cuenta: {_text(details.get('cuenta')) or 'no registrada'}\n",
+        f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
+        f"- Fecha detectada: {_text(details.get('fecha') or details.get('appointment_date'))}\n",
+        f"- Hora detectada: {_text(details.get('hora') or details.get('appointment_hour'))}\n",
+        f"- Cupos observados: {slots_text}\n",
+        f"- Opciones fecha: {_text(_list_text(details.get('date_options')))}\n",
+        f"- Opciones hora: {_text(_list_text(details.get('hour_options')))}\n",
+        f"- Origen deteccion: {detection_origin(details)}\n",
+        f"- Resultado: {_text(report.message)}\n",
+        "- Reglas/decision:\n",
+        f"  - Bloqueado por regla: {_bool_text(details.get('blocked_by_order_rule'))}\n",
+        "  - Seleccionado solo para evidencia: "
+        f"{_bool_text(details.get('blocked_selected_for_evidence'))}\n",
+        f"  - Outcome: {_text(details.get('submission_outcome')) or 'no aplicaba'}\n",
+        f"  - Fecha del dia actual bloqueada: {_today_blocked_text(details)}\n",
+        "- Contexto tecnico:\n",
+        f"  - Modo monitoreo: {_text(details.get('monitoring_mode'))}\n",
+        f"  - Reload probe: {_bool_text(details.get('reload_probe'))}\n",
+        f"  - Fetch probe: {_bool_text(details.get('fetch_probe'))}\n",
+        f"  - Refresco sede confirmado: {_bool_text(details.get('site_refresh_confirmed'))}\n",
+        f"  - Refresco sede cambio opciones: {_bool_text(details.get('site_refresh_changed'))}\n",
+        f"  - Refresco sede elapsed: {_milliseconds(details.get('site_refresh_elapsed_ms'))}\n",
+        f"  - Duracion corrida: {_duration_text(report.duration_seconds)}\n",
+        f"  - Seleccion fecha/hora: {_duration(timing, 'selection_seconds')}\n",
+        "- Evidencia:\n",
+        f"  - Screenshot principal: {_display_evidence_path(report.screenshot_path)}\n",
+    ]
+    diagnostic_artifacts = details.get("diagnostic_artifacts")
+    if isinstance(diagnostic_artifacts, dict):
+        for key, values in diagnostic_artifacts.items():
+            if not isinstance(values, list):
+                continue
+            for value in values:
+                path = _display_evidence_path(value)
+                if path != "no registrado":
+                    lines.append(f"  - Diagnostico {key}: {path}\n")
+    for path in _extra_screenshots(report):
+        lines.append(f"  - Screenshot adicional: {_text(path)}\n")
+    lines.extend(
+        [
+            "- Observacion tecnica:\n",
+            f"  - {_partial_technical_observation(report, details)}\n\n",
+        ]
+    )
+    return "".join(lines)
+
+
+def _is_partial_availability_case(report: RunReport, details: dict[str, Any]) -> bool:
+    status = ResultStatus(report.status)
+    if status != ResultStatus.PARTIAL:
+        return False
+    date_text = _text(details.get("fecha") or details.get("appointment_date"))
+    hour_text = _text(details.get("hora") or details.get("appointment_hour"))
+    if _looks_like_no_slots(date_text) and _looks_like_no_slots(hour_text):
+        return False
+    return bool(
+        date_text or hour_text or details.get("date_options") or details.get("hour_options")
+    )
+
+
+def _today_blocked_text(details: dict[str, Any]) -> str:
+    if details.get("blocked_by_current_day") is True:
+        return "si"
+    date_text = _text(details.get("fecha") or details.get("appointment_date"))
+    if not date_text:
+        return "no registrado"
+    finished_today = datetime.now(LIMA_TZ).strftime("%d/%m/%Y")
+    return "probable" if finished_today in date_text else "no registrado"
+
+
+def _partial_technical_observation(report: RunReport, details: dict[str, Any]) -> str:
+    notes: list[str] = []
+    origin = detection_origin(details)
+    date_text = _text(details.get("fecha") or details.get("appointment_date"))
+    hour_text = _text(details.get("hora") or details.get("appointment_hour"))
+    if origin == "fetch_probe":
+        notes.append(
+            "La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales."
+        )
+    elif origin == "reload_probe":
+        notes.append("La senal parcial aparecio despues de reload_probe.")
+    else:
+        notes.append("La senal parcial fue visible por el flujo normal.")
+    if date_text and _looks_like_no_slots(hour_text):
+        notes.append("Aparecio fecha sin hora seleccionable.")
+    if details.get("blocked_by_order_rule"):
+        notes.append("No se reservo porque la disponibilidad no cumplia reglas.")
+    return " ".join(notes) or _text(report.message)
+
+
+def _entry_for_report(
+    report: RunReport,
+    *,
+    switch_context: str | None,
+) -> str | None:
+    if not report.run_id or not report.order_id or not _is_relevant_case(report):
+        return None
+
+    details = report.details or {}
+    timing = details.get(TIMING_DETAILS_KEY)
+    timing = timing if isinstance(timing, dict) else {}
+    captcha_solver_label = _captcha_solver_label(details)
+    slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
+    title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
+    heading = (
+        f"## {title_time} - {_masked_order_id(report.order_id)} - "
+        f"{report.status.value}\n\n"
+    )
+    lines = [
+        heading,
+        f"- Run: {report.run_id}\n",
+        "- Corrida/attempt: "
+        f"{_text(details.get('observer_attempt') or details.get('attempt')) or 'no registrado'}\n",
+        f"- Sede: {_text(details.get('sede') or details.get('site')) or 'no registrada'}\n",
+        f"- Cita observada: {_appointment_text(details)}\n",
+        f"- Cupos observados: {slots_text}\n",
+        f"- Origen deteccion: {detection_origin(details)}\n",
+        f"- Resultado: {_result_summary(report)}\n",
+        f"- Confirmacion posterior: {_post_confirmation(details)}\n",
+        "- Tiempos:\n",
+        f"  - Cupo detectado -> fin reserva: {_duration(timing, 'total_from_available_seconds')}\n",
+        f"  - Seleccion fecha/hora: {_duration(timing, 'selection_seconds')}\n",
+        f"  - Imagen CAPTCHA: {_duration(timing, 'captcha_image_seconds')}\n",
+        f"  - {captcha_solver_label}: {_duration(timing, 'captcha_solver_seconds')}\n",
+        f"  - Rellenar campo CAPTCHA: {_duration(timing, 'captcha_field_fill_seconds')}\n",
+        f"  - Validacion final DOM: {_duration(timing, 'pre_click_validation_seconds')}\n",
+        f"  - Persistir intencion: {_duration(timing, 'submission_intent_seconds')}\n",
+        f"  - Llenar CAPTCHA -> click: {_duration(timing, 'captcha_fill_to_click_seconds')}\n",
+        f"  - Click -> respuesta portal: {_duration(timing, 'click_to_portal_response_seconds')}\n",
+        "  - Click -> screenshot confirmacion: "
+        f"{_duration(timing, 'click_to_confirmation_screenshot_seconds')}\n",
+        "- Contexto operativo:\n",
+        "  - Modo monitoreo: "
+        f"{_text(details.get('monitoring_mode')) or 'no registrado'}\n",
+        f"  - Reload probe: {_bool_text(details.get('reload_probe'))}\n",
+        f"  - Refresco sede confirmado: {_bool_text(details.get('site_refresh_confirmed'))}\n",
+        f"  - Refresco sede cambio opciones: {_bool_text(details.get('site_refresh_changed'))}\n",
+        f"  - Refresco sede elapsed: {_milliseconds(details.get('site_refresh_elapsed_ms'))}\n",
+    ]
+    selection_observation = details.get("selection_observation")
+    if isinstance(selection_observation, dict):
+        lines.extend(
+            [
+                "  - Estabilizacion hora: "
+                f"{_text(selection_observation.get('hour_stabilization_modes'))}\n",
+                "  - Espera senal seleccion: "
+                f"{_text(selection_observation.get('hour_signal_seconds'))}\n",
+                "  - Fallback seleccion: "
+                f"{_text(selection_observation.get('hour_fallback_reasons'))}\n",
+            ]
+        )
+    if switch_context:
+        lines.append(f"  - Cambio de usuario: {switch_context}\n")
+    lines.extend(
+        [
+            "- Evidencia:\n",
+            f"  - Screenshot principal: {_display_evidence_path(report.screenshot_path)}\n",
+        ]
+    )
+    if details.get("captcha_solution_sent"):
+        lines.append("  - CAPTCHA enviado: registrado y oculto\n")
+    if details.get("captcha_image_path"):
+        lines.append(
+            f"  - Imagen usada por {captcha_solver_label}: "
+            f"{_text(details.get('captcha_image_path'))}\n"
+        )
+    captcha_attempts = details.get("captcha_attempts")
+    if isinstance(captcha_attempts, list):
+        for item in captcha_attempts:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                "  - Intento CAPTCHA "
+                f"{_text(item.get('attempt'))}: "
+                f"outcome={_text(item.get('submission_outcome'))}, "
+                "valor=oculto, "
+                f"duracion={_text(item.get('duration_seconds'))}s\n"
+            )
+            captcha_size = _dimensions(
+                item.get("captcha_image_width"),
+                item.get("captcha_image_height"),
+            )
+            captcha_css_size = _dimensions(
+                item.get("captcha_element_css_width"),
+                item.get("captcha_element_css_height"),
+            )
+            if captcha_size or captcha_css_size:
+                lines.append(
+                    "    - Medidas CAPTCHA: "
+                    f"png={captcha_size or 'no registrado'}, "
+                    f"css={captcha_css_size or 'no registrado'}, "
+                    f"scale={_text(item.get('captcha_device_scale_factor'))}\n"
+                )
+            original_html_path = item.get("captcha_original_html_path")
+            if original_html_path:
+                original_size = _dimensions(
+                    item.get("captcha_original_html_width"),
+                    item.get("captcha_original_html_height"),
+                )
+                lines.append(
+                    "    - CAPTCHA original HTML: "
+                    f"path={_text(original_html_path)}, "
+                    f"mime={_text(item.get('captcha_original_html_mime'))}, "
+                    "formato_detectado="
+                    f"{_text(item.get('captcha_original_html_detected_format'))}, "
+                    f"bytes={_text(item.get('captcha_original_html_bytes'))}, "
+                    f"dimensiones={original_size or 'no registrado'}\n"
+                )
+            elif item.get("captcha_original_html_source"):
+                lines.append(
+                    "    - CAPTCHA original HTML: "
+                    f"source={_text(item.get('captcha_original_html_source'))}\n"
+                )
+    diagnostic_artifacts = details.get("diagnostic_artifacts")
+    if isinstance(diagnostic_artifacts, dict):
+        for key, values in diagnostic_artifacts.items():
+            if not isinstance(values, list):
+                continue
+            for value in values:
+                path = _display_evidence_path(value)
+                if path != "no registrado":
+                    lines.append(f"  - Diagnostico {key}: {path}\n")
+    for path in _extra_screenshots(report):
+        lines.append(f"  - Screenshot adicional: {_text(path)}\n")
+    lines.extend(
+        [
+            "- Observacion tecnica:\n",
+            f"  - {_technical_observation(report, timing)}\n\n",
+        ]
+    )
+    return "".join(lines)
+
+
+def _is_relevant_case(report: RunReport) -> bool:
+    details = report.details or {}
+    status = ResultStatus(report.status)
+    if report.reservation_confirmed or status == ResultStatus.REGISTERED:
+        return True
+    if _programmed_stage_confirmed(report):
+        return True
+    submission_outcome = str(details.get("submission_outcome") or "").strip()
+    if status == ResultStatus.RESERVATION_UNCONFIRMED and _reached_final_submission(report):
+        return True
+    return submission_outcome in REJECTED_AFTER_SUBMISSION and _reached_final_submission(report)
+
+
+def _reached_final_submission(report: RunReport) -> bool:
+    details = report.details or {}
+    timing = details.get(TIMING_DETAILS_KEY)
+    marks = timing.get("marks_lima") if isinstance(timing, dict) else None
+    return (
+        report.reservation_attempted
+        or bool(details.get("submission_outcome"))
+        or (isinstance(marks, dict) and "reserve_click_started" in marks)
+    )
+
+
+def _programmed_stage_confirmed(report: RunReport) -> bool:
+    if report.status != ResultStatus.COMPLETED:
+        return False
+    details = report.details or {}
+    return str(details.get("estado") or "").strip().casefold() == "programado"
+
+
+def _result_summary(report: RunReport) -> str:
+    details = report.details or {}
+    outcome = str(details.get("submission_outcome") or "").strip()
+    if report.reservation_confirmed or report.status == ResultStatus.REGISTERED:
+        source = _text(details.get("confirmation_source"))
+        return f"Reserva registrada o confirmada por {source or 'confirmacion del flujo'}."
+    if _programmed_stage_confirmed(report):
+        return "Etapa Programado confirmada en una pasada posterior."
+    if report.status == ResultStatus.RESERVATION_UNCONFIRMED:
+        return "CAPTCHA resuelto, click en Reservar enviado, confirmacion inmediata no validada."
+    if outcome in REJECTED_AFTER_SUBMISSION:
+        return f"Envio final alcanzado, pero el portal respondio {outcome}."
+    return _text(report.message)
+
+
+def _post_confirmation(details: dict[str, Any]) -> str:
+    source = _text(details.get("confirmation_source"))
+    stage = _text(details.get("confirmacion_etapa") or details.get("estado"))
+    if stage.casefold() == "programado":
+        return "Programado detectado en esta corrida."
+    if source:
+        return f"Fuente registrada: {source}."
+    return "No registrada en esta entrada."
+
+
+def _technical_observation(report: RunReport, timing: dict[str, Any]) -> str:
+    details = report.details or {}
+    origin = detection_origin(details)
+    slowest = _slowest_timing(timing, captcha_solver_label=_captcha_solver_label(details))
+    notes: list[str] = []
+    if origin == "normal":
+        notes.append("El flujo normal detecto el cupo; reload_probe no fue necesario.")
+    elif origin == "reload_probe":
+        notes.append("La disponibilidad se detecto despues de reload_probe.")
+    elif origin == "fetch_probe":
+        notes.append("La disponibilidad se detecto por fetch_probe.")
+    if report.status == ResultStatus.RESERVATION_UNCONFIRMED:
+        notes.append("La confirmacion inmediata quedo debil y requiere revalidacion posterior.")
+    if slowest:
+        notes.append(f"El tramo mas lento fue {slowest}.")
+    return " ".join(notes) or "Caso guardado por alcanzar un resultado util para optimizacion."
+
+
+def _captcha_solver_label(details: dict[str, Any]) -> str:
+    source = str(details.get("captcha_solver_source") or "").strip().casefold()
+    if source == "v6":
+        return "V6 local"
+    if source == "2captcha":
+        return "2Captcha"
+    return "Resolutor CAPTCHA"
+
+
+def _slowest_timing(
+    timing: dict[str, Any],
+    *,
+    captcha_solver_label: str = "Resolutor CAPTCHA",
+) -> str | None:
+    labels = {
+        "selection_seconds": "seleccion fecha/hora",
+        "captcha_image_seconds": "imagen CAPTCHA",
+        "captcha_solver_seconds": captcha_solver_label,
+        "captcha_field_fill_seconds": "rellenar campo CAPTCHA",
+        "pre_click_validation_seconds": "validacion final DOM",
+        "submission_intent_seconds": "persistir intencion",
+        "captcha_fill_to_click_seconds": "llenar CAPTCHA -> click",
+        "click_to_portal_response_seconds": "click -> respuesta portal",
+        "click_to_confirmation_screenshot_seconds": "click -> screenshot confirmacion",
+    }
+    values: list[tuple[float, str]] = []
+    for key, label in labels.items():
+        value = _float(timing.get(key))
+        if value is not None:
+            values.append((value, label))
+    if not values:
+        return None
+    seconds, label = max(values)
+    return f"{label} ({seconds:.3f}s)"
+
+
+def _switch_context(
+    report: RunReport,
+    previous: tuple[str, datetime] | None,
+) -> str | None:
+    if previous is None or not report.started_at or not report.order_id:
+        return None
+    previous_order_id, previous_finished_at = previous
+    if previous_order_id == report.order_id:
+        return None
+    started_at = _parse_datetime(report.started_at)
+    if started_at is None:
+        return f"{_masked_order_id(previous_order_id)} -> {_masked_order_id(report.order_id)}"
+    delta = max((started_at - previous_finished_at).total_seconds(), 0.0)
+    return (
+        f"{_masked_order_id(previous_order_id)} -> "
+        f"{_masked_order_id(report.order_id)} en {delta:.3f}s"
+    )
+
+
+def _appointment_text(details: dict[str, Any]) -> str:
+    date = _text(details.get("fecha") or details.get("appointment_date"))
+    hour = _text(details.get("hora") or details.get("appointment_hour"))
+    if date and hour:
+        return f"{date} {hour}"
+    return date or hour or "no registrada"
+
+
+def _extra_screenshots(report: RunReport) -> list[str]:
+    paths = report.screenshot_paths or []
+    return [
+        path
+        for path in paths
+        if path and path != report.screenshot_path and OBSOLETE_CAPTCHA_PANEL_ARTIFACT not in path
+    ]
+
+
+def _display_evidence_path(value: object) -> str:
+    text = _text(value)
+    if OBSOLETE_CAPTCHA_PANEL_ARTIFACT in text:
+        return "no registrado"
+    return text
+
+
+def _format_lima_datetime(value: str | None) -> str | None:
+    return format_lima_datetime(value, default_timezone=LIMA_TZ)
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    return parse_datetime(value, default_timezone=LIMA_TZ)
+
+
+def _duration(timing: dict[str, Any], key: str) -> str:
+    value = _float(timing.get(key))
+    return f"{value:.3f}s" if value is not None else "no registrado"
+
+
+def _milliseconds(value: Any) -> str:
+    if value in (None, ""):
+        return "no registrado"
+    return f"{value}ms"
+
+
+def _duration_text(value: Any) -> str:
+    number = _float(value)
+    return f"{number:.3f}s" if number is not None else "no registrado"
+
+
+def _dimensions(width: object, height: object) -> str:
+    if width in {None, ""} or height in {None, ""}:
+        return ""
+    return f"{_text(width)}x{_text(height)}"
+
+
+def _bool_text(value: Any) -> str:
+    if value is True:
+        return "si"
+    if value is False:
+        return "no"
+    if value in (None, ""):
+        return "no registrado"
+    return str(value)
+
+
+def _float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _text(value: Any) -> str:
+    return ORDER_IDENTIFIER_PATTERN.sub(
+        "order-***",
+        sanitize_text(detail_text(value, collapse_newlines=True)),
+    )
+
+
+def _masked_order_id(value: Any) -> str:
+    return "order-***" if detail_text(value) else "no registrado"
+
+
+def _monthly_log_path(directory: Path, value: str | None) -> Path:
+    parsed = _parse_datetime(value) or datetime.now(LIMA_TZ)
+    return directory / f"{parsed.astimezone(LIMA_TZ):%Y-%m}.md"
+
+
+def _masked_presence(value: Any) -> str:
+    return "registrado y oculto" if _text(value) else "no registrado"
+
+
+def _list_text(value: Any) -> str:
+    if isinstance(value, list):
+        return ", ".join(_text(item) for item in value if _text(item))
+    if isinstance(value, tuple):
+        return ", ".join(_text(item) for item in value if _text(item))
+    return _text(value)
+
+
+def _looks_like_no_slots(value: str) -> bool:
+    normalized = value.strip().casefold()
+    return normalized in {"", "sin cupos", "0:sin cupos", "no registrado"}
+
+
+def _document_header() -> str:
+    return (
+        "# Bitacora de optimizacion de reservas\n\n"
+        "Archivo curado y automatico con casos de exito o casi-exito. "
+        "No reemplaza PostgreSQL ni los logs completos; resume tiempos y evidencia util "
+        "para mejorar el flujo sin guardar nombres completos ni credenciales.\n\n"
+    )
+
+
+def _partial_document_header() -> str:
+    return (
+        "# Bitacora de disponibilidad parcial\n\n"
+        "Archivo curado y automatico para senales donde aparece fecha, hora parcial "
+        "o disponibilidad bloqueada por regla sin llegar necesariamente a resolver CAPTCHA. "
+        "Complementa la bitacora de optimizacion de reservas y ayuda a detectar patrones "
+        "previos a cupos reales.\n\n"
+    )

@@ -1,0 +1,235 @@
+<app-load-status [section]="operationsDomain.loads.runs" />
+<section class="panel activity-runs">
+  <div class="panel-header">
+    <div>
+      <h2>Revisiones recientes</h2>
+      <p>Disponibilidad detectada, resultado y capturas de cada revisión</p>
+    </div>
+    <label class="filter">
+      Estado
+      <select
+        name="runStatus"
+        [ngModel]="operationsDomain.runStatusFilter()"
+        (ngModelChange)="operationsDomain.runStatusFilter.set($event)"
+      >
+        <option value="">Todos</option>
+        @for (status of operationsDomain.runStatuses(); track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (operationsDomain.selectedRunId()) {
+    <article class="run-detail" aria-live="polite">
+      <div class="run-detail-header">
+        <div>
+          <p class="eyebrow">Revisión seleccionada</p>
+          <h3>Fechas y horarios</h3>
+          <small class="run-reference">{{ operationsDomain.selectedRunId() }}</small>
+        </div>
+        <button type="button" class="secondary" (click)="operationsDomain.closeRunDetail()">
+          Volver a la lista
+        </button>
+      </div>
+
+      @if (operationsDomain.runDetailState() === 'loading') {
+        <p class="run-detail-state">Cargando detalle sanitizado...</p>
+      } @else if (operationsDomain.runDetailState() === 'error') {
+        <div class="notice bad" role="alert">
+          {{ operationsDomain.runDetailError() ?? 'No se pudo cargar la corrida.' }}
+          <button type="button" class="secondary" (click)="operationsDomain.selectRun(operationsDomain.selectedRunId())">
+            Reintentar
+          </button>
+        </div>
+      } @else if (operationsDomain.selectedRun(); as run) {
+        <div class="run-overview">
+          <span class="badge {{ presentationDomain.statusTone(run.status) }}">{{ presentationDomain.statusLabel(run.status) }}</span>
+          <strong>{{ run.availability?.site || 'Sede no registrada' }}</strong>
+          <span>{{ presentationDomain.formatDateTime(run.started_at) }} · {{ run.duration_seconds }} s</span>
+        </div>
+        @if (availabilityDates(run); as dates) {
+          <section class="run-calendar" aria-label="Fechas y horarios encontrados">
+            <div class="run-calendar-heading">
+              <div><p class="eyebrow">Disponibilidad de esta revisión</p><h3>{{ dates.length }} {{ dates.length === 1 ? 'fecha encontrada' : 'fechas encontradas' }}</h3></div>
+              <div class="run-slot-legend"><span><i class="verified"></i>Cupos verificados</span><span><i></i>Horario listado</span></div>
+            </div>
+            <div class="run-calendar-dates">
+              @for (item of (expandedDatesRun() === run.run_id ? dates : dates.slice(0, 4)); track item.date) {
+                @let parts = dateParts(item.date);
+                <article class="run-calendar-date">
+                  <div class="run-day"><strong>{{ parts.day }}</strong><span>{{ parts.month }}</span></div>
+                  <div class="run-day-content">
+                    <header><strong>{{ parts.weekday }}</strong><span>{{ item.date }}</span></header>
+                    <div class="run-hours">
+                      @for (slot of item.hours; track slot.hour) {
+                        <div class="run-hour" [class.verified]="slot.slots !== null">
+                          <strong>{{ slot.hour }}</strong><span>{{ slot.slots !== null ? slot.slots + ' cupos' : 'Listado' }}</span>
+                        </div>
+                      } @empty {
+                        <p class="run-hours-empty">{{ item.queried ? 'Sin horarios listados en esta fecha' : 'Horarios no consultados en esta revisión' }}</p>
+                      }
+                    </div>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty compact-empty">Esta revisión no guardó fechas ni horarios disponibles.</p>
+              }
+            </div>
+            @if (dates.length > 4) {
+              <button type="button" class="secondary run-more-dates" [attr.aria-expanded]="expandedDatesRun() === run.run_id"
+                (click)="expandedDatesRun.set(expandedDatesRun() === run.run_id ? null : run.run_id)">
+                {{ expandedDatesRun() === run.run_id ? 'Mostrar las primeras 4' : 'Ver las ' + dates.length + ' fechas' }}
+              </button>
+            }
+            @if (scheduleStatusMessage(run); as message) { <p class="notice warn">{{ message }}</p> }
+            <p class="run-calendar-note">Los horarios listados aparecieron en el portal; sus cupos no se comprobaron individualmente. La disponibilidad puede cambiar.</p>
+          </section>
+        }
+        <details class="run-technical"><summary>Resultado y datos de la revisión</summary>
+          <p>{{ run.message || 'Sin mensaje registrado.' }}</p>
+          <dl class="run-detail-grid">
+            <div><dt>Orden</dt><dd>{{ run.order_id ?? 'Observador' }}</dd></div>
+            <div><dt>Reserva</dt><dd>{{ operationsDomain.runResultLabel(run) }}</dd></div>
+            <div><dt>Fin</dt><dd>{{ presentationDomain.formatDateTime(run.finished_at) }}</dd></div>
+            <div><dt>Código de salida</dt><dd>{{ run.exit_code }}</dd></div>
+          </dl>
+        </details>
+        @if (operationsDomain.runEvidencePaths(run).length) {
+          <div class="run-evidence">
+            <strong>Capturas de la corrida</strong>
+            <ul>
+              @for (path of operationsDomain.runEvidencePaths(run); track path) {
+                <li><button type="button" class="secondary" (click)="openEvidence(run, $index)">Ver captura {{ $index + 1 }}</button> <span>{{ path }}</span></li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <p class="empty compact-empty">
+            Esta corrida no tiene capturas registradas.
+          </p>
+        }
+      } @else {
+        <p class="empty compact-empty">No hay detalle disponible.</p>
+      }
+    </article>
+  }
+
+  <div class="table-wrap">
+    <table class="responsive-table activity-review-table">
+      <thead><tr><th>Revisión</th><th>Resultado</th><th>Cupo registrado</th><th>Duración</th></tr></thead>
+      <tbody>
+        @for (run of operationsDomain.filteredRuns(); track run.run_id) {
+          <tr class="selectable-row" [class.selected-row]="operationsDomain.selectedRunId() === run.run_id"
+            (click)="operationsDomain.selectRun(run.run_id)">
+            <td data-label="Revisión">
+              <button type="button" class="run-link" [title]="run.run_id"
+                (click)="$event.stopPropagation(); operationsDomain.selectRun(run.run_id)">
+                {{ presentationDomain.formatDateTime(run.started_at) }}
+              </button>
+              <span>{{ run.order_id ? 'Cliente · ' + run.order_id : 'Observador' }}</span>
+            </td>
+            <td data-label="Resultado">
+              <span class="badge {{ presentationDomain.statusTone(run.status) }}">{{ presentationDomain.statusLabel(run.status) }}</span>
+              @if (run.reservation_confirmed) { <span>Reserva confirmada</span> }
+              @else if (run.reservation_attempted) { <span>Con intento de reserva</span> }
+            </td>
+            <td data-label="Cupo registrado">
+              @if (hasVerifiedAvailability(run)) {
+                <strong>{{ run.availability?.date }} · {{ run.availability?.hour }}</strong>
+                <span>{{ run.availability?.slots }} cupos · {{ run.availability?.site }}</span>
+              } @else { <span>Sin cupos comprobados</span> }
+              <span class="run-row-hint">Abre la revisión para ver todas sus fechas y horarios</span>
+            </td>
+            <td data-label="Duración">{{ run.duration_seconds }} s</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="empty"><app-view-state state="empty" [compact]="true"
+            title="No hay revisiones para mostrar" message="Cambia el filtro o espera la siguiente revisión." /></td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<app-load-status [section]="operationsDomain.loads.commands" />
+<details class="panel activity-commands">
+<summary>Comandos del worker · {{ operationsDomain.workerCommands().length }} recientes</summary>
+<section>
+  <div class="panel-header">
+    <div>
+      <h2>Comandos worker</h2>
+      <p>Ultimas solicitudes persistidas</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="responsive-table">
+      <thead>
+        <tr>
+          <th>Comando</th>
+          <th>Estado</th>
+          <th>Solicitado</th>
+          <th>Procesado</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (command of operationsDomain.workerCommands(); track command.command_id) {
+          <tr>
+            <td data-label="Comando">
+              <strong>{{ command.command }}</strong>
+              <span>{{ command.command_id }}</span>
+            </td>
+            <td data-label="Estado">
+              <span class="badge {{ presentationDomain.statusTone(command.status) }}">{{
+                presentationDomain.statusLabel(command.status)
+              }}</span>
+            </td>
+            <td data-label="Solicitado">{{ presentationDomain.formatDateTime(command.requested_at) }}</td>
+            <td data-label="Procesado">
+              {{ presentationDomain.formatDateTime(command.processed_at, 'pendiente') }}
+              <span>{{ presentationDomain.formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
+            </td>
+            <td data-label="Error">{{ command.error_message ?? '' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay comandos recientes"
+                message="Los nuevos comandos del worker aparecerán aquí."
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+</details>
+
+
+@if (evidenceRun(); as run) {
+  <div class="modal-backdrop activity-evidence-backdrop" (click)="closeEvidence()">
+    <section class="activity-evidence-dialog" role="dialog" aria-modal="true" aria-labelledby="evidence-title"
+      [appFocusBoundary]="true" (click)="$event.stopPropagation()" (keydown.escape)="closeEvidence()">
+      <header>
+        <div><h2 id="evidence-title">Captura {{ evidenceIndex() + 1 }} de {{ operationsDomain.runEvidencePaths(run).length }}</h2><p>{{ run.run_id }} · Evidencia de la revisión</p></div>
+        <button type="button" class="secondary" data-modal-initial-focus (click)="closeEvidence()">Cerrar</button>
+      </header>
+      <div class="activity-evidence-image" tabindex="0" aria-label="Imagen, usa las flechas para desplazarla al ampliar" [class.zoomed]="evidenceZoom()">
+        @if (evidenceLoading()) { <p role="status">Cargando imagen…</p> }
+        @if (evidenceError()) { <p role="alert">{{ evidenceError() }}</p> }
+        @if (evidenceUrl()) { <img [src]="evidenceUrl()" alt="Captura real de la corrida seleccionada" (error)="evidenceError.set('La captura no se pudo mostrar. Selecciona otra imagen o vuelve a intentarlo.')" /> }
+      </div>
+      <footer>
+        <button type="button" class="secondary" [disabled]="evidenceIndex() === 0" (click)="moveEvidence(-1)">Anterior</button>
+        <button type="button" class="secondary" [disabled]="evidenceIndex() + 1 >= operationsDomain.runEvidencePaths(run).length" (click)="moveEvidence(1)">Siguiente</button>
+        <button type="button" class="secondary" [disabled]="!evidenceUrl()" [attr.aria-pressed]="evidenceZoom()" (click)="evidenceZoom.set(!evidenceZoom())">{{ evidenceZoom() ? 'Ajustar' : 'Ampliar' }}</button>
+        @if (evidenceUrl()) { <a class="secondary" [href]="evidenceUrl()" [download]="operationsDomain.runEvidencePaths(run)[evidenceIndex()]">Descargar</a> }
+      </footer>
+    </section>
+  </div>
+}

@@ -1,0 +1,2 @@
+class TelegramControlError(RuntimeError):
+    pass

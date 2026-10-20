@@ -1,0 +1,382 @@
+{
+  "cutoff": "2026-09-08 America/Lima",
+  "definitions_ast_equivalent": 90,
+  "manifest": {
+    "WhatsAppSendUncertain": {
+      "module": "common",
+      "ast_sha256": "92a8133425bcfb82fa770f2b2cf0ba90a77240820b3e12cde815a4005e903411"
+    },
+    "_AttachmentBeforeFileSelectionError": {
+      "module": "common",
+      "ast_sha256": "566027e4a69122ff7598cbdce80b7b6f1d7527a7243ebb4f6ff9878578391614"
+    },
+    "_DraftCommand": {
+      "module": "manager",
+      "ast_sha256": "b1ac529bd8d6ef7e0ea3c1d2c04be6723826a38e83573c8cb8f7c13de01a7d23"
+    },
+    "WhatsAppWebDraftManager": {
+      "module": "manager",
+      "ast_sha256": "5fbdfae87746d6a430f5cc83b7b1391497dda24b798ad8b55c82354b5f033190"
+    },
+    "_is_closed_target_error": {
+      "module": "session",
+      "ast_sha256": "bbc9a84a02375c0a2192876b9b8414cd0cc40d44f5d4ddb465cd38d560dc2804"
+    },
+    "prepare_whatsapp_web_draft": {
+      "module": "api",
+      "ast_sha256": "412514bbb1ed4d5ab2b646321642ca7dbabb9f2766becfe4912f5a411346a5ce"
+    },
+    "validate_whatsapp_web_session": {
+      "module": "api",
+      "ast_sha256": "b85638c09432ace3fb0925e138643480359a53f55fb785164e4195d29c303c56"
+    },
+    "prepare_whatsapp_web_album": {
+      "module": "api",
+      "ast_sha256": "ec8b5d59655100821f31ec37ce5bede9f8fe5042570ca0f88eb412531a9a73c1"
+    },
+    "prepare_whatsapp_web_documents": {
+      "module": "api",
+      "ast_sha256": "861f440c2bf2d793137d8d0ca1955e5bd0dd0bc08879b1640e94b4d9cc4e5089"
+    },
+    "send_whatsapp_web_daily_slot_summary": {
+      "module": "api",
+      "ast_sha256": "ee88f6e7220d19c9eabae339d4157160e4b0a5281f5ec84a5d04fc1ce7b5fa4b"
+    },
+    "send_whatsapp_web_registration_notice": {
+      "module": "api",
+      "ast_sha256": "35cea678109e1c7d6c93d56e71b22db02a14603eb65c520e8dcc18274365f65d"
+    },
+    "send_whatsapp_web_appointment_reminder": {
+      "module": "api",
+      "ast_sha256": "f8c3cae26e5d1664953efc478db7746a6497da368938bdbef20465cd69b79e53"
+    },
+    "_ensure_context": {
+      "module": "session",
+      "ast_sha256": "ab9020051f1084d6a82f570ef49971c55caf463a0ab36909773bc22305481d19"
+    },
+    "_headless_whatsapp_user_agent": {
+      "module": "session",
+      "ast_sha256": "6634c427dd93812c1e29cabb2af161e870c1bfccf59144f7a0300a5af7346fcf"
+    },
+    "_prepare_draft": {
+      "module": "drafts",
+      "ast_sha256": "a4fb5d17fe703ed50c1b15b5ff0b186cd102a1a961012de225933330a07d9540"
+    },
+    "_prepare_album": {
+      "module": "album",
+      "ast_sha256": "dc875d256b8a43c31c118624f59f57fecf14876ce85b8fb15077c59ebb9601ab"
+    },
+    "_attach_album_with_safe_page_retry": {
+      "module": "album",
+      "ast_sha256": "2c8c030172e17e4e58fb5440a94694a5c1a7829f4f7068729c818b299cc8611a"
+    },
+    "_prepare_documents": {
+      "module": "documents",
+      "ast_sha256": "bb31d0c7e54708b6ac36861f3f571e597df5c12ed457eebb0a5bcab7025f410c"
+    },
+    "_validate_whatsapp_session": {
+      "module": "session",
+      "ast_sha256": "1f7a02c136f5be2959e33ecf7fb64fd084d353e53b4b9bb0be7af419ca1be40e"
+    },
+    "_whatsapp_session_ready": {
+      "module": "session",
+      "ast_sha256": "8d7ad5851a5f460b4b6392d14bf909a9efdeba648a8ccb63c3af218131c1109a"
+    },
+    "_album_thumbnails": {
+      "module": "dom",
+      "ast_sha256": "044794974e4b571639e52d410cd90fe95633e1f0636239b077ce3b30dc634b25"
+    },
+    "_send_album": {
+      "module": "album",
+      "ast_sha256": "cf6da35089fc9c597f6652685a89194da2d451f955568ec73a2603ff90fe251e"
+    },
+    "_wait_until_outgoing_images_uploaded": {
+      "module": "confirmation",
+      "ast_sha256": "ef2ca104024838ca8cbb5dc0180e4bb3171a18874713bf900ae426cd09c53e2d"
+    },
+    "_outgoing_image_message_records": {
+      "module": "confirmation",
+      "ast_sha256": "5267ae6ac4196edd353979e58aa213ffbef91aa18049f5b03e8d634a77e14a82"
+    },
+    "_message_container_has_large_image": {
+      "module": "confirmation",
+      "ast_sha256": "668a0c323713efb1a65c644b8e55df3980b2e61f530c96702dc62506914bb1d8"
+    },
+    "_send_daily_slot_summary": {
+      "module": "notifications",
+      "ast_sha256": "0382942cbd6416ae3e7ae5867902e396213a98a5c39f55c3534dd7414023c8cc"
+    },
+    "_send_registration_notice": {
+      "module": "notifications",
+      "ast_sha256": "be5105bb85c90e9869fa114c05a806d6dcc385c78470effbeb2ab0cd673e8106"
+    },
+    "_send_appointment_reminder": {
+      "module": "notifications",
+      "ast_sha256": "90bd071ec730580a6c818574fc76c3251b69a6be8289176d1575754628e35f55"
+    },
+    "_fill_selected_album_caption": {
+      "module": "composition",
+      "ast_sha256": "e149481aa14d2ee0e5e101a02fc052d346de3c80e0120d99fc647fee573682d3"
+    },
+    "_album_control_summary": {
+      "module": "dom",
+      "ast_sha256": "3a708370527221b5b4895ecf33546c19e511fa3e32fdf8445cc6a851ba257914"
+    },
+    "_open_recipient_chat": {
+      "module": "navigation",
+      "ast_sha256": "b92608e734d9ad6f507f020a82943d9ad70612a96d50c3d6ead7673f05832541"
+    },
+    "_visible_whatsapp_search": {
+      "module": "navigation",
+      "ast_sha256": "7f5a8c98a5d0bc8a38e023b437a1e11ce1be520f77c10a86c8febd227ac51c91"
+    },
+    "_dismiss_whatsapp_updates_dialog": {
+      "module": "navigation",
+      "ast_sha256": "6b78e8b0d3e4bcf084f001c07c85f9f1cf8e9e77ba7635e01e1e2a12706b4ec8"
+    },
+    "_click_username_chat_result": {
+      "module": "navigation",
+      "ast_sha256": "968046342319221cad753cbf635a2989fdfaef68f1ec275d6d2ca9e04a56a3d6"
+    },
+    "_wait_for_stable_username_chat_results": {
+      "module": "navigation",
+      "ast_sha256": "d53a4803bb2a2997f3594d57bddc7edf75a98f89c83459be44a04a53b2a0df7c"
+    },
+    "_visible_whatsapp_dialogs": {
+      "module": "navigation",
+      "ast_sha256": "d8ac687fd184351a4bb4ad1f575241cd42d95547404d17b4bd9ee52e0b8e9c29"
+    },
+    "_dismiss_safe_whatsapp_dialog": {
+      "module": "navigation",
+      "ast_sha256": "b57ca4c2feac3781407fb78316111ded3f43a36415ab13a95cab1e429bae8cb4"
+    },
+    "_visible_username_chat_result_rows": {
+      "module": "navigation",
+      "ast_sha256": "868dadcf77249a3c228d454e96031fad5c737c74f03abd87f7a68aada134bf30"
+    },
+    "_row_belongs_to_chat_results": {
+      "module": "navigation",
+      "ast_sha256": "9e5e65ce29395daa9122e7b80218ede82356f2ad10707040dca31c934719c843"
+    },
+    "_whatsapp_chat_row_label": {
+      "module": "navigation",
+      "ast_sha256": "c1ce3cc03bc50d28e3a32c3804af928d1c35ce3df5be6d27d305ce6d900ab6b0"
+    },
+    "_wait_for_chat": {
+      "module": "navigation",
+      "ast_sha256": "97199596b1645a2593dd05c216606c582970c5d418f15bc4f218a9397d313563"
+    },
+    "_chat_not_ready_result": {
+      "module": "navigation",
+      "ast_sha256": "f6136e5978e6c720eb5a935159c8cca16a4559acac6205628964cb7cac15298f"
+    },
+    "_invalid_recipient_visible": {
+      "module": "navigation",
+      "ast_sha256": "b5dd2013f6aea6ff60f26c53cc4f6801686ee48150c3ea8a1aef9b36b4af0c7a"
+    },
+    "_attach_image": {
+      "module": "attachments",
+      "ast_sha256": "0acd25b723138a5d04c4d27d5d311c207fee94c7fbf8b1768d97411fdda8adbc"
+    },
+    "_click_attachment_button": {
+      "module": "attachments",
+      "ast_sha256": "b7a35641af02792948e3a78a6bdbc72670cad2ce3132d38386152a41f92ce771"
+    },
+    "_wait_for_attachment_menu": {
+      "module": "attachments",
+      "ast_sha256": "7073312bb08a2e954f52bc7819c89efa04014ebb15ea15fa6865753f87881701"
+    },
+    "_attachment_menu_visible": {
+      "module": "dom",
+      "ast_sha256": "4ef80f05632b872e1c20755a788428b08d947f9cfbec413839e3163805be4ef5"
+    },
+    "_attach_document": {
+      "module": "attachments",
+      "ast_sha256": "bc25c745c6e9d4fbafb0862212e704bd546b4602c0d76acbc317c846dfc88ba6"
+    },
+    "_choose_document_files": {
+      "module": "attachments",
+      "ast_sha256": "89f6c227aee4b3c492bf1bd47810bcb889794c0f68a8e70bfe0441e0434b1dde"
+    },
+    "_attachment_option_container": {
+      "module": "dom",
+      "ast_sha256": "0d2d5e7ba4b4d2a38f98eaf3c6f50344b0fbad7bb2f3703d00652036ad5f030b"
+    },
+    "_image_file_input": {
+      "module": "dom",
+      "ast_sha256": "7dddd0c7628c656287bd0a2ff3f6d0b1212bf1a1abe1ae90272a85e98b80acf4"
+    },
+    "_document_file_input": {
+      "module": "dom",
+      "ast_sha256": "fdd135459dfe49354756bb9d4c6c2465878f077db3d7178ae1c5d66f478280a5"
+    },
+    "_file_input_summary": {
+      "module": "dom",
+      "ast_sha256": "1a87b983e551b38134d033dffcbeaad4b58822bff3c03e6b4404b8d8bd3cbce3"
+    },
+    "_attachment_menu_summary": {
+      "module": "dom",
+      "ast_sha256": "b50bcae934037dd3476a5bf5180033acbaecf74fbba3a90a24f38d8c3e9d26a1"
+    },
+    "_file_input_summary_from": {
+      "module": "dom",
+      "ast_sha256": "adced893ebbead8342d6bbe18e77abc7dc23bf8907e6dd8cabeaa5ccbad1615c"
+    },
+    "_fill_caption": {
+      "module": "composition",
+      "ast_sha256": "892957acd6601ebefb35190fb828c0950e1af5588b8e8825e696d45475be4e1c"
+    },
+    "_click_send_button": {
+      "module": "sending",
+      "ast_sha256": "397e98bb5dc6eca826822d1682342beae979e676c6f1f49d01c70c6b7268dba7"
+    },
+    "_click_bottom_right_send_button": {
+      "module": "sending",
+      "ast_sha256": "058716c8c458faea410a4b68e4d0476d100de68a8b3a7862447272e153fc17e1"
+    },
+    "_send_plain_text_message": {
+      "module": "sending",
+      "ast_sha256": "56ebe333325b4ddd87f9f95361d2cc4a3e5feeb7018fea477300b3d6c21b95ca"
+    },
+    "_wait_until_plain_text_send_finishes": {
+      "module": "confirmation",
+      "ast_sha256": "8c3c2cdf92d6ef039a7c96efd37bf4c759d00735b24001d0ae3f9651c84f3c12"
+    },
+    "_plain_text_send_is_confirmed": {
+      "module": "confirmation",
+      "ast_sha256": "9e9f251d339b41f8dffc8a42358a8905732a97996a5a5e3bee26dcde3f13ac95"
+    },
+    "_outgoing_message_signatures": {
+      "module": "confirmation",
+      "ast_sha256": "aa00a95d3cc381ab2bc354379c807b73ffdf81122bba6a079598c0fe029d4c6b"
+    },
+    "_message_container_has_confirmed_status": {
+      "module": "confirmation",
+      "ast_sha256": "7987b3d6ec721d2c0c021af1c461464261693b70b6a9929bf49339d604863451"
+    },
+    "_message_container_has_pending_status": {
+      "module": "confirmation",
+      "ast_sha256": "65957013eeb921e2a9f05f2ac4bdfd1e714b123c89fe3bbe96cc05d500ff3c53"
+    },
+    "_locator_has_visible_match": {
+      "module": "dom",
+      "ast_sha256": "0fd0340e3dd45ab343006934226fad661cfce12537b64e6bbee88d08eefe5cf6"
+    },
+    "_message_container_signature": {
+      "module": "confirmation",
+      "ast_sha256": "d8aa5a5595e09f7fcab8f7a60c071ced9dbf6d44e8117d43d91bceb86049842f"
+    },
+    "_message_container_is_outgoing": {
+      "module": "confirmation",
+      "ast_sha256": "e5197bb4ac4d6497eac105abeadd90c01cb0aa219221275522cccff6791149bc"
+    },
+    "_click_and_replace_text": {
+      "module": "composition",
+      "ast_sha256": "8dab4d8a4cad3be90c21288a5732e3db43c4e3a740010f560578886533cabf4d"
+    },
+    "_paste_text_message": {
+      "module": "composition",
+      "ast_sha256": "4124a3b27597bb063fb37126a9b131ffc575bab3473b24bc47720775e334f2b4"
+    },
+    "_plain_text_ready": {
+      "module": "dom",
+      "ast_sha256": "c3f4000121cd0664937b6f3e056da9be98b0c57dbc6b9fba8744a2b9dbef98d6"
+    },
+    "_click_visible_send_button": {
+      "module": "sending",
+      "ast_sha256": "5120b30a4d186c1a6cc566b1a909cbf3d6a6dc2b8f7af6f0fd6864425f093426"
+    },
+    "_wait_until_send_attempt_finishes": {
+      "module": "confirmation",
+      "ast_sha256": "7ed6c71c1693279b95dda0ab583f0cfd6298ec12b7823b045286d3c669b316bc"
+    },
+    "_normal_chat_composer_visible": {
+      "module": "dom",
+      "ast_sha256": "e63d72602a5f023e912ced41fcc713819377ef70b227c185ebc9da75f97bf938"
+    },
+    "_document_preview_visible": {
+      "module": "dom",
+      "ast_sha256": "5c9661187c6d89ff7a0b6861a1c36c14d6cf2ef03d513cdb2393bf5ba8c0d3b8"
+    },
+    "_attachment_preview_visible": {
+      "module": "dom",
+      "ast_sha256": "91f6afab3b068064c82bd0a8b5e93e06e4573ae5cf3175ddf6d151e59e5d67ec"
+    },
+    "_fresh_whatsapp_page": {
+      "module": "session",
+      "ast_sha256": "6a2c3ab900eaa6e0bbfd4c76424bd17724ad176a673c21bb3fd7c7c53d430a97"
+    },
+    "_caption_editor": {
+      "module": "dom",
+      "ast_sha256": "b345f29712101ae92f0dd0369d0abee29b89b12217fa2588bac0d8f2ca0a17e0"
+    },
+    "_same_editor_text": {
+      "module": "dom",
+      "ast_sha256": "333b528b2f36729f2e4681c264ef72c0907530457414696e55e1223d5a222787"
+    },
+    "_compact_alphanumeric_text": {
+      "module": "dom",
+      "ast_sha256": "90fac9432b55d36b416a597196438ad7d8d6202e717dfe21fc5e0bc4c8f4d267"
+    },
+    "_caption_editor_summary": {
+      "module": "dom",
+      "ast_sha256": "9e0b3944d61c6e04b4b2fa861665ff2e79c23d0d06ddebdeb53011109de65ef7"
+    },
+    "_save_whatsapp_debug_screenshot": {
+      "module": "evidence",
+      "ast_sha256": "6312d7fa260ca8c9c2050e1c77c5fa99e7cfa2d3e5dac718226f084c41483a21"
+    },
+    "_safe_whatsapp_artifact_name": {
+      "module": "evidence",
+      "ast_sha256": "72a02d9855e5d69a1f89f8d8214dc71309547cd9d1e2fe13f18d411d2668349b"
+    },
+    "_whatsapp_qr_image_data_url": {
+      "module": "evidence",
+      "ast_sha256": "dedff7842d1ee43699c832e88fc5ae352721b82f09b7f87e60caf7e34bffa141"
+    },
+    "_safe_get_attribute": {
+      "module": "dom",
+      "ast_sha256": "6fa843ff0764a332ae81d5f02c3b131055bce8b6c9b37577cd889cdc651e9d6e"
+    },
+    "_safe_text_content": {
+      "module": "dom",
+      "ast_sha256": "6739563d8d0ed310bc910ef0deac8736832c9733f1f7e127dcc6b37ac653bda6"
+    },
+    "_visible": {
+      "module": "dom",
+      "ast_sha256": "b2798cc3bbeb68a79ed18dbd612acfacd4923e1ad02226c44cb10c7bf5b9e5f1"
+    },
+    "_attachment_control_summary": {
+      "module": "dom",
+      "ast_sha256": "a136e2fd136b16e1399a6042f94d1a2b4f6a714dbf4fa17f62fa1d232520cc6d"
+    },
+    "_close_context": {
+      "module": "session",
+      "ast_sha256": "880639cc174be96a1e9ecc89fd4b144d63cb31d68fa02a59326e5bedcfd9f12c"
+    },
+    "_save_context_failure_screenshot": {
+      "module": "evidence",
+      "ast_sha256": "d52848a905591d0a5f9b4457b9ef8e17ff21cb524d1245beec32fa0a12216ea8"
+    },
+    "_result": {
+      "module": "common",
+      "ast_sha256": "dd8e5b5c28c0fdf67a5af83a81dc0ce5540a4473a960f48cdc18e64aa6dbc38b"
+    }
+  },
+  "isolated_dom_fixtures": 48,
+  "api_payloads_equivalent": 7,
+  "single_manager_identity": true,
+  "scope": "Chromium efimero con HTML sintetico y red bloqueada; dispatcher simulado, sin perfil persistente ni envios reales.",
+  "natural_acceptance": "Pendiente de siguiente caso natural posterior a la extraccion; fachada conservada.",
+  "validation": {
+    "pytest_passed": 181,
+    "subtests_passed": 24,
+    "critical_coverage_gate": "passed",
+    "architecture_modules": 317,
+    "architecture_cycles": 0,
+    "existing_inverse_edges": 1
+  },
+  "production_facade_imports": 0,
+  "extraction_commit": "2216bf5",
+  "isolated_send_single_click_confirmed_and_pending": true
+}

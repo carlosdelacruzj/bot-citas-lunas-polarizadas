@@ -1,0 +1,72 @@
+<section class="panel inbox-toolbar" aria-labelledby="inbox-title">
+  <div class="inbox-heading">
+    <div>
+      <h2 id="inbox-title">Siguiente trabajo</h2>
+      <p>Una acción por orden. Bloqueos primero; luego, el último cambio más antiguo.</p>
+    </div>
+    <span class="inbox-total"><strong>{{ operationsDomain.inboxPendingTotal() }}</strong> pendientes</span>
+  </div>
+  <app-load-status [section]="operationsDomain.loads.inbox" />
+  <div class="inbox-controls">
+    <label class="inbox-search">
+      <span>Buscar un pendiente</span>
+      <input type="search" autocomplete="off" placeholder="Cliente, orden o documento" [ngModel]="taskSearch()" (ngModelChange)="taskSearch.set($event)" />
+    </label>
+    <div class="inbox-filter-chips" aria-label="Filtrar pendientes">
+      @for (filter of filters(); track filter.key) {
+        @if (filter.key === 'all' || filter.count > 0 || taskFilter() === filter.key) {
+          <button type="button" class="filter-chip" [class.active]="taskFilter() === filter.key" [attr.aria-pressed]="taskFilter() === filter.key" (click)="chooseFilter(filter.key)">
+            {{ filter.label }} <strong>{{ filter.count }}</strong>
+          </button>
+        }
+      }
+    </div>
+    <button type="button" class="secondary" [disabled]="taskFilter() === 'all' && !taskSearch()" (click)="chooseFilter('all'); taskSearch.set('')">Limpiar filtros</button>
+  </div>
+</section>
+
+<div class="inbox-workspace" [class.with-detail]="ordersDomain.orderPanelOpen() && wideScreen()">
+  <section class="panel inbox-list-panel" aria-label="Pendientes comerciales">
+    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ operationsDomain.inboxPendingTotal() }} pendientes</p>
+    @if (operationsDomain.inboxPendingTotal() === 0 && !operationsDomain.loads.inbox.loading() && !operationsDomain.loads.inbox.error()) {
+      <app-view-state state="empty" title="Todo está al día" message="No hay pagos, accesos ni mensajes esperando intervención." />
+    } @else if (visibleTasks().length === 0 && !operationsDomain.loads.inbox.loading() && !operationsDomain.loads.inbox.error()) {
+      <app-view-state state="empty" title="No hay pendientes con estos filtros" message="Prueba otra búsqueda o vuelve a mostrar todos los tipos de trabajo." />
+    } @else {
+      <div class="inbox-list">
+        @for (task of visibleTasks(); track task.key) {
+          <article class="inbox-row {{ task.tone }}" [class.selected]="ordersDomain.orderPanelOpen() && ordersDomain.selectedOrderId() === task.orderId">
+            <div class="inbox-row-icon" aria-hidden="true">{{ task.icon }}</div>
+            <div class="inbox-row-copy">
+              <div class="inbox-row-heading">
+                <button type="button" class="inbox-client" [attr.data-order-row]="task.orderId" [attr.aria-expanded]="ordersDomain.orderPanelOpen() && ordersDomain.selectedOrderId() === task.orderId" (click)="operationsDomain.openInboxOrder(task.orderId)">
+                  {{ task.applicantName ?? task.documentNumberMasked }}
+                </button>
+                <span class="badge {{ task.tone }}">{{ task.label }}</span>
+              </div>
+              <strong class="inbox-task-title">{{ task.title }}</strong>
+              <p>{{ task.description }}</p>
+              <div class="inbox-row-meta">
+                <small>{{ task.orderId }}</small>
+                <small>{{ taskAgeLabel(task.updatedAt) }}</small>
+              </div>
+            </div>
+            <div class="inbox-row-actions">
+              <button type="button" class="primary" [disabled]="uiDomain.actionBusy()" (click)="operationsDomain.runInboxOrderTask(task)">{{ task.actionLabel }}</button>
+              <button type="button" class="secondary" [attr.aria-label]="'Ver orden de ' + (task.applicantName ?? task.orderId)" (click)="operationsDomain.openInboxOrder(task.orderId)">Ver orden</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+  <app-order-detail-panel [docked]="wideScreen()" />
+</div>
+
+@if (captchasDomain.captchaShadowEnabled() && captchasDomain.captchaReviewTotal() > 0) {
+  <details class="panel inbox-training">
+    <summary>Entrenamiento CAPTCHA · {{ captchasDomain.captchaReviewTotal() }} por etiquetar</summary>
+    <p>No bloquea clientes, pagos ni mensajes.</p>
+    <button type="button" class="secondary" (click)="operationsDomain.openInboxCaptchaReview()">Abrir revisión</button>
+  </details>
+}

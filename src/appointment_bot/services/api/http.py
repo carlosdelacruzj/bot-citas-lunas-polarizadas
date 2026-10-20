@@ -1,0 +1,183 @@
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import mimetypes
+import os
+import re
+from collections.abc import Mapping
+from http import HTTPStatus
+from http.cookies import CookieError, SimpleCookie
+from http.server import BaseHTTPRequestHandler
+from pathlib import Path
+from typing import Any
+
+MAX_JSON_BODY_BYTES = 64 * 1024
+AUTHENTICATED_ACTOR_PATTERN = re.compile(r"^[A-Za-z0-9:_-]{1,64}$")
+
+
+class RequestBodyError(ValueError):
+    def __init__(self, status: HTTPStatus, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+def require_authorized(
+    handler: BaseHTTPRequestHandler,
+    *,
+    strict: bool = False,
+) -> bool:
+    if _trusted_dashboard_session(handler):
+        handler._authenticated_principal = "dashboard:local"
+        return True
+    token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
+    if not token:
+        if strict:
+            send_json(
+                handler,
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                error_payload(
+                    "configuration_error",
+                    "APPOINTMENT_BOT_API_TOKEN is required for this endpoint.",
+                ),
+            )
+            return False
+        handler._authenticated_principal = "local:unconfigured"
+        return True
+
+    header_value = handler.headers.get("Authorization", "")
+    if hmac.compare_digest(header_value, f"Bearer {token}"):
+        handler._authenticated_principal = _bearer_actor(handler, token)
+        return True
+    send_json(
+        handler,
+        HTTPStatus.UNAUTHORIZED,
+        error_payload("unauthorized", "Invalid local API token."),
+    )
+    return False
+
+
+def authenticated_actor(handler: BaseHTTPRequestHandler) -> str:
+    actor = getattr(handler, "_authenticated_principal", "")
+    if not isinstance(actor, str) or not actor:
+        raise RuntimeError("The request has no authenticated principal.")
+    return actor
+
+
+def signed_actor_signature(token: str, actor: str) -> str:
+    return hmac.new(
+        token.encode("utf-8"),
+        actor.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _bearer_actor(handler: BaseHTTPRequestHandler, token: str) -> str:
+    claimed_actor = handler.headers.get("X-Appointment-Actor", "").strip()
+    claimed_signature = handler.headers.get("X-Appointment-Actor-Signature", "").strip()
+    if claimed_actor and AUTHENTICATED_ACTOR_PATTERN.fullmatch(claimed_actor):
+        expected_signature = signed_actor_signature(token, claimed_actor)
+        if hmac.compare_digest(claimed_signature, expected_signature):
+            return claimed_actor
+    fingerprint = hashlib.sha256(token.encode("utf-8")).hexdigest()[:12]
+    return f"api:sha256:{fingerprint}"
+
+
+def _trusted_dashboard_session(handler: BaseHTTPRequestHandler) -> bool:
+    expected = getattr(handler.server, "dashboard_session_token", "")
+    if not expected or handler.client_address[0] not in {"127.0.0.1", "::1"}:
+        return False
+    cookie_header = handler.headers.get("Cookie", "")
+    if not cookie_header:
+        return False
+    cookie = SimpleCookie()
+    try:
+        cookie.load(cookie_header)
+    except CookieError:
+        return False
+    session = cookie.get("appointment_bot_dashboard")
+    return session is not None and hmac.compare_digest(session.value, expected)
+
+
+def read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
+    try:
+        length = int(handler.headers.get("Content-Length", "0") or "0")
+    except ValueError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length header.") from exc
+    if length < 0:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length header.")
+    if length > MAX_JSON_BODY_BYTES:
+        raise RequestBodyError(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "JSON body is too large.")
+    if length <= 0:
+        return {}
+    try:
+        body = handler.rfile.read(length).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "JSON body must use UTF-8.") from exc
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid JSON body.") from exc
+    if not isinstance(payload, dict):
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "JSON body must be an object.")
+    return payload
+
+
+def send_json(
+    handler: BaseHTTPRequestHandler,
+    status: HTTPStatus,
+    payload: dict[str, Any],
+    *,
+    headers: Mapping[str, str] | None = None,
+) -> None:
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/json; charset=utf-8")
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    for name, value in (headers or {}).items():
+        handler.send_header(name, value)
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def send_png(handler: BaseHTTPRequestHandler, path: Path) -> None:
+    send_image(handler, path)
+
+
+def send_image(handler: BaseHTTPRequestHandler, path: Path) -> None:
+    body = path.read_bytes()
+    handler.send_response(HTTPStatus.OK)
+    content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Disposition", f'inline; filename="{path.name}"')
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def send_download(
+    handler: BaseHTTPRequestHandler,
+    body: bytes,
+    *,
+    filename: str,
+    content_type: str = "application/octet-stream",
+) -> None:
+    handler.send_response(HTTPStatus.OK)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def error_payload(status: str, message: str, **extra: Any) -> dict[str, Any]:
+    payload = {"status": status, "message": message}
+    payload.update(extra)
+    return payload

@@ -1,0 +1,13 @@
+.returning-contact-section { margin-top: 0; }
+.returning-match { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); background: var(--surface-soft); border-radius: var(--radius-sm); margin: 10px 0; }
+.returning-match > div { min-width: 0; }
+.returning-match strong, .returning-match small { display: block; overflow-wrap: anywhere; }
+.returning-match small { color: var(--ink-muted); margin-top: 3px; }
+.returning-match button { flex-shrink: 0; }
+.returning-text-action { background: transparent; border: 0; color: var(--accent-700); padding: 6px 0; text-align: left; }
+.returning-selected { color: var(--success) !important; margin: 10px 0 !important; }
+.returning-status p { margin-top: 10px; }
+@media (max-width: 540px) { .returning-match { align-items: flex-start; flex-direction: column; } }
+
+.returning-contact-section .form-grid.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 540px) { .returning-contact-section .form-grid.wide { grid-template-columns: 1fr; } }

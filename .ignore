@@ -1,0 +1,16 @@
+# Contexto historico o generado: excluir de busquedas ordinarias.
+# Abrir una ruta explicita solo cuando la tarea requiera evidencia fechada.
+docs/history/
+docs/evidence-index.csv
+docs/evidence-summary.md
+reports/
+
+# Artefactos locales y dependencias.
+.codegraph/
+.runtime/
+.venv/
+dashboard/dist/
+dashboard/node_modules/
+logs/
+screenshots/
+videos/

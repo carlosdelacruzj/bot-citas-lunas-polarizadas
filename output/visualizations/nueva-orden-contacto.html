@@ -1,0 +1,83 @@
+<div id="returning-client-order" aria-label="Propuesta de nueva orden">
+  <style>
+    #returning-client-order{--order-bg:light-dark(#ffffff,#191b20);--order-ink:light-dark(#202733,#edf0f5);--order-muted:light-dark(#596576,#a9b3c2);--order-line:light-dark(#e1e6ed,#363c47);--order-soft:light-dark(#f5f7fa,#22262d);--order-accent:light-dark(#245bd6,#98b7ff);--order-action:light-dark(#245bd6,#477bed);--order-success:light-dark(#186547,#83d9b2);font:14px/1.5 system-ui,sans-serif;color:var(--order-ink);max-width:690px;margin:auto}
+    #returning-client-order *{box-sizing:border-box}
+    #returning-client-order .order-window{background:var(--order-bg);border:1px solid var(--order-line);border-radius:16px;overflow:hidden}
+    #returning-client-order .order-head{padding:22px 26px 18px;border-bottom:1px solid var(--order-line)}
+    #returning-client-order .order-title{font-size:21px;font-weight:500;margin:0 0 4px}
+    #returning-client-order .order-muted{color:var(--order-muted)}
+    #returning-client-order .order-body{padding:22px 26px;display:grid;gap:23px}
+    #returning-client-order .order-section-title{font-weight:500;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+    #returning-client-order .order-number{color:var(--order-muted);font-size:12px;border:1px solid var(--order-line);border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center}
+    #returning-client-order label{display:grid;gap:6px;min-width:0}
+    #returning-client-order input,#returning-client-order select{font:inherit;background:var(--order-bg);color:var(--order-ink);border:1px solid var(--order-line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
+    #returning-client-order button{font:inherit;cursor:pointer;border-radius:8px;padding:9px 13px;border:1px solid var(--order-line);background:var(--order-bg);color:var(--order-ink);white-space:normal}
+    #returning-client-order button:disabled{opacity:.5;cursor:default}
+    #returning-client-order .order-primary{background:var(--order-action);color:#fff;border-color:var(--order-action)}
+    #returning-client-order .order-link{border:0;background:transparent;padding:4px 0;color:var(--order-accent)}
+    #returning-client-order .order-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    #returning-client-order .order-match{border:1px solid var(--order-line);border-radius:10px;padding:13px 15px;margin-top:10px;background:var(--order-soft)}
+    #returning-client-order .order-name{font-weight:500}
+    #returning-client-order .order-small{font-size:12px}
+    #returning-client-order .order-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:13px}
+    #returning-client-order .order-status{color:var(--order-success)}
+    #returning-client-order .order-account{border:1px solid var(--order-line);border-radius:10px;padding:15px}
+    #returning-client-order .order-divider{border:0;border-top:1px solid var(--order-line);margin:0}
+    #returning-client-order .order-footer{padding:16px 26px;background:var(--order-soft);border-top:1px solid var(--order-line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    #returning-client-order details{margin-top:14px;color:var(--order-muted)}
+    #returning-client-order summary{cursor:pointer}
+    #returning-client-order [hidden]{display:none!important}
+    @media(max-width:480px){#returning-client-order .order-head,#returning-client-order .order-body,#returning-client-order .order-footer{padding:18px}#returning-client-order .order-fields{grid-template-columns:1fr}#returning-client-order input,#returning-client-order select{font-size:16px}}
+  </style>
+  <div class="order-window">
+    <div class="order-head"><div class="order-row"><h2 class="order-title">Nueva orden</h2><span class="order-small order-muted">Ejemplo · datos ficticios</span></div><div class="order-muted">Empieza por el WhatsApp de quien solicita el servicio.</div></div>
+    <div class="order-body">
+      <section>
+        <div class="order-section-title"><span class="order-number">1</span> Contacto</div>
+        <label>WhatsApp<input id="order-phone" type="tel" autocomplete="off" value="999 123 456" aria-describedby="order-contact-result"></label>
+        <div id="order-contact-result" aria-live="polite">
+          <div id="order-match" class="order-match"><div class="order-row"><div><div class="order-name">Carlos Mendoza</div><div class="order-small order-muted">Contacto encontrado · 2 órdenes anteriores</div></div><button id="order-use-contact" type="button">Usar este contacto</button></div></div>
+          <div id="order-new-contact" class="order-small order-muted" hidden style="margin-top:8px">Sin coincidencias. Completa los datos del nuevo contacto.</div>
+        </div>
+        <div class="order-fields"><label>Nombre del contacto<input id="order-contact-name" placeholder="Nombre de quien te contacta" autocomplete="off"></label><label>Origen<select id="order-source"><option>Seleccionar</option><option>WhatsApp</option><option>TikTok</option><option>Recomendación</option></select></label></div>
+      </section>
+      <hr class="order-divider">
+      <section>
+        <div class="order-section-title"><span class="order-number">2</span> Cuenta del portal</div>
+        <div id="order-account-saved" class="order-account" hidden><div class="order-row"><div><div class="order-name">Carlos Mendoza · DNI</div><div class="order-muted order-small">Usuario 45***6 · cuenta utilizada anteriormente</div></div><button id="order-use-account" type="button">Usar esta cuenta</button></div></div>
+        <div id="order-account-selected" class="order-account" hidden><div class="order-row"><div><div class="order-name">Carlos Mendoza · usuario 45***6</div><div class="order-status order-small">Cuenta seleccionada</div></div><button id="order-change-account" class="order-link" type="button">Cambiar cuenta</button></div><div class="order-small order-muted" style="margin-top:8px">El acceso y los expedientes disponibles se validarán al crear la orden.</div></div>
+        <button id="order-other-account" class="order-link" type="button" hidden style="margin-top:8px">Ingresar otra cuenta</button>
+        <div id="order-credentials" class="order-fields"><label>Tipo de documento<select><option>DNI</option><option>Carné de extranjería</option></select></label><label>Usuario del portal<input id="order-username" autocomplete="off" placeholder="Número de documento"></label><label>Contraseña<input id="order-password" type="password" autocomplete="off" placeholder="Contraseña del portal"></label></div>
+      </section>
+      <hr class="order-divider">
+      <section>
+        <div class="order-section-title"><span class="order-number">3</span> Servicio de esta orden</div>
+        <div class="order-fields" style="margin-top:0"><label>Servicio<select id="order-service"><option>Regular · S/50</option><option>Disponibilidad restringida · S/70</option><option>Trámite integral · S/160</option></select></label><label>Preferencia<input value="Fecha más próxima disponible" readonly></label></div>
+        <details><summary>Fechas y horarios permitidos</summary><div class="order-fields"><label>Desde<input type="date"></label><label>Hasta<input type="date"></label></div></details>
+      </section>
+      <div id="order-preview-status" class="order-small order-status" aria-live="polite" hidden></div>
+    </div>
+    <div class="order-footer"><span class="order-small order-muted">Nueva orden · validar antes de buscar</span><button id="order-create" class="order-primary" type="button" disabled>Crear y validar</button></div>
+  </div>
+  <script>
+    (()=>{
+      const root=document.getElementById('returning-client-order');
+      const get=id=>root.querySelector('#'+id);
+      const state={contact:false,account:false};
+      const design={spacing:22,rounded:true};
+      function availability(){get('order-create').disabled=!(get('order-contact-name').value.trim()&&(state.account||(get('order-username').value.trim()&&get('order-password').value)));}
+      function accountView(){get('order-account-saved').hidden=!state.contact||state.account;get('order-account-selected').hidden=!state.account;get('order-other-account').hidden=!state.contact||state.account;get('order-credentials').hidden=state.contact;availability();}
+      get('order-use-contact').onclick=()=>{state.contact=true;state.account=false;get('order-contact-name').value='Carlos Mendoza';get('order-use-contact').textContent='Contacto seleccionado';get('order-use-contact').disabled=true;accountView();};
+      get('order-use-account').onclick=()=>{state.account=true;accountView();};
+      function other(){state.account=false;get('order-account-saved').hidden=true;get('order-account-selected').hidden=true;get('order-other-account').hidden=true;get('order-credentials').hidden=false;availability();get('order-username').focus();}
+      get('order-other-account').onclick=other;
+      get('order-change-account').onclick=()=>{state.account=false;accountView();};
+      get('order-phone').oninput=()=>{state.contact=false;state.account=false;const matched=get('order-phone').value.replace(/\D/g,'').replace(/^51/,'')==='999123456';get('order-match').hidden=!matched;get('order-new-contact').hidden=matched;get('order-use-contact').disabled=false;get('order-use-contact').textContent='Usar este contacto';accountView();get('order-preview-status').hidden=true;};
+      ['order-contact-name','order-username','order-password'].forEach(id=>get(id).addEventListener('input',availability));
+      get('order-create').onclick=()=>{get('order-preview-status').hidden=false;get('order-preview-status').textContent='Ejemplo: se crearía una orden nueva y se validaría el acceso. No se ha registrado nada.';};
+      function renderDesign(){root.querySelector('.order-body').style.gap=design.spacing+'px';root.querySelector('.order-window').style.borderRadius=design.rounded?'16px':'6px';}
+      renderDesign();
+      if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:renderDesign});tweak.addSlider(design,'spacing',{label:'Separación de secciones',min:14,max:28,unit:'px'});tweak.addToggle(design,'rounded',{label:'Bordes suaves'});}
+    })();
+  </script>
+</div>
